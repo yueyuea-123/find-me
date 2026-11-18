@@ -1,0 +1,33 @@
+<view class="page">
+  <view class="card">
+    <view class="card-t">房间照片</view>
+    <view class="card-s">按引导拍摄多角度照片：尽量覆盖房间不同方向、相邻视角有重叠。普通照片无真实尺度，建议同时填尺寸参照。</view>
+    <view class="hint-box">MVP 说明：照片保存在本机， rebuilding 识别能力待三维可行性验证后再接入；本版以手动添加家具与列表管理为主。</view>
+  </view>
+
+  <view class="card">
+    <view class="row between">
+      <view class="card-t">已上传 {{photos.length}} 张</view>
+      <button class="btn sm primary" bindtap="choosePhoto">＋ 选择照片</button>
+    </view>
+    <view class="photo-grid">
+      <view class="photo-cell" wx:for="{{photos}}" wx:key="id">
+        <image src="{{item.path}}" mode="aspectFill" bindtap="preview" data-src="{{item.path}}"></image>
+        <view class="photo-del" catchtap="remove" data-id="{{item.id}}">×</view>
+      </view>
+    </view>
+    <view class="empty-line" wx:if="{{photos.length===0}}">还没有照片。拍照或从相册选择。</view>
+  </view>
+
+  <view class="card">
+    <view class="card-t">尺寸参照（可选）</view>
+    <view class="row">
+      <input class="input grow" style="margin-right:12rpx" type="number" placeholder="宽(米)" value="{{width}}" bindinput="onW" />
+      <input class="input grow" type="number" placeholder="深(米)" value="{{depth}}" bindinput="onD" />
+    </view>
+    <button class="btn sm" style="margin-top:16rpx" bindtap="saveDims">保存尺寸</button>
+    <view class="card-s" style="margin-top:12rpx">{{calText}}</view>
+  </view>
+
+  <button class="btn primary block" bindtap="goTask" disabled="{{photos.length===0}}">查看建模任务</button>
+</view>

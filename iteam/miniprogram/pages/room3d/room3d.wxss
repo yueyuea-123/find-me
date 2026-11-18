@@ -1,0 +1,16 @@
+/* pages/room3d/room3d.wxss */
+.wrap-page { position: relative; width: 100vw; height: 100vh; overflow: hidden; background: #1a212a; }
+.glcanvas { position: absolute; left: 0; top: 0; width: 100vw; height: 100vh; }
+.topbar { position: absolute; left: 24rpx; top: 24rpx; color: #fff; text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.5); }
+.topbar .strong { font-size: 34rpx; }
+.modebar { position: absolute; left: 24rpx; top: 110rpx; display: flex; }
+.mode { color: #cfd8dd; font-size: 24rpx; padding: 10rpx 20rpx; background: rgba(255,255,255,0.12); margin-right: 8rpx; border-radius: 999rpx; }
+.mode.on { background: #2b7a9b; color: #fff; }
+.degrade { position: absolute; left: 24rpx; right: 24rpx; top: 170rpx; background: rgba(255,243,224,0.95); color: #8a5a12; padding: 20rpx; border-radius: 14rpx; }
+.selcard { position: absolute; left: 24rpx; right: 24rpx; bottom: 180rpx; background: rgba(255,255,255,0.96); border-radius: 18rpx; padding: 24rpx; }
+.bottombar { position: absolute; left: 24rpx; right: 24rpx; bottom: 30rpx; display: flex; align-items: center; justify-content: space-between; }
+.seg { display: flex; background: rgba(255,255,255,0.15); border-radius: 12rpx; padding: 4rpx; }
+.seg-i { color: #dbe3e8; font-size: 24rpx; padding: 12rpx 20rpx; border-radius: 10rpx; }
+.seg-i.on { background: #fff; color: #2b5f75; }
+.listview { position: absolute; left: 0; right: 0; top: 170rpx; bottom: 120rpx; overflow-y: auto; padding: 0 24rpx; }
+.empty-line { text-align: center; color: #cfd8dd; font-size: 26rpx; padding: 60rpx 0; }

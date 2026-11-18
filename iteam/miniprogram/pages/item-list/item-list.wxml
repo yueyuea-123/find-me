@@ -1,0 +1,36 @@
+<view class="page">
+  <view class="card search-card">
+    <input class="input" placeholder="搜索物品名称 / 分类" value="{{keyword}}" bindinput="onKeyword" confirm-type="search" />
+    <view class="filter-row">
+      <picker mode="selector" range="{{statusOptions}}" range-key="name" value="{{stIndex}}" bindchange="onStatus">
+        <view class="filter-pill">{{statusOptions[stIndex].name}} ▾</view>
+      </picker>
+      <picker mode="selector" range="{{catOptions}}" value="{{catIndex}}" bindchange="onCat">
+        <view class="filter-pill">{{catOptions[catIndex]}} ▾</view>
+      </picker>
+      <picker mode="selector" range="{{locOptions}}" range-key="name" value="{{locIndex}}" bindchange="onLoc">
+        <view class="filter-pill">{{locOptions[locIndex].name}} ▾</view>
+      </picker>
+      <view class="filter-pill {{includeEnded?'on':''}}" bindtap="toggleEnded">含已结束</view>
+    </view>
+  </view>
+
+  <view class="card item-card" wx:for="{{items}}" wx:key="id" bindtap="openItem" data-id="{{item.id}}">
+    <view class="row between">
+      <view class="grow">
+        <view class="strong" style="font-size:30rpx">{{item.name}} <text class="tag {{item.mgmtClass}}">{{item.mgmtText}}</text> <text class="tag {{item.locClass}}">{{item.locText}}</text></view>
+        <view class="small muted" style="margin-top:8rpx">{{item.catText}} · {{item.modeText}} · 完善度 {{item.completed}}%</view>
+        <view class="small muted" style="margin-top:6rpx">位置：{{item.locPath}}</view>
+      </view>
+      <text class="muted">▸</text>
+    </view>
+  </view>
+
+  <view class="state" wx:if="{{!loading && items.length===0}}">
+    <text class="state-icon">🔍</text>
+    <text class="state-title">{{hasFilter?'没有匹配的物品':'还没有物品档案'}}</text>
+    <text class="state-desc">{{hasFilter?'试试调整筛选条件':'点右下角 + 添加第一件物品，只填名称即可'}}</text>
+  </view>
+
+  <view class="fab" bindtap="addItem">+</view>
+</view>

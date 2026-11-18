@@ -1,0 +1,67 @@
+<view class="page">
+  <view class="card">
+    <view class="card-t">{{editing?'编辑物品':(continuous?'连续添加':'添加物品')}}</view>
+    <view class="card-s">只填名称即可保存，分类/照片/位置可后续完善（BR-001）。连续添加每件独立建档（BR-002）。</view>
+  </view>
+
+  <view class="card">
+    <view class="form-error" wx:if="{{formError}}">{{formError}}</view>
+    <view class="field">
+      <text class="label">物品名称 <text class="req">*</text></text>
+      <input class="input" placeholder="例如：身份证 / 洗发水" value="{{formName}}" bindinput="onName" maxlength="30" />
+    </view>
+    <view class="field">
+      <text class="label">分类</text>
+      <picker mode="selector" range="{{categories}}" value="{{catIndex}}" bindchange="onCat">
+        <view class="picker">{{categories[catIndex]}} ▾</view>
+      </picker>
+    </view>
+    <view class="field">
+      <text class="label">跟踪模式</text>
+      <picker mode="selector" range="{{modes}}" range-key="name" value="{{modeIndex}}" bindchange="onMode">
+        <view class="picker">{{modes[modeIndex].name}} — {{modes[modeIndex].desc}} ▾</view>
+      </picker>
+    </view>
+
+    <!-- 库存字段（仅 inventory/hybrid） -->
+    <view wx:if="{{needInventory}}">
+      <view class="divider"></view>
+      <view class="field">
+        <text class="label">当前数量与单位</text>
+        <view class="row">
+          <input class="input grow" style="margin-right:12rpx" type="number" placeholder="数量" value="{{balance}}" bindinput="onBalance" />
+          <picker class="grow" mode="selector" range="{{units}}" value="{{unitIndex}}" bindchange="onUnit">
+            <view class="picker">{{units[unitIndex]}} ▾</view>
+          </picker>
+        </view>
+      </view>
+      <view class="field">
+        <text class="label">最低库存阈值（低于时提醒）</text>
+        <input class="input" type="number" placeholder="0 表示不提醒" value="{{threshold}}" bindinput="onThreshold" />
+      </view>
+    </view>
+
+    <view class="divider"></view>
+    <view class="field">
+      <text class="label">当前存放位置（可选；创建时填写属初始存放信息，不记为移动 BR-004）</text>
+      <picker mode="selector" range="{{nodeOptions}}" range-key="label" value="{{nodeIndex}}" bindchange="onNode">
+        <view class="picker">{{nodeOptions[nodeIndex].label}} ▾</view>
+      </picker>
+    </view>
+    <view class="field" wx:if="{{!hasNode}}">
+      <text class="label">位置状态</text>
+      <picker mode="selector" range="{{locStatus}}" range-key="name" value="{{locIndex}}" bindchange="onLoc">
+        <view class="picker">{{locStatus[locIndex].name}} ▾</view>
+      </picker>
+    </view>
+    <view class="field">
+      <text class="label">备注</text>
+      <textarea class="textarea" placeholder="可选，例如品牌、规格、质保信息" value="{{note}}" bindinput="onNote" maxlength="200" />
+    </view>
+
+    <view class="row">
+      <button class="btn primary grow" bindtap="save">保存</button>
+      <button class="btn grow" wx:if="{{!editing}}" bindtap="saveContinue">保存并继续</button>
+    </view>
+  </view>
+</view>

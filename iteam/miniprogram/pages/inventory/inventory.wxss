@@ -1,0 +1,5 @@
+/* pages/inventory/inventory.wxss */
+.right { text-align: right; }
+.bal { font-size: 44rpx; font-weight: 600; color: #2b7a9b; }
+.bal.warn { color: #c0392b; }
+.unit { font-size: 24rpx; margin-left: 6rpx; }

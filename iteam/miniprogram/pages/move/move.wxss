@@ -1,0 +1,6 @@
+/* pages/move/move.wxss */
+.chip-grid { display: flex; flex-wrap: wrap; margin-top: 12rpx; }
+.chip { font-size: 26rpx; padding: 14rpx 26rpx; background: #f2f5f7; color: #53646f; border-radius: 999rpx; margin: 0 14rpx 14rpx 0; }
+.chip.on { background: #2b7a9b; color: #fff; }
+.kv { display: flex; justify-content: space-between; padding: 12rpx 0; font-size: 27rpx; }
+.hint-box { background: #f0f7fa; border-left: 6rpx solid #2b7a9b; color: #4a6572; font-size: 24rpx; padding: 16rpx 20rpx; border-radius: 8rpx; margin-top: 16rpx; line-height: 1.6; }

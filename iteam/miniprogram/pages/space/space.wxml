@@ -1,0 +1,38 @@
+<view class="page">
+  <view class="card" wx:for="{{spaces}}" wx:key="id">
+    <view class="row between" bindtap="choose" data-id="{{item.id}}">
+      <view class="grow">
+        <view class="card-t">{{item.name}} <text class="tag blue" wx:if="{{item.id===activeId}}">当前</text></view>
+        <view class="card-s">{{item.roomCount}} 个房间 · 创建于 {{item.time}}</view>
+      </view>
+      <text class="muted">▸</text>
+    </view>
+    <view class="divider"></view>
+    <view class="row">
+      <button class="btn sm" catchtap="rename" data-id="{{item.id}}" data-name="{{item.name}}">重命名</button>
+      <button class="btn sm danger" catchtap="archive" data-id="{{item.id}}" data-name="{{item.name}}">归档</button>
+    </view>
+  </view>
+
+  <view class="state" wx:if="{{spaces.length===0}}">
+    <text class="state-icon">⌂</text>
+    <text class="state-title">还没有空间</text>
+    <text class="state-desc">创建一个空间，例如「我的家」，开始建立家庭物品档案</text>
+  </view>
+
+  <view class="fab" bindtap="openCreate">+</view>
+
+  <view class="mask" wx:if="{{showEditor}}" bindtap="closeEditor"></view>
+  <view class="sheet" wx:if="{{showEditor}}">
+    <text class="sheet-title">{{editing?'编辑空间':'新建空间'}}</text>
+    <view class="form-error" wx:if="{{formError}}">{{formError}}</view>
+    <view class="field">
+      <text class="label">空间名称 <text class="req">*</text></text>
+      <input class="input" placeholder="例如：我的家 / 父母家" value="{{formName}}" bindinput="onName" maxlength="20" />
+    </view>
+    <view class="sheet-actions">
+      <button class="btn ghost" bindtap="closeEditor">取消</button>
+      <button class="btn primary" bindtap="save">保存</button>
+    </view>
+  </view>
+</view>

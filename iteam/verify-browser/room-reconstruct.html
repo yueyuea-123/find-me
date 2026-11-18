@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三维房间重建 · 端到端原型</title>
+<style>
+  :root{
+    --bg:#14181f; --panel:rgba(20,24,32,.90); --line:rgba(255,255,255,.10);
+    --txt:#e8ecf2; --dim:#93a1b3; --accent:#ffd166; --ok:#5fd38a; --warn:#ff8a80; --cand:#ffb703;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;overflow:hidden;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--txt)}
+  canvas{display:block}
+  .panel{position:fixed;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    box-shadow:0 6px 20px rgba(0,0,0,.3);backdrop-filter:blur(6px)}
+  #left{top:12px;left:12px;bottom:12px;width:290px;padding:14px;overflow:auto}
+  #right{top:12px;right:12px;bottom:12px;width:330px;padding:14px;overflow:auto}
+  #topbar{top:12px;left:314px;right:354px;padding:8px 10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  #flowbar{bottom:12px;left:314px;right:354px;padding:10px 12px}
+  h1{font-size:15px;margin:0 0 3px;font-weight:600}
+  .sub{color:var(--dim);font-size:11px;line-height:1.5;margin-bottom:10px}
+  h2{font-size:12px;margin:14px 0 6px;color:var(--accent);border-bottom:1px solid var(--line);padding-bottom:4px}
+  .btn{background:#26303d;color:var(--txt);border:1px solid var(--line);border-radius:7px;
+    padding:6px 10px;font-size:12px;cursor:pointer}
+  .btn:hover{background:#314052}
+  .btn.primary{background:#3b6ea5;border-color:#4a82bd}
+  .btn.sm{padding:3px 7px;font-size:11px}
+  .btn.ok{background:#2f7d54;border-color:#3c9666}
+  .btn.danger{background:#7d3b3b;border-color:#965050}
+  .row{display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:3px 0}
+  .k{color:var(--dim)}.v{color:var(--accent);text-align:right}
+  input[type=number]{width:62px;background:#1c232d;color:var(--txt);border:1px solid var(--line);
+    border-radius:6px;padding:4px 6px;font-size:12px}
+  .photo-strip{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .photo-strip img{width:56px;height:44px;object-fit:cover;border-radius:5px;border:1px solid var(--line)}
+  .hint{font-size:11px;color:var(--dim);line-height:1.6}
+  .det{border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:7px;font-size:12px;cursor:pointer}
+  .det.sel{border-color:var(--accent);background:rgba(255,209,102,.08)}
+  .det.confirmed{border-color:var(--ok)}
+  .det .t{display:flex;justify-content:space-between;align-items:center}
+  .badge{font-size:10px;padding:2px 6px;border-radius:10px}
+  .badge.cand{background:rgba(255,183,3,.18);color:var(--cand)}
+  .badge.ok{background:rgba(95,211,138,.18);color:var(--ok)}
+  .badge.low{background:rgba(255,138,128,.18);color:var(--warn)}
+  .bar{height:4px;background:#2a313b;border-radius:3px;margin:5px 0;overflow:hidden}
+  .bar>i{display:block;height:100%;background:var(--accent)}
+  .meta{color:var(--dim);font-size:11px;line-height:1.6}
+  .meta b{color:var(--txt);font-weight:500}
+  .detacts{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
+  #alerts .a{font-size:11px;color:var(--warn);padding:3px 0;border-bottom:1px solid var(--line)}
+  .flow{display:flex;gap:4px;align-items:center;justify-content:space-between;font-size:11px}
+  .step{flex:1;text-align:center;padding:7px 2px;border-radius:6px;background:#1c232d;color:var(--dim);
+    border:1px solid transparent;transition:.3s}
+  .step.on{color:#14181f;background:var(--accent);font-weight:600}
+  .step.done{color:var(--ok);border-color:var(--ok)}
+  .arrow{color:var(--dim)}
+  /* 规格抽屉 */
+  #spec{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:50}
+  #spec .box{position:absolute;right:0;top:0;bottom:0;width:min(720px,92vw);background:#11161d;
+    border-left:1px solid var(--line);padding:22px 26px;overflow:auto}
+  #spec h1{font-size:18px}#spec h2{font-size:13px;margin-top:20px}
+  #spec table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+  #spec th,#spec td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+  #spec th{color:var(--accent);background:#1a2029;font-weight:500}
+  #spec li{font-size:12px;line-height:1.7;margin:3px 0}
+  #spec .close{float:right}
+  code{background:#1c232d;padding:1px 5px;border-radius:4px;font-size:11px;color:#8fd3ff}
+  #err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:#14181f;
+    color:var(--warn);font-size:14px;text-align:center;padding:40px;z-index:99}
+  #refCard{position:fixed;left:314px;top:62px;width:210px;padding:8px;display:none;z-index:5}
+  #refCard .cap{font-size:10px;color:var(--dim);margin-bottom:5px}
+  #refCard img{width:100%;border-radius:6px;display:block;border:1px solid var(--line)}
+  #refCard .feat{display:flex;gap:5px;margin-top:7px;align-items:center;flex-wrap:wrap}
+  #refCard .sw{width:18px;height:18px;border-radius:4px;border:1px solid rgba(255,255,255,.25)}
+  #refCard .fl{font-size:10px;color:var(--dim)}
+  select{background:#1c232d;color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:4px 6px;font-size:12px}
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="err"></div>
+
+<!-- 左：输入与识别结果 -->
+<div id="left" class="panel">
+  <h1>三维房间重建</h1>
+  <div class="sub">端到端技术验证原型 · 照片 → 识别 → 匹配 → 摆放 → 可调整场景<br>识别结果均为「候选预测」，须用户确认后方为事实</div>
+
+  <h2>① 输入数据</h2>
+  <div class="hint">房间照片（支持多角度，JPG/PNG）· 识別来源见下方</div>
+  <label class="btn sm" for="file">＋ 选择照片</label>
+  <input id="file" type="file" accept="image/*" multiple style="display:none">
+  <button class="btn sm" id="btnDemoPhoto" style="margin-left:4px">载入示例照片</button>
+  <div id="photoStrip" class="photo-strip"></div>
+  <div class="row" style="margin-top:8px"><span class="k">房间类型</span>
+    <select id="roomType"><option value="bedroom">卧室</option><option value="living">客厅/起居室</option></select>
+  </div>
+  <div class="hint" style="margin-top:6px">识别来源：<b id="profileName" style="color:var(--accent)">自动适配（读取照片像素）</b></div>
+  <div class="row" style="margin-top:4px">
+    <button class="btn sm primary" id="btnProfileAuto" style="flex:1">自动适配</button>
+    <button class="btn sm" id="btnProfileBed" style="flex:1">卧室样本</button>
+    <button class="btn sm" id="btnProfileLiv" style="flex:1">客厅演示</button>
+  </div>
+
+  <div class="hint" style="margin-top:10px">真实语义识别 · 自托管服务（照片不出内网）</div>
+  <div class="row"><span class="k">服务地址</span><input id="svcUrl" type="text" value="http://127.0.0.1:8766/recognize" style="font-size:11px;padding:3px 4px"></div>
+  <div class="row" style="margin-top:4px">
+    <button class="btn sm" id="btnService" style="flex:1">服务适配（POST 照片）</button>
+    <button class="btn sm" id="btnSvcHealth" style="flex:1">测试连接</button>
+  </div>
+  <div class="hint" id="svcHint" style="margin-top:3px;font-size:10px;color:var(--dim)">启动服务：python3 recognition-service.py --port 8766 --backend mock</div>
+
+  <div class="hint" style="margin-top:10px">尺寸参照（单位：米；决定位置是否按米定标）</div>
+  <div class="row"><span class="k">宽 W</span><input id="inW" type="number" value="4.6" min="1" max="30" step="0.1"></div>
+  <div class="row"><span class="k">深 D</span><input id="inD" type="number" value="4.2" min="1" max="30" step="0.1"></div>
+  <div class="row"><span class="k">高 H</span><input id="inH" type="number" value="2.8" min="1" max="10" step="0.1"></div>
+  <div class="row"><span class="k">已定标</span><span class="v" id="calState" data-cal="1">是（按米定标）</span></div>
+  <button class="btn primary" id="btnRun" style="width:100%;margin-top:10px">运行识别与重建</button>
+
+  <h2>② 识别结果（候选）</h2>
+  <div id="detList"></div>
+  <div id="alerts"></div>
+</div>
+
+<!-- 中：工具栏 + 流程条 -->
+<div id="topbar" class="panel">
+  <button class="btn" id="btnSpec">规格说明</button>
+  <button class="btn" id="btnReset">重置视角</button>
+  <button class="btn ok" id="btnExport">导出场景 JSON</button>
+  <span class="hint" id="selInfo" style="margin-left:auto">选中：无</span>
+</div>
+<div id="refCard" class="panel">
+  <div class="cap">输入照片 · 场景据此适配</div>
+  <img id="refImg" alt="输入照片">
+  <div class="feat">
+    <span class="fl">墙</span><span class="sw" id="swWall"></span>
+    <span class="fl">地</span><span class="sw" id="swFloor"></span>
+    <span class="fl">主</span><span class="sw" id="swDom"></span>
+  </div>
+  <div class="fl" id="featTxt" style="margin-top:5px"></div>
+</div>
+<div id="flowbar" class="panel">
+  <div class="flow">
+    <div class="step" data-s="0">输入</div><span class="arrow">›</span>
+    <div class="step" data-s="1">识别</div><span class="arrow">›</span>
+    <div class="step" data-s="2">匹配</div><span class="arrow">›</span>
+    <div class="step" data-s="3">摆放</div><span class="arrow">›</span>
+    <div class="step" data-s="4">输出</div>
+  </div>
+  <div class="hint" style="text-align:center;margin-top:6px" id="flowMsg">等待输入…</div>
+</div>
+
+<!-- 右：匹配详情 + 约束 -->
+<div id="right" class="panel">
+  <h2>③ 模型匹配 / 选中详情</h2>
+  <div id="detail" class="meta">点选场景中的家具，或点击左侧识别结果。</div>
+
+  <h2>交互</h2>
+  <div class="hint">
+    拖动家具改 X/Z 位置 · <b>R</b> 旋转 · <b>M</b> 换外观<br>
+    <b>Enter</b> 确认摆放 · <b>Delete</b> 移除 · <b>Esc</b> 取消选中<br>
+    黄色虚线圈 = 位置误差范围（估算不确定性）
+  </div>
+
+  <h2>④ 约束（本原型已实现）</h2>
+  <div class="meta">
+    <b>位置估算</b>：照片无真实尺度 → 尺寸参照定标；单视角深度不确定 → 输出带误差半径；遮挡/出画不可恢复。<br><br>
+    <b>模型匹配</b>：仅匹配模型库已有类别；库外类别降级占位模型；外观为粗粒度档位；置信度低于阈值强制人工确认。<br><br>
+    <b>摆放误差</b>：候选不覆盖已确认；重叠/越界仅提示不自动改；误差经用户确认后消除；降级不影响核心数据。
+  </div>
+  <button class="btn sm" id="btnSpec2" style="margin-top:8px">查看完整规格</button>
+</div>
+
+<!-- 规格抽屉 -->
+<div id="spec"><div class="box">
+  <button class="btn close" id="specClose">关闭 ×</button>
+  <h1>规格说明 · 三维房间重建</h1>
+  <div class="sub">对应产品文档原则：事实与预测分离 · 用户确认优先 · 失败可降级 · 三维与逻辑解耦</div>
+
+  <h2>一、输入数据</h2>
+  <table>
+    <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+    <tr><td>photos[]</td><td>图片 ≥1</td><td>房间多角度照片；建议不同视角有重叠；本原型仅做预览与计数，识别由适配器产出</td></tr>
+    <tr><td>room.width / depth / height</td><td>数值（米）</td><td>尺寸参照，可选；提供即「已定标」，否则「相对估算」</td></tr>
+    <tr><td>room.calibrated</td><td>布尔</td><td>是否带真实尺度；决定位置估算是否按米定标</td></tr>
+    <tr><td>cameraHint</td><td>枚举</td><td>正面朝向参考（本原型默认 +Z 为拍摄侧）</td></tr>
+  </table>
+
+  <h2>二、处理流程</h2>
+  <table>
+    <tr><th>步骤</th><th>输入 → 输出</th><th>约束 / 降级</th></tr>
+    <tr><td>1 输入校验</td><td>照片+尺寸参照 → 规范化输入</td><td>无照片可用内置演示样本；无尺寸参照标记未定标</td></tr>
+    <tr><td>2 识别</td><td>照片 → 候选检测集{类别,置信度,外观特征,2D位置,朝向,深度线索,空间关系}</td><td>三档适配器：auto（端侧读像素，照片不出本机）/ service（自托管视觉服务，照片不出内网）/ 预置样本；结果一律为候选</td></tr>
+    <tr><td>3 模型匹配</td><td>候选 → 模型库中类别+外观+尺寸档匹配</td><td>库外类别→占位模型；低置信→强制确认</td></tr>
+    <tr><td>4 位置估算</td><td>2D位置+深度线索+尺寸 → X/Z/朝向 + 误差半径</td><td>未定标只给相对位置；误差随置信度下降而增大</td></tr>
+    <tr><td>5 摆放与修正</td><td>估算位姿 → 三维场景候选对象</td><td>重叠/越界仅提示；用户拖动/旋转/确认</td></tr>
+    <tr><td>6 输出</td><td>确认后对象 → 可查看场景 + 结构化 JSON</td><td>source/status 字段区分「AI预测」与「用户确认事实」</td></tr>
+  </table>
+
+  <h2>三、输出结果（场景 JSON 字段）</h2>
+  <table>
+    <tr><th>字段</th><th>含义</th></tr>
+    <tr><td>room</td><td>房间尺寸与是否定标</td></tr>
+    <tr><td>objects[].category / model / variant</td><td>识别类别 / 匹配模型 / 外观档位</td></tr>
+    <tr><td>objects[].position / rotation / size</td><td>摆放位姿（米 / 弧度 / 米），Y-up 坐标</td></tr>
+    <tr><td>objects[].confidence</td><td>识别置信度（0–1），仅代表预测可信度</td></tr>
+    <tr><td>objects[].errorRadius</td><td>位置估算误差半径（米），未定标时更大</td></tr>
+    <tr><td>objects[].source</td><td><code>recognition_candidate</code> 或 <code>user_confirmed</code></td></tr>
+    <tr><td>objects[].status</td><td><code>candidate</code> / <code>confirmed</code> / <code>rejected</code></td></tr>
+    <tr><td>alerts[]</td><td>重叠、越界等摆放告警（仅记录，不自动改）</td></tr>
+  </table>
+
+  <h2>四、位置估算约束</h2>
+  <ul>
+    <li>普通照片无绝对尺度：无尺寸参照时只输出房间内的相对位置，不承诺真实米制精度。</li>
+    <li>单视角深度不确定：Z 向由画面垂直位置+表观尺寸+深度线索推断，属估算，带误差半径。</li>
+    <li>遮挡、出画、镜像反射的物体无法可靠恢复，识别环节即标低置信度或直接不输出。</li>
+    <li>误差半径随置信度下降、未定标而增大；确认前一律以候选圈可视化。</li>
+    <li>朝向仅作粗粒度（正面/侧向）估计，精细角度由用户在场景中修正。</li>
+  </ul>
+
+  <h2>五、模型匹配约束</h2>
+  <ul>
+    <li>只能从已有三维家具模型库匹配；库中无该类别时降级为占位模型，不虚构精确外观。</li>
+    <li>外观特征为粗粒度档位（颜色/材质/尺寸档），匹配是近似择优，不等于照片真实款式。</li>
+    <li>置信度低于阈值（本原型 0.6）的匹配必须经用户确认，不得静默计入事实。</li>
+    <li>用户可手动改选模型/外观，改选后重新以用户确认为准，覆盖预测来源。</li>
+  </ul>
+
+  <h2>六、摆放误差处理约束</h2>
+  <ul>
+    <li>候选摆放不得覆盖已确认对象：重新识别只生成新候选，不动已确认事实。</li>
+    <li>重叠与越界只提示、不自动修改位置，避免算法静默污染用户事实。</li>
+    <li>用户拖动/旋转/确认后，误差圈消除、状态转为已确认，写入 source=user_confirmed。</li>
+    <li>识别或摆放失败时保留房间基础数据与已确认对象，可手动添加家具，核心业务不中断。</li>
+    <li>三维不可用不影响物品列表数据（与 MVP-012 降级原则一致）。</li>
+  </ul>
+
+  <h2>七、接口边界（可替换点）</h2>
+  <ul>
+    <li><b>自动适配（auto，默认）</b>：浏览器用 canvas 读取照片像素，提取主色/墙面色/地面色/明暗分区，按所选房间类型套用家具模板并叠加真实取色与亮区（窗）位置。换任意新照片，颜色与布局随之变化；全部在本机完成，照片不上传。这是<b>启发式估算，不是语义目标识别</b>——类别由模板假定、需用户核对。</li>
+    <li><b>真实语义识别（service）</b>：点「服务适配」后，前端把照片以 data URL 通过 <code>POST {服务地址}</code> 发到自<b>托管</b>视觉服务，请求体 <code>{images, room:{w,d,h,type}, photoFeature}</code>；服务返回 <code>{objects:[{id,category,variantHint,conf,u,v,apparent,depthHint,facing,anchor,colorHex?}], meta}</code>，前端规整为同一套候选并进入匹配/摆放。参考服务 <code>recognition-service.py</code> 提供三档后端：<code>mock</code>（零依赖验证链路）、<code>ollama</code>（本地多模态模型，如 qwen2.5vl:7b）、<code>openai</code>（自托管兼容端点）。服务地址可改；照片只发往该地址，须在自有服务器/内网，家庭照片不出内网、未经授权不得用于训练。服务不可用时界面给出错误提示，可切回 auto 继续。</li>
+    <li><b>预置样本</b>：<code>bedroom</code>/<code>living</code> 为确定性对照样本，用于无照片或回归验证。</li>
+    <li>识别结果按照片空间关系（贴墙、置于柜上、窗前、沙发对面）映射为三维位姿；仍是候选、带误差，须用户确认。</li>
+    <li>真实服务须遵守隐私约束：家庭照片私有处理，未经授权不得传第三方或用于训练。</li>
+    <li>本原型不预设准确率/耗时/成本等指标，须真机与真实样本验证后确定。</li>
+  </ul>
+</div></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const $ = s => document.querySelector(s);
+const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+const PALETTE = {'灰色':0x8b8f96,'米色':0xd9c8a6,'深蓝':0x3f5a7a,'深色':0x49505a,'木色':0xb08a5a,'白色':0xe6e6e6};
+
+/* ---------- 程序化家具模型库 ---------- */
+const mat = c => new THREE.MeshStandardMaterial({color:c,roughness:.8,metalness:.04});
+function box(w,h,d,c,x,y,z){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(c));m.position.set(x,y,z);m.castShadow=m.receiveShadow=true;return m;}
+const B = {
+  沙发:v=>{const g=new THREE.Group();g.add(box(1.9,.35,.9,v,0,.32,0),box(1.9,.72,.2,v,0,.7,-.36),box(.2,.5,.9,v,-.95,.5,0),box(.2,.5,.9,v,.95,.5,0));return g;},
+  茶几:v=>{const g=new THREE.Group();g.add(box(1.05,.08,.6,v,0,.42,0));[[-.45,-.23],[.45,-.23],[-.45,.23],[.45,.23]].forEach(([x,z])=>g.add(box(.07,.4,.07,v,x,.2,z)));return g;},
+  电视柜:v=>{const g=new THREE.Group();g.add(box(1.8,.5,.42,v,0,.25,0),box(.02,.44,.01,0x2a2a2a,0,.25,.22));return g;},
+  床:v=>{const g=new THREE.Group();g.add(box(1.6,.3,2.0,0x7a5a3a,0,.18,0),box(1.55,.22,1.9,v,0,.44,0),box(.7,.12,.4,0xf0f0f0,-.38,.6,-.7),box(.7,.12,.4,0xf0f0f0,.38,.6,-.7));return g;},
+  衣柜:v=>{const g=new THREE.Group();g.add(box(1.2,2.0,.55,v,0,1.0,0),box(.02,1.9,.01,0x2a2a2a,0,1.0,.285));return g;},
+  餐桌:v=>{const g=new THREE.Group();g.add(box(1.4,.08,.9,v,0,.74,0));[[-.6,-.35],[.6,-.35],[-.6,.35],[.6,.35]].forEach(([x,z])=>g.add(box(.08,.72,.08,v,x,.36,z)));return g;},
+  椅子:v=>{const g=new THREE.Group();g.add(box(.45,.06,.45,v,0,.45,0),box(.45,.5,.06,v,0,.72,-.2));[[-.18,-.18],[.18,-.18],[-.18,.18],[.18,.18]].forEach(([x,z])=>g.add(box(.05,.44,.05,v,x,.22,z)));return g;},
+  书架:v=>{const g=new THREE.Group();g.add(box(.06,1.8,.35,v,-.45,.9,0),box(.06,1.8,.35,v,.45,.9,0));for(let i=0;i<4;i++)g.add(box(.9,.05,.35,v,0,.1+i*.5,0));return g;},
+  // —— 卧室照片补充模型 ——
+  床头柜:v=>{const g=new THREE.Group();g.add(box(.55,.48,.42,v,0,.24,0));g.add(box(.5,.02,.02,0x2a2a2a,0,.30,.215),box(.5,.02,.02,0x2a2a2a,0,.15,.215));return g;},
+  台灯:v=>{const g=new THREE.Group();g.add(box(.16,.03,.16,0xcaa64e,0,.015,0),box(.03,.28,.03,0xcaa64e,0,.16,0));
+    const sh=new THREE.Mesh(new THREE.CylinderGeometry(.11,.18,.20,16,1,true),new THREE.MeshStandardMaterial({color:0xf3dd8c,side:THREE.DoubleSide,emissive:0x6b5518,emissiveIntensity:.5}));sh.position.y=.36;sh.castShadow=true;g.add(sh);return g;},
+  软包椅:v=>{const g=new THREE.Group();g.add(box(.6,.14,.6,v,0,.42,0),box(.62,.55,.14,v,0,.72,-.24),box(.12,.3,.5,v,-.26,.55,0),box(.12,.3,.5,v,.26,.55,0));[[-.24,-.24],[.24,-.24],[-.24,.24],[.24,.24]].forEach(([x,z])=>g.add(box(.05,.4,.05,0x9a8f7d,x,.2,z)));return g;},
+  躺椅:v=>{const g=new THREE.Group();const wood=0xb08a5a,cloth=0xd8cbb0;g.add(box(.6,.05,1.2,wood,0,.3,0));[[-.26,-.5],[.26,-.5],[-.26,.5],[.26,.5]].forEach(([x,z])=>g.add(box(.05,.3,.05,wood,x,.15,z)));
+    const back=new THREE.Mesh(new THREE.BoxGeometry(.6,.7,.05),mat(cloth));back.position.set(0,.62,-.4);back.rotation.x=-.5;g.add(back);return g;},
+  窗帘:v=>{const g=new THREE.Group();
+    // 深色窗框 + 明亮玻璃（落地窗）
+    g.add(box(2.7,.06,.1,0x3a3a3a,0,2.4,0),box(2.7,.06,.1,0x3a3a3a,0,.06,0),
+          box(.06,2.4,.1,0x3a3a3a,-1.35,1.23,0),box(.06,2.4,.1,0x3a3a3a,1.35,1.23,0),box(.05,2.4,.1,0x3a3a3a,0,1.23,0));
+    const glass=new THREE.Mesh(new THREE.PlaneGeometry(2.6,2.3),new THREE.MeshStandardMaterial({color:0xcfd8dc,transparent:true,opacity:.28,side:THREE.DoubleSide}));glass.position.set(0,1.23,-.01);g.add(glass);
+    // 两侧布帘 + 中间白纱（照片：灰褐布帘 + 白纱）
+    const drape=(x,c)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(.66,2.25,.06),new THREE.MeshStandardMaterial({color:c}));m.position.set(x,1.15,.06);return m;};
+    g.add(drape(-1.02,0x8f857a),drape(1.02,0x8f857a));
+    const sheer=new THREE.Mesh(new THREE.BoxGeometry(2.1,2.25,.03),new THREE.MeshStandardMaterial({color:0xf4f3ee,transparent:true,opacity:.42}));sheer.position.set(0,1.15,.08);g.add(sheer);
+    return g;},
+};
+const LIB = {
+  '沙发':{size:[2.0,.9,.95],vars:[['米色布艺','米色'],['灰色布艺','灰色'],['深蓝布艺','深蓝']]},
+  '茶几':{size:[1.1,.45,.62],vars:[['深色木质','深色'],['木色原木','木色']]},
+  '电视柜':{size:[1.8,.5,.42],vars:[['深色木质','深色'],['白色简约','白色']]},
+  '床':{size:[1.7,.6,2.0],vars:[['米色床品','米色'],['灰色床品','灰色']]},
+  '衣柜':{size:[1.2,2.0,.55],vars:[['白色简约','白色'],['木色原木','木色']]},
+  '餐桌':{size:[1.4,.78,.9],vars:[['木色原木','木色'],['深色木质','深色']]},
+  '椅子':{size:[.45,.95,.45],vars:[['木色原木','木色'],['灰色布艺','灰色']]},
+  '书架':{size:[.9,1.8,.35],vars:[['木色原木','木色'],['白色简约','白色']]},
+  '床头柜':{size:[.55,.48,.42],vars:[['白色简约','白色'],['木色原木','木色']]},
+  '台灯':{size:[.36,.5,.36],vars:[['暖黄灯罩','米色'],['白色灯罩','白色']]},
+  '软包椅':{size:[.6,1.0,.6],vars:[['米白布艺','米色'],['灰色布艺','灰色']]},
+  '躺椅':{size:[.6,.95,1.2],vars:[['木色帆布','木色'],['灰色帆布','灰色']]},
+  '窗帘':{size:[2.6,2.4,.15],vars:[['灰帘白纱','灰色'],['米帘白纱','米色']]},
+};
+// 调色板补充照片中出现的颜色词
+Object.assign(PALETTE,{'暖黄':0xe8c96b,'灰纱':0x9b9186,'米白':0xe4ddd0,'木色':0xb08a5a});
+function buildPlaceholder(){const g=new THREE.Group();const m=new THREE.Mesh(new THREE.BoxGeometry(.8,.8,.8),new THREE.MeshStandardMaterial({color:0x9aa3ad,transparent:true,opacity:.45}));m.position.y=.4;g.add(m);return g;}
+
+/* ---------- 照片像素特征（浏览器本地提取，照片不出本机） ----------
+   真实产品里语义识别（家具类别/实例分割/位姿）由视觉服务或端侧模型完成；
+   此处提取可计算的低层特征（主色/墙面色/地面色/明暗分区），用于驱动的"自动适配"，
+   明确为启发式估算，不是语义识别。换任意新照片，特征重新计算，场景随之变化。 */
+let photoFeature=null;
+function hexOf(r,g,b){return '#'+[r,g,b].map(v=>clamp(Math.round(v),0,255).toString(16).padStart(2,'0')).join('');}
+function rgbToCname(r,g,b){
+  const mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2;
+  if(mx-mn<18)return l>200?'白色':(l>120?'灰色':'深色');
+  if(r>=g&&r>=b)return r>150&&g>110?'米色':'木色';
+  if(g>=r&&g>=b)return '灰色';
+  return b>r?'深蓝':'木色';
+}
+function extractPhotoFeature(img){
+  const W=64,H=64,c=document.createElement('canvas');c.width=W;c.height=H;
+  const cx=c.getContext('2d',{willReadFrequently:true});cx.drawImage(img,0,0,W,H);
+  const d=cx.getImageData(0,0,W,H).data;
+  const region=(x0,y0,x1,y1)=>{x0|=0;y0|=0;x1|=0;y1|=0;let r=0,g=0,b=0,n=0;
+    for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){const i=(y*W+x)*4;r+=d[i];g+=d[i+1];b+=d[i+2];n++;}
+    if(!n)return [128,128,128];return [r/n,g/n,b/n];};
+  const top=region(0,0,W,H*.28), mid=region(0,H*.28,W,H*.72), bot=region(0,H*.72,W,H);
+  // 亮度分区：找最亮的横向条带（近似窗位置）
+  let brightU=.5,brightL=-1;
+  for(let s=0;s<5;s++){const col=region(Math.floor(s*W/5),Math.floor(H*.2),Math.floor((s+1)*W/5),Math.floor(H*.55));
+    const l=(col[0]+col[1]+col[2])/3;if(l>brightL){brightL=l;brightU=(s+.5)/5;}}
+  const avg=a=>(a[0]+a[1]+a[2])/3;
+  return {wallRGB:top,floorRGB:bot,dominantRGB:mid,brightU,brightV:.34,
+    lum:avg(mid),colorName:rgbToCname(...mid),floorName:rgbToCname(...bot),
+    wallHex:hexOf(...top),floorHex:hexOf(...bot),domHex:hexOf(...mid)};
+}
+
+/* ---------- 识别适配器（可替换点） ----------
+   profile 说明：
+   - bedroom：针对用户提供的卧室照片，识别结果按照片真实内容与空间关系编码（预置视觉分析结果）。
+   - living ：内置客厅演示样本。
+   真实产品在此处调用视觉服务，输出结构保持一致：
+   {id,category,variantHint,conf,u,v,apparent,depthHint,facing,anchor?}
+   anchor 表示"贴靠某面墙/相对某物"，用于把 2D 位置 + 空间关系映射为三维位姿。
+*/
+const PROFILE_BEDROOM = [
+  // 床头靠左后方墙，床纵向朝画面右侧延伸；相机在 +Z 侧
+  {id:'b1',category:'床',     variantHint:'米色', conf:.94,u:.46,v:.60,apparent:.42,depthHint:'中',facing:'侧向',anchor:'bed'},
+  {id:'b2',category:'床头柜', variantHint:'白色', conf:.86,u:.12,v:.70,apparent:.12,depthHint:'近',facing:'正面',anchor:'bed:headLeft'},
+  {id:'b3',category:'台灯',   variantHint:'暖黄', conf:.81,u:.09,v:.62,apparent:.08,depthHint:'近',facing:'无',  anchor:'on:床头柜'},
+  {id:'b4',category:'窗帘',   variantHint:'灰纱', conf:.78,u:.55,v:.34,apparent:.30,depthHint:'远',facing:'正面',anchor:'backWall'},
+  {id:'b5',category:'软包椅', variantHint:'米白', conf:.63,u:.50,v:.42,apparent:.09,depthHint:'远',facing:'正面',anchor:'nearWindow'},
+  {id:'b6',category:'躺椅',   variantHint:'木色', conf:.52,u:.63,v:.44,apparent:.09,depthHint:'远',facing:'侧向',anchor:'nearWindow'},
+];
+const PROFILE_LIVING = [
+  {id:'d1',category:'沙发',variantHint:'米色',conf:.88,u:.28,v:.63,apparent:.30,depthHint:'远',facing:'侧向'},
+  {id:'d2',category:'茶几',variantHint:'深色',conf:.74,u:.47,v:.72,apparent:.14,depthHint:'中',facing:'无'},
+  {id:'d3',category:'电视柜',variantHint:'深色',conf:.69,u:.53,v:.44,apparent:.22,depthHint:'远',facing:'正面'},
+  {id:'d4',category:'餐桌',variantHint:'木色',conf:.57,u:.74,v:.60,apparent:.20,depthHint:'中',facing:'无'},
+  {id:'d5',category:'椅子',variantHint:'木色',conf:.45,u:.80,v:.69,apparent:.10,depthHint:'中',facing:'无'},
+  {id:'d6',category:'异形边柜',variantHint:'白色',conf:.38,u:.16,v:.50,apparent:.12,depthHint:'远',facing:'侧向'},
+];
+// 房间类型 → 应出现的家具骨架（自动适配时按此套模板，再叠加照片特征）
+const ROOM_TEMPLATES={
+  bedroom:[
+    {category:'床',      variantHint:'米色',u:.46,v:.60,depthHint:'中',facing:'侧向',anchor:'bed'},
+    {category:'床头柜',  variantHint:'白色',u:.12,v:.70,depthHint:'近',facing:'正面',anchor:'bed:headLeft'},
+    {category:'台灯',    variantHint:'暖黄',u:.09,v:.62,depthHint:'近',facing:'无',  anchor:'on:床头柜'},
+    {category:'窗帘',    variantHint:'灰纱',u:.55,v:.34,depthHint:'远',facing:'正面',anchor:'backWall'},
+    {category:'软包椅',  variantHint:'米白',u:.50,v:.42,depthHint:'远',facing:'正面',anchor:'nearWindow'},
+    {category:'躺椅',    variantHint:'木色',u:.63,v:.44,depthHint:'远',facing:'侧向',anchor:'nearWindow'},
+  ],
+  living:[
+    {category:'沙发',   variantHint:'米色',u:.30,v:.62,depthHint:'中',facing:'侧向',anchor:'sofa'},
+    {category:'茶几',   variantHint:'深色',u:.47,v:.70,depthHint:'中',facing:'无',  anchor:'inFront:沙发'},
+    {category:'电视柜', variantHint:'深色',u:.55,v:.40,depthHint:'远',facing:'正面',anchor:'opposite:沙发'},
+    {category:'餐桌',   variantHint:'木色',u:.76,v:.60,depthHint:'中',facing:'无',  anchor:'side'},
+    {category:'椅子',   variantHint:'木色',u:.80,v:.69,depthHint:'近',facing:'无',  anchor:'inFront:餐桌'},
+  ],
+};
+/* service 模式：POST JSON 到自托管视觉服务，返回同结构候选。
+   请求 {images:[dataURL...], room:{w,d,h,type}, photoFeature:{...}}
+   响应 {objects:[{id,category,variantHint,conf,u,v,apparent,depthHint,facing,anchor,colorHex?}], meta:{...}}
+   服务地址在左侧「服务地址」输入框配置；照片只发往该地址，须为自托管/内网服务。*/
+let serviceMeta = {};
+function fileToDataUrl(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(f);});}
+function normCandidate(d,i){
+  const num=(k,lo,hi,def)=>{let v=Number(d[k]);if(!isFinite(v))v=def;return Math.max(lo,Math.min(hi,v));};
+  const ce=(typeof d.colorHex==='string'&&/^#[0-9a-fA-F]{6}$/.test(d.colorHex))?d.colorHex:null;
+  return {id:d.id||('svc-'+(i+1)),category:String(d.category||'').trim(),
+    variantHint:d.variantHint||'米色',conf:num('conf',0,1,.5),u:num('u',0,1,.5),v:num('v',0,1,.5),
+    apparent:num('apparent',.02,1,.2),depthHint:['近','中','远'].includes(d.depthHint)?d.depthHint:'中',
+    facing:['正面','侧向','无'].includes(d.facing)?d.facing:'无',anchor:d.anchor||'side',
+    colorHex:ce,source:d.source||'service_candidate'};
+}
+const RecognitionAdapter = {
+  // 'auto'（读像素）| 'bedroom'/'living'（预置样本）| 'service'（自托管视觉服务）
+  mode:'auto',
+  endpoint(){const el=$('#svcUrl');return (el&&el.value.trim())||'http://127.0.0.1:8766/recognize';},
+  recognize(photos,room){
+    if(this.mode==='auto') return this._auto(room);
+    const src = this.mode==='bedroom' ? PROFILE_BEDROOM : PROFILE_LIVING;
+    return src.map(d=>({...d}));
+  },
+  async recognizeService(photos,room){
+    if(!photos.length) throw new Error('服务适配需先选择至少一张照片');
+    serviceMeta={};
+    const images=await Promise.all(photos.slice(0,8).map(fileToDataUrl));
+    const rt=($('#roomType')&&$('#roomType').value)||'bedroom';
+    const payload={request:'recognize_furniture_v1',images,
+      room:{w:room.width,d:room.depth,h:room.height,type:rt},photoFeature:photoFeature||null};
+    const ctl=new AbortController();const timer=setTimeout(()=>ctl.abort(),180000);
+    let resp;
+    try{
+      resp=await fetch(this.endpoint(),{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(payload),signal:ctl.signal});
+    }catch(e){clearTimeout(timer);throw new Error('连接服务失败：'+e.message+'（检查地址与服务是否启动）');}
+    clearTimeout(timer);
+    if(!resp.ok){let msg='';try{msg=(await resp.json()).error||'';}catch(_){}throw new Error('服务 HTTP '+resp.status+(msg?' · '+msg:''));}
+    let j;try{j=await resp.json();}catch(e){throw new Error('服务返回的不是合法 JSON');}
+    serviceMeta=j.meta||{};
+    const raw=Array.isArray(j)?j:(j.objects||[]);
+    const dets=raw.map(normCandidate).filter(d=>d.category);
+    if(!dets.length) throw new Error('服务返回空候选集（检查模型与提示词）');
+    return dets;
+  },
+  _auto(room){
+    const type=($('#roomType')&&$('#roomType').value)||'bedroom';
+    const tpl=ROOM_TEMPLATES[type]||ROOM_TEMPLATES.bedroom;
+    const f=photoFeature;
+    return tpl.map((t,i)=>{
+      // 置信度：无照片特征时给中低值（明确是模板推断）；有特征时按照片对比度适度上调
+      let conf=f? (0.58+Math.min(.22,(f.lum/255)*.2)) : 0.50;
+      conf=+conf.toFixed(2);
+      const d={...t,id:'a'+i,conf,apparent:.2,
+        variantHint:f?f.colorName:t.variantHint, // 外观色取自照片主色（启发式）
+        // 空间关系：亮区偏左/中/右影响窗与窗前家具的横向位置
+        brightU:f?f.brightU:.5,
+        // 前景色深、后景色亮 —— 用照片明暗差标记估算依据
+        photoHint:f?('主色'+f.colorName+'·地'+f.floorName):'无照片特征'};
+      // 窗帘位置跟随照片亮区（窗）
+      if(t.anchor==='backWall'&&f) d.u=f.brightU;
+      return d;
+    });
+  }
+};
+
+/* ---------- 位置估算 / 模型匹配 ---------- */
+function estimatePosition(d,room){
+  const W=room.width,D=room.depth;
+  // 基础：由照片归一化位置 + 深度线索估算（相对位置）
+  let x=clamp((d.u-.5)*W*.9,-W/2+.4,W/2-.4);
+  let z=(d.v-.5)*D*.9+({远:-.12,'中':0,近:.14})[d.depthHint]*D;
+  z=clamp(z,-D/2+.4,D/2-.4);
+  let facing={正面:Math.PI,侧向:Math.PI/2,无:0}[d.facing]||0;
+  let y=0,rel='照片2D位置+深度线';
+
+  // 空间关系锚点：把"相对位置/朝向/空间关系"转成三维位姿（事实仍是候选，带误差）
+  const a=d.anchor||'';
+  if(a==='bed'){ // 床头贴 -X 墙，床长轴沿 X
+    x=-W/2+1.05; z=-D*.05; facing=Math.PI/2; rel='床头贴左墙+纵向延伸';
+  }else if(a==='bed:headLeft'){ // 床头柜：床左侧、靠床头、贴左墙
+    x=-W/2+.42; z=-D/2+.70; facing=0; rel='床左侧·靠床头·贴墙';
+  }else if(a.startsWith('on:')){ // 台灯：置于床头柜上
+    const host=PROFILE_BEDROOM.find(o=>o.category===a.slice(3));
+    if(host){const hp=estimatePosition(host,room);x=hp.x;z=hp.z;facing=0;y=.5;rel='置于床头柜顶面';}
+  }else if(a==='backWall'){ // 窗帘：贴后墙(-Z)，横向跟随照片亮区（窗）
+    x=clamp(((d.brightU??.55)-.5)*W*.85,-W/2+1.4,W/2-1.4); z=-D/2+.09; facing=0; rel='贴后墙·对照片亮区(窗)';
+  }else if(a==='nearWindow'){ // 椅子：窗前
+    const winX=clamp(((d.brightU??.55)-.5)*W*.85,-W/2+1.4,W/2-1.4);
+    x=(d.u-.5)*W*.9; z=-D/2+.85; facing=Math.PI;
+    rel='窗前(x≈'+winX.toFixed(1)+')·面朝室内';
+  }
+  // 客厅模板锚点
+  else if(a==='sofa'){x=-W*.18;z=-D*.22;facing=Math.PI;rel='主位·贴侧墙面向电视';}
+  else if(a.startsWith('inFront:')){const h=a.slice(8);
+    if(h==='沙发'){x=-W*.18;z=D*.10;facing=0;rel='沙发前方';}
+    else{x=(d.u-.5)*W*.9;z=-D*.04;facing=0;rel='餐桌前方';}}
+  else if(a.startsWith('opposite:')){x=-W*.18;z=-D/2+.3;facing=0;rel='沙发对面·贴墙';}
+  else if(a==='side'){x=W*.28;z=D*.06;facing=Math.PI/2;rel='侧区';}
+
+  const err=clamp((room.calibrated ? 0.12 : 0.30)+(1-d.conf)*.5,.1,1.2);
+  return {x,z,y,rotation:facing,errorRadius:+err.toFixed(2),basis:room.calibrated?'已定标(米)':'相对估算',rel};
+}
+function matchModel(d){
+  const lib=LIB[d.category];
+  if(!lib) return {placeholder:true,variant:['占位模型','灰'],colorHex:null,score:0,reason:'库外类别→降级占位'};
+  let best=lib.vars[0],score=.42;
+  for(const v of lib.vars){let s=v[1]===d.variantHint ? 0.92 : (v[0].includes(d.variantHint) ? 0.7 : 0.45);if(s>score){score=s;best=v;}}
+  // 外观色优先级：服务端实测色 > 自动适配照片主色 > 模型库默认档位
+  const colorHex=d.colorHex||((RecognitionAdapter.mode==='auto'&&photoFeature)?photoFeature.domHex:null);
+  return {placeholder:false,variant:best,colorHex,score:+score.toFixed(2),
+    reason:colorHex?(d.colorHex?'外观取服务端实测色':'外观取照片主色 '+photoFeature.colorName):''};
+}
+
+/* ---------- Three.js 场景 ---------- */
+let renderer,scene,camera,controls,room;
+function initGL(){
+  scene=new THREE.Scene();scene.background=new THREE.Color(0x1b2029);
+  camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,.1,100);camera.position.set(5.5,5.5,7.5);
+  renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;
+  document.body.insertBefore(renderer.domElement,document.body.firstChild);
+  controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,.6,0);controls.enableDamping=true;
+  scene.add(new THREE.AmbientLight(0xffffff,.75));
+  const dir=new THREE.DirectionalLight(0xffffff,1.0);dir.position.set(6,10,8);dir.castShadow=true;scene.add(dir);
+  window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+  (function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,camera);})();
+}
+function buildRoomShell(){
+  if(room){scene.remove(room);}
+  room=new THREE.Group();
+  const W=+ $('#inW').value,D=+$('#inD').value,H=+$('#inH').value;
+  // 地面/墙面颜色来自照片特征（自动适配时），否则用中性色
+  const floorColor=photoFeature?new THREE.Color(photoFeature.floorHex).multiplyScalar(.85):new THREE.Color(0x2c333e);
+  const wallColor =photoFeature?new THREE.Color(photoFeature.wallHex).multiplyScalar(.92):new THREE.Color(0x556074);
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(W,D),new THREE.MeshStandardMaterial({color:floorColor}));
+  floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;room.add(floor);
+  const grid=new THREE.GridHelper(Math.max(W,D),Math.max(W,D)*2,0x6a7488,0x4a5262);grid.position.y=.01;grid.material.transparent=true;grid.material.opacity=.35;room.add(grid);
+  const wm=new THREE.MeshStandardMaterial({color:wallColor,transparent:true,opacity:.35,side:THREE.DoubleSide});
+  const back=new THREE.Mesh(new THREE.PlaneGeometry(W,H),wm);back.position.set(0,H/2,-D/2);room.add(back);
+  const left=new THREE.Mesh(new THREE.PlaneGeometry(D,H),wm);left.rotation.y=Math.PI/2;left.position.set(-W/2,H/2,0);room.add(left);
+  scene.add(room);
+  return {width:W,depth:D,height:H,calibrated:hasCalibration()};
+}
+function hasCalibration(){return $('#calState').dataset.cal==='1';}
+
+/* ---------- 摆放 ---------- */
+let objects=[],selected=null,dragging=null;
+function makeErrorRing(r){
+  const g=new THREE.RingGeometry(Math.max(r-.03,.02),r,48);
+  const m=new THREE.MeshBasicMaterial({color:0xffb703,transparent:true,opacity:.55,side:THREE.DoubleSide,depthWrite:false});
+  const mesh=new THREE.Mesh(g,m);mesh.rotation.x=-Math.PI/2;mesh.position.y=.02;mesh.name='__ring';return mesh;
+}
+function disposeGroup(g){g.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());}});}
+function clearObjects(){objects.forEach(o=>{scene.remove(o);disposeGroup(o);});objects=[];selected=null;$('#selInfo').textContent='选中：无';}
+
+function placeOne(d,roomInfo){
+  const m=matchModel(d),est=estimatePosition(d,roomInfo);
+  const colorVal=m.colorHex?parseInt(m.colorHex.slice(1),16):(PALETTE[m.variant[1]]||0x999999);
+  let g=m.placeholder?buildPlaceholder():B[d.category](colorVal);
+  g.position.set(est.x,est.y||0,est.z);g.rotation.y=est.rotation;
+  g.userData={id:d.id,category:d.category,variant:m.variant[0],placeholder:m.placeholder,conf:d.conf,
+    matchScore:m.score,matchReason:m.reason,est,rel:est.rel,
+    source:d.source||'recognition_candidate',status:'candidate'};
+  const ring=makeErrorRing(est.errorRadius);ring.position.y=.02-(est.y||0); // 误差圈投影到地面
+  g.add(ring);
+  scene.add(g);objects.push(g);return g;
+}
+
+/* ---------- 选中 / 高亮 / 拖动 ---------- */
+const ray=new THREE.Raycaster(),ndc=new THREE.Vector2(),ground=new THREE.Plane(new THREE.Vector3(0,1,0),0);
+function setNdc(e){ndc.x=(e.clientX/innerWidth)*2-1;ndc.y=-(e.clientY/innerHeight)*2+1;ray.setFromCamera(ndc,camera);}
+function pickObj(e){setNdc(e);const hits=ray.intersectObjects(objects,true);if(!hits.length)return null;let o=hits[0].object;while(o&&!objects.includes(o))o=o.parent;return o;}
+function highlight(g,on){g.traverse(o=>{if(o.isMesh&&o.name!=='__ring'&&o.material.emissive){o.material.emissive.setHex(on?0x3a3010:0x000000);}});}
+function select(g){
+  if(selected)highlight(selected,false);
+  selected=g;
+  if(g){highlight(g,true);$('#selInfo').textContent='选中：'+g.userData.category+'（'+g.userData.status+'）';}
+  else $('#selInfo').textContent='选中：无';
+  renderDetail();renderList();
+}
+function bindPointer(dom){
+  dom.addEventListener('pointerdown',e=>{
+    const g=pickObj(e);
+    if(g){select(g);dragging=g;controls.enabled=false;
+      const p=ray.ray.intersectPlane(ground,new THREE.Vector3());if(p)dragOff={x:g.position.x-p.x,z:g.position.z-p.z};
+    }else select(null);
+  });
+  dom.addEventListener('pointermove',e=>{
+    if(!dragging)return;setNdc(e);const p=ray.ray.intersectPlane(ground,new THREE.Vector3());
+    if(p){dragging.position.x=clamp(p.x+dragOff.x,-50,50);dragging.position.z=clamp(p.z+dragOff.z,-50,50);renderDetail();}
+  });
+  dom.addEventListener('pointerup',()=>{dragging=null;controls.enabled=true;checkAlerts();});
+}
+let dragOff={x:0,z:0};
+
+/* ---------- 键盘操作 ---------- */
+document.addEventListener('keydown',e=>{
+  if(['INPUT','TEXTAREA'].includes(document.activeElement.tagName))return;
+  if(!selected)return;
+  const u=selected.userData;
+  if(e.key==='r'||e.key==='R'){selected.rotation.y+=Math.PI/12;u.est.rotation=+selected.rotation.y.toFixed(2);renderDetail();}
+  if(e.key==='m'||e.key==='M'){cycleVariant(selected);}
+  if(e.key==='Enter'){confirmOne(selected);}
+  if(e.key==='Delete'||e.key==='Backspace'){rejectOne(selected);}
+});
+function cycleVariant(g){
+  const u=g.userData,lib=LIB[u.category];if(!lib){return;}
+  let i=lib.vars.findIndex(v=>v[0]===u.variant);i=(i+1)%lib.vars.length;
+  const v=lib.vars[i],pos=g.position.clone(),rot=g.rotation.y;
+  const idx=objects.indexOf(g);
+  scene.remove(g);disposeGroup(g);
+  const ng=B[u.category](PALETTE[v[1]]||0x999999);ng.position.copy(pos);ng.rotation.y=rot;
+  ng.userData={...u,variant:v[0],source:'user_modified'};
+  ng.add(makeErrorRing(u.est.errorRadius));ng.userData.ringKept=true;
+  scene.add(ng);objects[idx]=ng;select(ng);
+}
+function confirmOne(g){
+  const u=g.userData;u.status='confirmed';u.source='user_confirmed';
+  const ring=g.children.find(c=>c.name==='__ring');if(ring){g.remove(ring);ring.geometry.dispose();ring.material.dispose();}
+  renderDetail();renderList();checkAlerts();
+}
+function rejectOne(g){
+  const u=g.userData;u.status='rejected';u.source='user_rejected';
+  g.visible=false;select(null);checkAlerts();
+}
+
+/* ---------- UI 渲染 ---------- */
+function renderList(){
+  const wrap=$('#detList');wrap.innerHTML='';
+  objects.forEach(g=>{
+    const u=g.userData;
+    const el=document.createElement('div');
+    el.className='det'+(selected===g?' sel':'')+(u.status==='confirmed'?' confirmed':'');
+    const badge=u.status==='confirmed'?'<span class="badge ok">已确认</span>'
+      :u.conf<0.6?'<span class="badge low">低置信 '+(u.conf)+'</span>'
+      :'<span class="badge cand">候选</span>';
+    el.innerHTML='<div class="t"><b>'+u.category+'</b>'+badge+'</div>'+
+      '<div class="bar"><i style="width:'+(u.conf*100)+'%"></i></div>'+
+      '<div class="meta">置信 '+u.conf+' · 匹配 '+u.matchScore+' · '+(u.placeholder?'占位模型':u.variant)+'</div>'+
+      '<div class="meta">空间关系：'+(u.rel||u.est.rel||'—')+'</div>'+
+      '<div class="meta">位置 ('+u.est.x.toFixed(2)+', '+u.est.z.toFixed(2)+') · 误差 ±'+u.est.errorRadius+'m</div>'+
+      '<div class="detacts"><button class="btn sm" data-act="sel">定位</button>'+
+      (u.status==='confirmed'?'':'<button class="btn sm ok" data-act="ok">确认</button>')+
+      '<button class="btn sm danger" data-act="del">移除</button></div>';
+    el.onclick=()=>select(g);
+    el.querySelectorAll('button').forEach(b=>b.onclick=ev=>{ev.stopPropagation();
+      const a=b.dataset.act;if(a==='sel')select(g);if(a==='ok'){select(g);confirmOne(g);}if(a==='del'){select(g);rejectOne(g);}});
+    wrap.appendChild(el);
+  });
+}
+function renderDetail(){
+  if(!selected){$('#detail').innerHTML='点选场景中的家具，或点击左侧识别结果。';return;}
+  const u=selected.userData,p=selected.position;
+  $('#detail').innerHTML=
+    '<div class="row"><span class="k">类别</span><span class="v">'+u.category+'</span></div>'+
+    '<div class="row"><span class="k">匹配模型</span><span class="v">'+(u.placeholder?'占位模型':u.variant)+'</span></div>'+
+    '<div class="row"><span class="k">匹配得分</span><span class="v">'+u.matchScore+(u.matchReason?'（'+u.matchReason+'）':'')+'</span></div>'+
+    '<div class="row"><span class="k">识别置信度</span><span class="v">'+u.conf+'</span></div>'+
+    '<div class="row"><span class="k">位置 X/Z</span><span class="v">'+p.x.toFixed(2)+' / '+p.z.toFixed(2)+'</span></div>'+
+    '<div class="row"><span class="k">朝向 Y</span><span class="v">'+u.est.rotation.toFixed(2)+' rad</span></div>'+
+    '<div class="row"><span class="k">误差半径</span><span class="v">±'+u.est.errorRadius+' m</span></div>'+
+    '<div class="row"><span class="k">空间关系</span><span class="v">'+(u.rel||u.est.rel||'—')+'</span></div>'+
+    '<div class="row"><span class="k">定标依据</span><span class="v">'+u.est.basis+'</span></div>'+
+    '<div class="row"><span class="k">来源 / 状态</span><span class="v">'+u.source+' / '+u.status+'</span></div>';
+}
+function checkAlerts(){
+  const msgs=[];const W=+$('#inW').value,D=+$('#inD').value;
+  const act=objects.filter(g=>g.userData.status!=='rejected');
+  const boxes=act.map(g=>new THREE.Box3().setFromObject(g));
+  for(let i=0;i<boxes.length;i++){
+    const c=boxes[i].getCenter(new THREE.Vector3());
+    if(Math.abs(c.x)>W/2-.15||Math.abs(c.z)>D/2-.15)msgs.push(act[i].userData.category+'：疑似越界');
+    for(let j=i+1;j<boxes.length;j++)if(boxes[i].intersectsBox(boxes[j]))
+      msgs.push(act[i].userData.category+' 与 '+act[j].userData.category+'：重叠（仅提示，未自动修改）');
+  }
+  const a=$('#alerts');a.innerHTML=msgs.length?'<h2>摆放告警</h2>'+msgs.map(m=>'<div class="a">'+m+'</div>').join(''):'';
+}
+
+/* ---------- 流程动画 ---------- */
+function flow(msg,active,done){
+  document.querySelectorAll('.step').forEach(s=>{const i=+s.dataset.s;s.className='step'+(i===active?' on':(i<=done&&done>=0?' done':''));});
+  if(msg)$('#flowMsg').textContent=msg;
+}
+function runFlow(done){flow('识别中…',1,0);setTimeout(()=>flow('模型匹配中…',2,1),420);
+  setTimeout(()=>flow('位置估算与摆放…',3,2),840);setTimeout(()=>{flow('完成：'+objects.length+' 个候选对象，已标注误差',4,3);done&&done();},1260);}
+
+/* ---------- 主流程 ---------- */
+let pipelineBusy=false;
+async function runPipeline(){
+  if(pipelineBusy)return;
+  pipelineBusy=true;
+  const roomInfo=buildRoomShell();clearObjects();
+  try{
+    let dets;
+    if(RecognitionAdapter.mode==='service'){
+      flow('请求自托管识别服务…',1,0);
+      dets=await RecognitionAdapter.recognizeService([...photos],roomInfo);
+      const tag=[serviceMeta.backend,serviceMeta.model].filter(x=>x&&x!=='-').join(' / ');
+      $('#flowMsg').textContent='服务识别：'+dets.length+' 个候选'+(tag?' · '+tag:'')+'（均须用户确认）';
+      $('#svcHint').textContent='服务返回 '+dets.length+' 个候选'+(serviceMeta.note?' · '+serviceMeta.note:'');
+    }else{
+      dets=RecognitionAdapter.recognize([...photos],roomInfo);
+    }
+    dets.forEach(d=>placeOne(d,roomInfo));
+    renderList();renderDetail();checkAlerts();
+    if(RecognitionAdapter.mode!=='service')runFlow();
+    else setTimeout(()=>flow('完成：'+objects.length+' 个服务候选，已标注误差',4,3),500);
+  }catch(err){
+    $('#flowMsg').textContent='识别失败：'+err.message;
+    $('#svcHint').textContent='服务不可用：'+err.message+' · 可切回「自动适配」继续';
+    flow('识别失败',-1,-1);
+  }finally{pipelineBusy=false;}
+}
+let photos=[],demoIdx=0;
+// 合成示例照片（canvas），用于无真实照片时演示"读像素→场景变化"，与真实上传走同一条提取链路
+function synthRoomPhoto(kind){
+  const c=document.createElement('canvas');c.width=480;c.height=360;const x=c.getContext('2d');
+  const P=[
+    {wall:'#d9cfc0',floor:'#9a7d5c',obj:'#8a8272',win:'#f2f0e8'}, // 米色暖房
+    {wall:'#c3ced8',floor:'#6e6a66',obj:'#4a5560',win:'#e8f1f7'}, // 冷灰蓝房
+    {wall:'#e6ddd2',floor:'#b9a98f',obj:'#a89673',win:'#fffaf0'}, // 浅木明亮房
+  ][kind%3];
+  x.fillStyle=P.wall;x.fillRect(0,0,480,220);
+  x.fillStyle=P.floor;x.fillRect(0,220,480,140);
+  x.fillStyle=P.win;x.fillRect(300,60,120,150);x.strokeStyle='#3a3a3a';x.lineWidth=6;x.strokeRect(300,60,120,150);
+  x.fillStyle=P.obj;x.fillRect(60,150,180,120); // 家具块
+  x.fillStyle='#e8c96b';x.fillRect(70,130,30,30); // 暖黄台灯
+  return c.toDataURL('image/png');
+}
+$('#btnDemoPhoto').addEventListener('click',async()=>{
+  const dataUrl=synthRoomPhoto(demoIdx++);
+  if(!photos.length){const f=new File([dataUrlToBlob(dataUrl)],'示例照片.png',{type:'image/png'});photos=[f];}
+  $('#refImg').src=dataUrl;$('#refCard').style.display='block';
+  const s=$('#photoStrip');const im=document.createElement('img');im.src=dataUrl;s.appendChild(im);
+  const img=new Image();img.src=dataUrl;await new Promise(r=>{img.onload=r;});
+  photoFeature=extractPhotoFeature(img);
+  $('#swWall').style.background=photoFeature.wallHex;$('#swFloor').style.background=photoFeature.floorHex;$('#swDom').style.background=photoFeature.domHex;
+  $('#featTxt').textContent='主色 '+photoFeature.colorName+' · 墙 '+photoFeature.wallHex+' · 地 '+photoFeature.floorHex+' · 亮区 x≈'+photoFeature.brightU.toFixed(2);
+  if(RecognitionAdapter.mode!=='auto'){RecognitionAdapter.mode='auto';$('#profileName').textContent='自动适配（读取照片像素）';}
+  $('#flowMsg').textContent='已载入示例照片（第'+demoIdx+'张），场景按像素特征重建';
+  runPipeline();
+});
+function dataUrlToBlob(u){const b=u.split(',')[1];const bin=atob(b);const arr=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);return new Blob([arr],{type:'image/png'});}
+
+$('#file').addEventListener('change',async e=>{
+  photos=[...e.target.files].filter(f=>f.type.startsWith('image/'));
+  const s=$('#photoStrip');s.innerHTML='';
+  photos.slice(0,8).forEach(f=>{const img=document.createElement('img');img.src=URL.createObjectURL(f);s.appendChild(img);});
+  if(!photos.length)return;
+  $('#refImg').src=URL.createObjectURL(photos[0]);$('#refCard').style.display='block';
+  $('#flowMsg').textContent='正在读取照片像素特征…';
+  // 本地解析第一张照片的像素特征（照片不上传）
+  const img=new Image();img.src=URL.createObjectURL(photos[0]);
+  await new Promise(r=>{img.onload=r;img.onerror=r;});
+  try{
+    photoFeature=extractPhotoFeature(img);
+    $('#swWall').style.background=photoFeature.wallHex;
+    $('#swFloor').style.background=photoFeature.floorHex;
+    $('#swDom').style.background=photoFeature.domHex;
+    $('#featTxt').textContent='主色 '+photoFeature.colorName+' · 墙 '+photoFeature.wallHex+' · 地 '+photoFeature.floorHex+' · 亮区 x≈'+photoFeature.brightU.toFixed(2);
+    if(RecognitionAdapter.mode==='auto') runPipeline();
+    else $('#flowMsg').textContent='已读取照片特征；当前为「'+$('#profileName').textContent+'」，切到「自动适配」让它随照片变化';
+  }catch(err){$('#flowMsg').textContent='照片解析失败：'+err.message;}
+});
+['#inW','#inD','#inH'].forEach(id=>$(id).addEventListener('change',()=>{
+  const any=$('#inW').value&&$('#inD').value;$('#calState').dataset.cal=any?'1':'0';
+  $('#calState').textContent=any?'是（按米定标）':'否（相对估算）';
+}));
+$('#btnRun').addEventListener('click',runPipeline);
+function setProfile(mode,label){
+  RecognitionAdapter.mode=mode;$('#profileName').textContent=label;
+  if(mode==='bedroom'||mode==='auto'||mode==='service'){camera.position.set(3.5,3.6,6.5);controls.target.set(-.4,.6,-.4);}
+  else{camera.position.set(5.5,5.5,7.5);controls.target.set(0,.6,0);}
+  controls.update();runPipeline();
+}
+$('#btnProfileAuto').addEventListener('click',()=>setProfile('auto','自动适配（读取照片像素）'));
+$('#btnProfileBed').addEventListener('click',()=>setProfile('bedroom','卧室照片（预置视觉分析结果）'));
+$('#btnProfileLiv').addEventListener('click',()=>setProfile('living','客厅演示样本'));
+$('#btnService').addEventListener('click',()=>setProfile('service','服务适配（自托管视觉识别）'));
+$('#btnSvcHealth').addEventListener('click',async()=>{
+  const base=RecognitionAdapter.endpoint().replace(/\/recognize\/?$/,'');
+  try{
+    const r=await fetch(base+'/health');const j=await r.json();
+    $('#flowMsg').textContent='服务连接正常 · backend='+j.backend+' · model='+(j.model||'无');
+    $('#svcHint').textContent='在线类别：'+(j.categories||[]).join('、');
+  }catch(e){$('#flowMsg').textContent='服务连接失败：'+e.message;
+    $('#svcHint').textContent='先运行：python3 recognition-service.py --port 8766 --backend mock';}
+});
+$('#svcUrl').addEventListener('change',()=>{$('#svcHint').textContent='地址已更新，点「测试连接」验证';});
+$('#roomType').addEventListener('change',()=>{if(RecognitionAdapter.mode==='auto'||RecognitionAdapter.mode==='service')runPipeline();});
+$('#btnReset').addEventListener('click',()=>{camera.position.set(5.5,5.5,7.5);controls.target.set(0,.6,0);controls.update();});
+$('#btnExport').addEventListener('click',()=>{
+  const roomInfo=buildRoomShell();
+  const data={meta:{generator:'reconstruction-prototype',note:'候选预测与用户确认事实通过 source/status 字段区分；指标未预设，须真机验证'},
+    input:{photoCount:photos.length,room:roomInfo},
+    room:roomInfo,
+    objects:objects.map(g=>{const u=g.userData;return{category:u.category,model:u.placeholder?null:u.category,variant:u.variant,
+      position:{x:+g.position.x.toFixed(3),y:0,z:+g.position.z.toFixed(3)},rotation:+g.rotation.y.toFixed(3),size:LIB[u.category]?LIB[u.category].size:null,
+      confidence:u.conf,matchScore:u.matchScore,errorRadius:u.est.errorRadius,errorBasis:u.est.basis,
+      source:u.source,status:u.status};}),
+    alerts:$('#alerts').innerText.trim()?$('#alerts').innerText.split('\n'):[]};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='room-scene.json';a.click();
+});
+const openSpec=()=>{$('#spec').style.display='block';};
+$('#btnSpec').addEventListener('click',openSpec);$('#btnSpec2').addEventListener('click',openSpec);
+$('#specClose').addEventListener('click',()=>{$('#spec').style.display='none';});
+$('#spec').addEventListener('click',e=>{if(e.target.id==='spec')$('#spec').style.display='none';});
+
+/* ---------- 启动 ---------- */
+try{
+  initGL();bindPointer(renderer.domElement);
+  $('#calState').dataset.cal='1';
+  camera.position.set(3.5,3.6,6.5);controls.target.set(-.4,.6,-.4);controls.update();
+  // URL 参数 ?demo=0|1|2：启动时载入合成照片；?svc=1：载入后再切服务模式（便于端到端验证）
+  const q=new URLSearchParams(location.search),dm=q.get('demo');
+  if(q.get('svc')==='1'){
+    demoIdx=0;$('#btnDemoPhoto').click();
+    setTimeout(()=>setProfile('service','服务适配（自托管视觉识别）'),700);
+  }else if(dm!==null&&!isNaN(+dm)){demoIdx=+dm;$('#btnDemoPhoto').click();}
+  else runPipeline();
+}catch(err){
+  $('#err').style.display='flex';$('#err').textContent='初始化失败：'+err.message+'（本原型需联网加载 Three.js，并检查浏览器 WebGL 支持）';
+  console.error(err);
+}
+</script>
+</body>
+</html>

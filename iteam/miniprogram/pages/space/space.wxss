@@ -1,0 +1,2 @@
+/* pages/space/space.wxss */
+.card-t { font-size: 32rpx; }

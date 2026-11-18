@@ -1,0 +1,60 @@
+<view class="page">
+  <view class="row between" style="margin-bottom:20rpx">
+    <view>
+      <view class="strong" style="font-size:32rpx">{{spaceName}}</view>
+      <view class="muted small">{{rooms.length}} 个房间</view>
+    </view>
+    <button class="btn sm primary" bindtap="goSpaces">切换空间</button>
+  </view>
+
+  <view class="card" wx:for="{{rooms}}" wx:key="id">
+    <view class="row between" bindtap="enterRoom" data-id="{{item.id}}">
+      <view class="grow">
+        <view class="card-t">🏠 {{item.name}}</view>
+        <view class="card-s">{{item.dimText}} · {{item.furnitureCount}} 件家具 · {{item.itemCount}} 件物品</view>
+        <view class="row" style="margin-top:10rpx">
+          <text class="tag {{item.statusClass}}">{{item.statusText}}</text>
+        </view>
+      </view>
+      <text class="muted">▸</text>
+    </view>
+    <view class="divider"></view>
+    <view class="row wrap">
+      <button class="btn sm primary" catchtap="enter3d" data-id="{{item.id}}">三维查看</button>
+      <button class="btn sm" catchtap="enterPhotos" data-id="{{item.id}}">房间照片</button>
+      <button class="btn sm" catchtap="enterFurniture" data-id="{{item.id}}">家具</button>
+      <button class="btn sm" catchtap="rename" data-id="{{item.id}}" data-name="{{item.name}}">改名</button>
+      <button class="btn sm danger" catchtap="archive" data-id="{{item.id}}" data-name="{{item.name}}">归档</button>
+    </view>
+  </view>
+
+  <view class="state" wx:if="{{rooms.length===0}}">
+    <text class="state-icon">⌂</text>
+    <text class="state-title">还没有房间</text>
+    <text class="state-desc">新建房间后可上传照片、添加家具与收纳位置</text>
+  </view>
+
+  <view class="fab" bindtap="openCreate">+</view>
+
+  <view class="mask" wx:if="{{showEditor}}" bindtap="closeEditor"></view>
+  <view class="sheet" wx:if="{{showEditor}}">
+    <text class="sheet-title">{{editing?'编辑房间':'新建房间'}}</text>
+    <view class="form-error" wx:if="{{formError}}">{{formError}}</view>
+    <view class="field">
+      <text class="label">房间名称 <text class="req">*</text></text>
+      <input class="input" placeholder="例如：主卧 / 客厅" value="{{formName}}" bindinput="onName" maxlength="20" />
+    </view>
+    <view class="field">
+      <text class="label">尺寸参照（可选，单位米；留空则按相对估算）</text>
+      <view class="row">
+        <input class="input grow" style="margin-right:12rpx" type="number" placeholder="宽" value="{{formW}}" bindinput="onW" />
+        <input class="input grow" style="margin-right:12rpx" type="number" placeholder="深" value="{{formD}}" bindinput="onD" />
+        <input class="input grow" type="number" placeholder="高" value="{{formH}}" bindinput="onH" />
+      </view>
+    </view>
+    <view class="sheet-actions">
+      <button class="btn ghost" bindtap="closeEditor">取消</button>
+      <button class="btn primary" bindtap="save">保存</button>
+    </view>
+  </view>
+</view>

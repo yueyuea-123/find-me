@@ -1,0 +1,28 @@
+<view class="page">
+  <view class="card">
+    <view class="card-t">建模任务</view>
+    <view class="card-s">房间：{{roomName}}</view>
+  </view>
+
+  <view class="card center">
+    <view class="status-icon">{{statusIcon}}</view>
+    <view class="status-title">{{statusTitle}}</view>
+    <view class="card-s" style="margin-top:12rpx">{{statusDesc}}</view>
+  </view>
+
+  <view class="card" wx:if="{{showActions}}">
+    <view class="card-t">下一步</view>
+    <button class="btn primary block" wx:if="{{status==='none' || status==='ready' || status==='failed'}}" bindtap="start">提交建模任务</button>
+    <button class="btn block" wx:if="{{status==='processing'}}" bindtap="markDone">标记处理完成</button>
+    <button class="btn block" wx:if="{{status==='processing'}}" bindtap="markFail">标记失败</button>
+    <button class="btn primary block" wx:if="{{status==='candidate_ready'}}" bindtap="go3d">查看候选并确认</button>
+    <view class="divider"></view>
+    <button class="btn ghost block" bindtap="goManual">手动添加家具（降级方案）</button>
+    <view class="hint-box">本版本未提供云端建模服务：任务用于演示「排队/处理中/成功/失败」状态流转与失败降级路径。即使建模不可用，仍可通过列表完整管理房间、家具、收纳与物品（BR-014）。</view>
+  </view>
+
+  <view class="card">
+    <view class="card-t">任务说明</view>
+    <view class="card-s">• 三维对象与逻辑位置解耦：模型生成失败不影响家具与物品数据。<br/>• AI 候选与用户确认分开保存，重新处理不覆盖已确认位置（BR-013）。<br/>• 尺寸参照可选，未定标时只给相对估算。</view>
+  </view>
+</view>

@@ -1,0 +1,8 @@
+/* pages/profile/profile.wxss */
+.profile-card { display: flex; align-items: center; }
+.avatar { width: 100rpx; height: 100rpx; border-radius: 50%; background: #2b7a9b; color: #fff; font-size: 44rpx; display: flex; align-items: center; justify-content: center; margin-right: 24rpx; }
+.menu { display: flex; justify-content: space-between; align-items: center; padding: 22rpx 0; border-bottom: 1rpx solid #eef1f4; font-size: 28rpx; }
+.menu:last-child { border-bottom: none; }
+.kv { display: flex; justify-content: space-between; align-items: center; padding: 14rpx 0; font-size: 28rpx; border-bottom: 1rpx solid #f4f6f8; }
+.kv:last-child { border-bottom: none; }
+.warn { color: #c98a1e; }

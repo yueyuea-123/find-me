@@ -1,0 +1,48 @@
+<view class="page">
+  <view class="card">
+    <view class="card-t">{{editing?'编辑家具':'添加家具'}}</view>
+    <view class="card-s">三维对象（位置/尺寸/旋转）与逻辑收纳位置分开保存；更换外观模型不影响收纳节点与物品关联。</view>
+  </view>
+
+  <view class="card">
+    <view class="form-error" wx:if="{{formError}}">{{formError}}</view>
+    <view class="field">
+      <text class="label">家具类别 <text class="req">*</text></text>
+      <picker mode="selector" range="{{categories}}" value="{{catIndex}}" bindchange="onCat">
+        <view class="picker">{{categories[catIndex]}} ▾</view>
+      </picker>
+    </view>
+    <view class="field">
+      <text class="label">名称</text>
+      <input class="input" placeholder="默认用类别名" value="{{formName}}" bindinput="onName" maxlength="20" />
+    </view>
+    <view class="field">
+      <text class="label">外观模型</text>
+      <picker mode="selector" range="{{models}}" value="{{modelIndex}}" bindchange="onModel">
+        <view class="picker">{{models[modelIndex]}} ▾</view>
+      </picker>
+    </view>
+    <view class="field">
+      <text class="label">尺寸（米，可后续在三维页调整）</text>
+      <view class="row">
+        <input class="input grow" style="margin-right:8rpx" type="number" placeholder="宽" value="{{fw}}" bindinput="onW" />
+        <input class="input grow" style="margin-right:8rpx" type="number" placeholder="高" value="{{fh}}" bindinput="onH" />
+        <input class="input grow" type="number" placeholder="深" value="{{fd}}" bindinput="onD" />
+      </view>
+    </view>
+    <view class="field">
+      <text class="label">初始位置（米，Y-up 坐标；可留空后续拖动）</text>
+      <view class="row">
+        <input class="input grow" style="margin-right:8rpx" type="number" placeholder="X 左右" value="{{px}}" bindinput="onX" />
+        <input class="input grow" type="number" placeholder="Z 前后" value="{{pz}}" bindinput="onZ" />
+      </view>
+    </view>
+    <button class="btn primary block" bindtap="save">保存家具</button>
+    <button class="btn danger block" wx:if="{{editing}}" bindtap="remove">删除家具</button>
+  </view>
+
+  <view class="card">
+    <view class="card-t">摆放辅助说明</view>
+    <view class="card-s">• 普通落地家具默认贴地；墙面吸附/对齐为辅助，不可用时可手动拖放与数值编辑。<br/>• 未定标的房间只提供相对位置，尺寸标注为估算。<br/>• 新增家具来源为「手动创建」，属用户确认事实。</view>
+  </view>
+</view>

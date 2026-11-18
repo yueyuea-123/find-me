@@ -1,0 +1,12 @@
+/* pages/inventory-detail/inventory-detail.wxss */
+.bigbal { font-size: 64rpx; font-weight: 600; color: #2b7a9b; }
+.bigbal.warn { color: #c0392b; }
+.unit { font-size: 26rpx; }
+.chip-grid { display: flex; flex-wrap: wrap; }
+.chip { font-size: 26rpx; padding: 12rpx 24rpx; background: #f2f5f7; color: #53646f; border-radius: 999rpx; margin: 0 12rpx 12rpx 0; }
+.chip.on { background: #2b7a9b; color: #fff; }
+.tx { padding: 18rpx 0; border-bottom: 1rpx solid #eef1f4; }
+.right { text-align: right; }
+.plus { color: #27864d; }
+.minus { color: #c0392b; }
+.empty-line { text-align: center; color: #8a94a0; font-size: 26rpx; padding: 40rpx 0; }

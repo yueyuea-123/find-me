@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>三维房间验证场景 · 家具摆放交互</title>
+  <style>
+    body { margin: 0; overflow: hidden; font-family: -apple-system, "PingFang SC", sans-serif; }
+    canvas { display: block; }
+    #hud {
+      position: fixed; top: 12px; left: 12px; width: 300px;
+      background: rgba(20, 24, 32, 0.86); color: #e8ecf2;
+      border-radius: 10px; padding: 14px 16px; font-size: 13px; line-height: 1.6;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.25); pointer-events: none;
+    }
+    #hud h1 { font-size: 15px; margin: 0 0 6px; font-weight: 600; }
+    #hud .sub { color: #93a1b3; font-size: 12px; margin-bottom: 10px; }
+    #hud .row { display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.08); padding: 4px 0; }
+    #hud .k { color: #93a1b3; }
+    #hud .v { color: #ffd166; }
+    #help {
+      position: fixed; bottom: 12px; left: 12px; right: 12px;
+      background: rgba(20, 24, 32, 0.86); color: #e8ecf2;
+      border-radius: 10px; padding: 10px 16px; font-size: 13px; line-height: 1.7;
+    }
+    #help b { color: #ffd166; }
+    #err {
+      position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+      background: #14181f; color: #ff8a80; font-size: 15px; text-align: center; padding: 40px;
+    }
+  </style>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+<div id="hud">
+  <h1>三维房间验证场景</h1>
+  <div class="sub">家具摆放交互 · 技术验证载体（非产品原型）</div>
+  <div class="row"><span class="k">当前选中</span><span class="v" id="s-name">无</span></div>
+  <div class="row"><span class="k">位置 X / Z</span><span class="v" id="s-pos">—</span></div>
+  <div class="row"><span class="k">旋转 Y</span><span class="v" id="s-rot">—</span></div>
+  <div class="row"><span class="k">模型状态</span><span class="v" id="s-state">—</span></div>
+  <div class="row"><span class="k">渲染器</span><span class="v" id="s-gl">读取中…</span></div>
+</div>
+<div id="help">
+  <b>左键拖动空白处</b> 旋转视角 · <b>滚轮</b> 缩放 · <b>右键拖动</b> 平移 ·
+  <b>单击家具</b> 选中 · <b>拖动家具</b> 移动位置 ·
+  <b>R</b> 旋转选中家具 · <b>M</b> 换外观（验证模型与逻辑解耦） · <b>Esc</b> 取消选中
+</div>
+<div id="err"></div>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+try {
+  // === 场景 ===
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xeef1f5);
+
+  // === 相机 ===
+  const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 1000);
+  camera.position.set(4.2, 3.6, 5.0);
+
+  // === 渲染器 ===
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  document.body.appendChild(renderer.domElement);
+
+  // === 控制器 ===
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.target.set(0, 0.6, 0);
+  controls.minDistance = 2;
+  controls.maxDistance = 18;
+  controls.maxPolarAngle = Math.PI / 2 - 0.02;
+
+  // === 灯光（产品展示预设）===
+  scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+  const key = new THREE.DirectionalLight(0xffffff, 1.3);
+  key.position.set(5, 9, 6);
+  key.castShadow = true;
+  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.camera.left = -6; key.shadow.camera.right = 6;
+  key.shadow.camera.top = 6; key.shadow.camera.bottom = -6;
+  scene.add(key);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.4);
+  fill.position.set(-5, 4, -4);
+  scene.add(fill);
+
+  // === 房间（Y-up，单位米）===
+  const room = new THREE.Group(); scene.add(room);
+  const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(8, 8),
+    new THREE.MeshStandardMaterial({ color: 0xd8dee7, roughness: 0.95 })
+  );
+  floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; room.add(floor);
+  const grid = new THREE.GridHelper(8, 16, 0x9aa6b5, 0xc3ccd8);
+  grid.position.y = 0.002; room.add(grid);
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0xf3f5f8, roughness: 1, side: THREE.DoubleSide });
+  const wallBack = new THREE.Mesh(new THREE.PlaneGeometry(8, 3.2), wallMat);
+  wallBack.position.set(0, 1.6, -4); wallBack.receiveShadow = true; room.add(wallBack);
+  const wallLeft = new THREE.Mesh(new THREE.PlaneGeometry(8, 3.2), wallMat);
+  wallLeft.rotation.y = Math.PI / 2; wallLeft.position.set(-4, 1.6, 0); wallLeft.receiveShadow = true; room.add(wallLeft);
+
+  // === 家具（占位几何体，Y-up 米）===
+  const furniture = [];
+  function box(w, h, d, color) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d),
+      new THREE.MeshStandardMaterial({ color, roughness: 0.7, metalness: 0.05 }));
+    m.castShadow = true; m.receiveShadow = true; return m;
+  }
+  function addFurniture(name, parts, x, z) {
+    const g = new THREE.Group();
+    parts.forEach(p => { const b = box(p[0], p[1], p[2], p[3]); b.position.set(p[4], p[5], p[6]); g.add(b); });
+    g.position.set(x, 0, z);
+    g.userData = { name, logicId: 'node-' + (furniture.length + 1), model: '基础模型' };
+    scene.add(g); furniture.push(g); return g;
+  }
+  // 沙发：底座 + 靠背 + 两扶手
+  addFurniture('沙发', [
+    [2.0,0.35,0.85,0x4f7fc4,0,0.28,0],[2.0,0.7,0.2,0x3f6bab,0,0.65,-0.33],
+    [0.2,0.55,0.85,0x3f6bab,-0.9,0.52,0],[0.2,0.55,0.85,0x3f6bab,0.9,0.52,0]
+  ], -1.4, -1.2);
+  // 茶几：桌面 + 四腿
+  addFurniture('茶几', [
+    [1.2,0.08,0.7,0x9a6b46,0,0.42,0],
+    [0.08,0.4,0.08,0x7a5335,-0.5,0.2,-0.27],[0.08,0.4,0.08,0x7a5335,0.5,0.2,-0.27],
+    [0.08,0.4,0.08,0x7a5335,-0.5,0.2,0.27],[0.08,0.4,0.08,0x7a5335,0.5,0.2,0.27]
+  ], -1.2, 0.3);
+  // 柜子：主体 + 两门
+  addFurniture('柜子', [
+    [1.1,1.6,0.5,0xb98b5e,0,0.8,0],
+    [0.5,1.4,0.03,0xa2764d,-0.27,0.8,0.26],[0.5,1.4,0.03,0xa2764d,0.27,0.8,0.26]
+  ], 2.4, -2.6);
+  // 床：床体 + 床垫 + 枕头
+  addFurniture('床', [
+    [1.6,0.3,2.0,0x8a6b9c,0,0.2,0],[1.55,0.18,1.9,0xe8e2ef,0,0.44,0],
+    [0.6,0.12,0.32,0xffffff,-0.4,0.58,-0.7],[0.6,0.12,0.32,0xffffff,0.4,0.58,-0.7]
+  ], 1.8, 1.6);
+
+  // === 交互：点选 + 拖动 ===
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
+  const ground = new THREE.Plane(new THREE.Vector3(0,1,0), 0);
+  let selected = null, dragging = false, dragOffset = new THREE.Vector3();
+  const hitPoint = new THREE.Vector3();
+
+  function setPointer(e) {
+    pointer.x = (e.clientX / innerWidth) * 2 - 1;
+    pointer.y = -(e.clientY / innerHeight) * 2 + 1;
+  }
+  function pick() {
+    raycaster.setFromCamera(pointer, camera);
+    const hits = raycaster.intersectObjects(furniture, true);
+    if (!hits.length) return null;
+    let o = hits[0].object;
+    while (o && !o.userData.logicId) o = o.parent;
+    return o;
+  }
+  function refreshHud() {
+    document.getElementById('s-name').textContent = selected ? selected.userData.name : '无';
+    document.getElementById('s-pos').textContent = selected
+      ? selected.position.x.toFixed(2) + ' / ' + selected.position.z.toFixed(2) + ' m' : '—';
+    document.getElementById('s-rot').textContent = selected
+      ? Math.round(selected.rotation.y * 180 / Math.PI) + '°' : '—';
+    document.getElementById('s-state').textContent = selected ? selected.userData.model : '—';
+  }
+  renderer.domElement.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    setPointer(e);
+    const obj = pick();
+    if (obj) {
+      selected = obj; refreshHud();
+      raycaster.setFromCamera(pointer, camera);
+      if (raycaster.ray.intersectPlane(ground, hitPoint)) {
+        dragOffset.set(obj.position.x - hitPoint.x, 0, obj.position.z - hitPoint.z);
+        dragging = true; controls.enabled = false;
+      }
+    }
+  });
+  renderer.domElement.addEventListener('pointermove', e => {
+    if (!dragging || !selected) return;
+    setPointer(e);
+    raycaster.setFromCamera(pointer, camera);
+    if (raycaster.ray.intersectPlane(ground, hitPoint)) {
+      selected.position.x = THREE.MathUtils.clamp(hitPoint.x + dragOffset.x, -3.5, 3.5);
+      selected.position.z = THREE.MathUtils.clamp(hitPoint.z + dragOffset.z, -3.5, 3.5);
+      refreshHud();
+    }
+  });
+  function endDrag() { dragging = false; controls.enabled = true; }
+  renderer.domElement.addEventListener('pointerup', endDrag);
+  renderer.domElement.addEventListener('pointerleave', endDrag);
+
+  const models = ['基础模型', '替代模型 A', '替代模型 B'];
+  addEventListener('keydown', e => {
+    const k = e.key.toLowerCase();
+    if (k === 'escape') { selected = null; refreshHud(); }
+    if (selected && k === 'r') { selected.rotation.y += Math.PI / 12; refreshHud(); }
+    if (selected && k === 'm') {
+      const d = selected.userData;
+      d.model = models[(models.indexOf(d.model) + 1) % models.length];
+      selected.children.forEach(c => c.material.color.offsetHSL(0.06, 0, 0));
+      refreshHud();
+    }
+  });
+
+  // 渲染器诊断信息
+  const gl = renderer.getContext();
+  const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+  document.getElementById('s-gl').textContent = dbg
+    ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL).slice(0, 28) : gl.getParameter(gl.RENDERER).slice(0, 28);
+
+  // === 动画循环 ===
+  function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  // === 自适应 ===
+  addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+  });
+} catch (err) {
+  const el = document.getElementById('err');
+  el.style.display = 'flex';
+  el.textContent = '三维场景初始化失败：' + err.message + '（可视为降级路径触发示例）';
+  console.error(err);
+}
+</script>
+</body>
+</html>

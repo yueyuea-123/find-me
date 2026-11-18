@@ -1,0 +1,24 @@
+<view class="page">
+  <view class="card">
+    <view class="card-t">位置历史</view>
+    <view class="card-s">{{itemName}} · 共 {{history.length}} 条记录</view>
+  </view>
+
+  <view class="card timeline" wx:for="{{history}}" wx:key="id">
+    <view class="tl-dot"></view>
+    <view class="row between">
+      <text class="tag {{item.cls}}">{{item.typeText}}</text>
+      <text class="muted tiny">{{item.time}}</text>
+    </view>
+    <view class="tl-body small">
+      <view>{{item.fromText}} → {{item.toText}}</view>
+      <view class="muted" wx:if="{{item.note}}">备注：{{item.note}}</view>
+    </view>
+  </view>
+
+  <view class="state" wx:if="{{history.length===0}}">
+    <text class="state-icon">🕘</text>
+    <text class="state-title">暂无历史</text>
+    <text class="state-desc">创建时直接填写的初始位置不计为移动</text>
+  </view>
+</view>

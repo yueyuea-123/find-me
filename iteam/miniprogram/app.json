@@ -1,0 +1,49 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/space/space",
+    "pages/room/room",
+    "pages/photos/photos",
+    "pages/task/task",
+    "pages/room3d/room3d",
+    "pages/furniture-edit/furniture-edit",
+    "pages/furniture-detail/furniture-detail",
+    "pages/node/node",
+    "pages/item-list/item-list",
+    "pages/item-edit/item-edit",
+    "pages/item-detail/item-detail",
+    "pages/move/move",
+    "pages/history/history",
+    "pages/inventory/inventory",
+    "pages/inventory-detail/inventory-detail",
+    "pages/alerts/alerts",
+    "pages/profile/profile",
+    "pages/backup/backup",
+    "pages/admin/admin",
+    "pages/privacy/privacy"
+  ],
+  "window": {
+    "backgroundColor": "#F5F6F8",
+    "backgroundTextStyle": "dark",
+    "navigationBarBackgroundColor": "#2B5F75",
+    "navigationBarTitleText": "居所收纳",
+    "navigationBarTextStyle": "white",
+    "enablePullDownRefresh": false
+  },
+  "tabBar": {
+    "color": "#8A94A0",
+    "selectedColor": "#2B7A9B",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "black",
+    "list": [
+      { "pagePath": "pages/index/index", "text": "首页", "iconPath": "images/icons/home.png", "selectedIconPath": "images/icons/home-active.png" },
+      { "pagePath": "pages/room/room", "text": "空间", "iconPath": "images/icons/business.png", "selectedIconPath": "images/icons/business-active.png" },
+      { "pagePath": "pages/item-list/item-list", "text": "物品", "iconPath": "images/icons/goods.png", "selectedIconPath": "images/icons/goods-active.png" },
+      { "pagePath": "pages/inventory/inventory", "text": "库存", "iconPath": "images/icons/examples.png", "selectedIconPath": "images/icons/examples-active.png" },
+      { "pagePath": "pages/profile/profile", "text": "我的", "iconPath": "images/icons/usercenter.png", "selectedIconPath": "images/icons/usercenter-active.png" }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents"
+}

@@ -1,0 +1,53 @@
+<view class="page" wx:if="{{furniture}}">
+  <view class="card">
+    <view class="row between">
+      <view>
+        <view class="card-t">{{furniture.icon}} {{furniture.name}}</view>
+        <view class="card-s">{{furniture.category}} · {{furniture.model}}</view>
+      </view>
+      <text class="tag {{furniture.status==='candidate'?'orange':'green'}}">{{furniture.status==='candidate'?'AI候选':'已确认'}}</text>
+    </view>
+    <view class="divider"></view>
+    <view class="row">
+      <button class="btn sm" bindtap="editFurniture">编辑家具</button>
+      <button class="btn sm primary" bindtap="addNode">＋ 收纳节点</button>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="card-t">收纳位置（逻辑层级，与三维模型解耦）</view>
+    <view class="node-item" wx:for="{{nodes}}" wx:key="id" bindtap="openNode" data-id="{{item.id}}">
+      <view class="row between">
+        <view class="grow">
+          <view class="strong">{{item.name}} <text class="tag">{{item.type}}</text></view>
+          <view class="small muted">{{item.path}} · {{item.itemCount}} 件物品</view>
+        </view>
+        <text class="muted">▸</text>
+      </view>
+    </view>
+    <view class="empty-line" wx:if="{{nodes.length===0}}">还没有收纳节点，点「＋ 收纳节点」添加抽屉/隔层/收纳盒</view>
+  </view>
+</view>
+
+<!-- 带 roomId 进入：房间家具列表 -->
+<view class="page" wx:if="{{!furniture}}">
+  <view class="card">
+    <view class="card-t">房间家具</view>
+    <view class="card-s">{{roomName}} · {{furnitureList.length}} 件</view>
+    <button class="btn primary block" style="margin-top:16rpx" bindtap="addFurniture">＋ 添加家具</button>
+  </view>
+  <view class="card" wx:for="{{furnitureList}}" wx:key="id" bindtap="openFurniture" data-id="{{item.id}}">
+    <view class="row between">
+      <view class="grow">
+        <view class="strong">{{item.icon}} {{item.name}} <text class="tag {{item.status==='candidate'?'orange':'green'}}">{{item.status==='candidate'?'候选':'已确认'}}</text></view>
+        <view class="small muted">{{item.model}} · {{item.nodeCount}} 个收纳节点</view>
+      </view>
+      <text class="muted">▸</text>
+    </view>
+  </view>
+  <view class="state" wx:if="{{furnitureList.length===0}}">
+    <text class="state-icon">▣</text>
+    <text class="state-title">房间还没有家具</text>
+    <text class="state-desc">添加家具后即可建立收纳层级、存放物品</text>
+  </view>
+</view>

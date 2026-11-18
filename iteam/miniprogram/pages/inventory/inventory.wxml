@@ -1,0 +1,31 @@
+<view class="page">
+  <view class="card">
+    <view class="row between">
+      <view class="card-t">易耗品库存</view>
+      <text class="tag {{lowCount>0?'red':'green'}}">{{lowCount>0?lowCount+' 项需补货':'库存正常'}}</text>
+    </view>
+    <view class="card-s">库存变更都留有交易记录；补货须通过入库交易（TBD-005）。</view>
+  </view>
+
+  <view class="card item-card" wx:for="{{list}}" wx:key="id" bindtap="openDetail" data-id="{{item.itemId}}">
+    <view class="row between">
+      <view class="grow">
+        <view class="strong" style="font-size:30rpx">{{item.name}} <text class="tag {{item.low?'red':'green'}}">{{item.low?'低库存':'正常'}}</text></view>
+        <view class="small muted" style="margin-top:8rpx">{{item.category || '未分类'}}</view>
+      </view>
+      <view class="right">
+        <view class="bal {{item.low?'warn':''}}">{{item.balance}}<text class="unit">{{item.unit}}</text></view>
+        <view class="small muted">阈值 {{item.threshold}}{{item.unit}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="state" wx:if="{{list.length===0}}">
+    <text class="state-icon">📦</text>
+    <text class="state-title">还没有库存物品</text>
+    <text class="state-desc">添加物品时选「只记库存」或「位置+库存」即可管理易耗品</text>
+  </view>
+
+  <button class="btn primary block" bindtap="goAlerts" wx:if="{{lowCount>0}}" style="margin-top:20rpx">查看提醒中心</button>
+  <view class="fab" bindtap="addInventoryItem">+</view>
+</view>

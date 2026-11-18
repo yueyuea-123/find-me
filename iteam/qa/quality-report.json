@@ -1,0 +1,50 @@
+{
+  "timestamp": "2026-11-18T02:28:32",
+  "project": "iteam",
+  "total": 100.0,
+  "passed": true,
+  "threshold": {
+    "score": 90,
+    "noP0": true
+  },
+  "dims": {
+    "D1 配置合法性": {
+      "score": 10,
+      "full": 10
+    },
+    "D2 页面四件套": {
+      "score": 12.0,
+      "full": 12
+    },
+    "D3 JSON合法": {
+      "score": 8.0,
+      "full": 8
+    },
+    "D4 JS语法": {
+      "score": 18.0,
+      "full": 18
+    },
+    "D5 WXML事件绑定": {
+      "score": 12.0,
+      "full": 12
+    },
+    "D6 路由一致性": {
+      "score": 10.0,
+      "full": 10
+    },
+    "D7 静态资源": {
+      "score": 8.0,
+      "full": 8
+    },
+    "D8 数据层完整性": {
+      "score": 12.0,
+      "full": 12
+    },
+    "D9 运行时健壮性": {
+      "score": 10.0,
+      "full": 10
+    }
+  },
+  "blockers": [],
+  "issues": []
+}

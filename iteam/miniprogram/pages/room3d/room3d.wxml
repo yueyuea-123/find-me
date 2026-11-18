@@ -1,0 +1,61 @@
+<view class="wrap-page">
+  <canvas type="webgl" id="gl" class="glcanvas"
+    bindtouchstart="onTouchStart" bindtouchmove="onTouchMove" bindtouchend="onTouchEnd"></canvas>
+
+  <!-- 顶部信息 -->
+  <view class="topbar">
+    <view class="strong">{{roomName}}</view>
+    <view class="small muted">{{dimText}} · {{furniture.length}} 件家具</view>
+  </view>
+
+  <!-- 模式切换：浏览/编辑/收纳 -->
+  <view class="modebar">
+    <view class="mode {{mode==='browse'?'on':''}}" data-m="browse" bindtap="setMode">浏览</view>
+    <view class="mode {{mode==='edit'?'on':''}}" data-m="edit" bindtap="setMode">编辑</view>
+    <view class="mode {{mode==='store'?'on':''}}" data-m="store" bindtap="setMode">收纳</view>
+    <view class="mode" bindtap="resetView">复位视角</view>
+  </view>
+
+  <!-- 失败降级提示（BR-014） -->
+  <view class="degrade" wx:if="{{glError}}">
+    <view class="strong">三维不可用，已切换到列表模式</view>
+    <view class="small">{{glError}}</view>
+  </view>
+
+  <!-- 选中家具卡片 -->
+  <view class="selcard" wx:if="{{selected}}">
+    <view class="row between">
+      <view class="strong">{{selected.name}} <text class="tag {{selected.status==='candidate'?'orange':'green'}}">{{selected.status==='candidate'?'AI候选':'已确认'}}</text></view>
+      <text class="muted" bindtap="clearSel">✕</text>
+    </view>
+    <view class="small muted" style="margin-top:8rpx">位置 ({{selected.px}}, {{selected.pz}}) m · 旋转 {{selected.rot}}°</view>
+    <view class="row" style="margin-top:14rpx">
+      <button class="btn sm primary" wx:if="{{mode==='edit'}}" bindtap="editFurniture">编辑</button>
+      <button class="btn sm" wx:if="{{mode==='store'}}" bindtap="goNodes">收纳节点</button>
+      <button class="btn sm" wx:if="{{selected.status==='candidate'}}" bindtap="confirmCandidate">确认候选</button>
+    </view>
+  </view>
+
+  <!-- 底部：视图/列表切换 + 添加家具 -->
+  <view class="bottombar">
+    <view class="seg">
+      <view class="seg-i {{view==='3d'?'on':''}}" data-v="3d" bindtap="setView">三维视图</view>
+      <view class="seg-i {{view==='list'?'on':''}}" data-v="list" bindtap="setView">列表（降级）</view>
+    </view>
+    <button class="btn sm primary" bindtap="addFurniture">＋ 家具</button>
+  </view>
+
+  <!-- 列表降级视图 -->
+  <view class="listview" wx:if="{{view==='list'}}">
+    <view class="card" wx:for="{{furniture}}" wx:key="id" bindtap="selectFromList" data-id="{{item.id}}">
+      <view class="row between">
+        <view class="grow">
+          <view class="strong">{{item.icon}} {{item.name}} <text class="tag {{item.status==='candidate'?'orange':'green'}}">{{item.status==='candidate'?'候选':'已确认'}}</text></view>
+          <view class="small muted">位置 ({{item.px}}, {{item.pz}}) m · {{item.model}}</view>
+        </view>
+        <text class="muted">▸</text>
+      </view>
+    </view>
+    <view class="empty-line" wx:if="{{furniture.length===0}}">房间还没有家具，点「＋ 家具」添加</view>
+  </view>
+</view>

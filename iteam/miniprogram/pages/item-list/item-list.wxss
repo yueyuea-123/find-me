@@ -1,0 +1,5 @@
+/* pages/item-list/item-list.wxss */
+.search-card { position: sticky; top: 0; z-index: 5; }
+.filter-row { display: flex; flex-wrap: wrap; margin-top: 16rpx; }
+.filter-pill { font-size: 24rpx; color: #53646f; background: #f2f5f7; padding: 10rpx 18rpx; border-radius: 999rpx; margin: 0 12rpx 12rpx 0; }
+.filter-pill.on { background: #e5f2f8; color: #2b7a9b; }

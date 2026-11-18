@@ -1,0 +1,61 @@
+<view class="page">
+  <view class="card">
+    <view class="card-t">{{name}}</view>
+    <view class="row between" style="margin-top:16rpx">
+      <view>
+        <view class="bigbal {{low?'warn':''}}">{{balance}} <text class="unit">{{unit}}</text></view>
+        <view class="small muted">当前余额</view>
+      </view>
+      <text class="tag {{low?'red':'green'}}" wx:if="{{threshold>0}}">{{low?'低库存':'正常'}}</text>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="card-t">库存变更</view>
+    <view class="field" style="margin-top:16rpx">
+      <text class="label">变更类型</text>
+      <view class="chip-grid">
+        <view class="chip {{txType===item.key?'on':''}}" wx:for="{{txTypes}}" wx:key="key" data-key="{{item.key}}" bindtap="chooseType">{{item.name}}</view>
+      </view>
+    </view>
+    <view class="field">
+      <text class="label">数量（{{unit}}）</text>
+      <input class="input" type="digit" placeholder="输入正数" value="{{amount}}" bindinput="onAmount" />
+    </view>
+    <view class="field">
+      <text class="label">备注（可选）</text>
+      <input class="input" placeholder="例如：采购入库 / 日常使用" value="{{txNote}}" bindinput="onTxNote" />
+    </view>
+    <button class="btn primary block" bindtap="submitTx">提交变更</button>
+    <view class="small muted" style="margin-top:12rpx">调整与消耗分开记录；超额消耗被拒绝，库存不会低于零（BR-011）。</view>
+  </view>
+
+  <view class="card">
+    <view class="card-t">阈值设置</view>
+    <view class="row">
+      <input class="input grow" style="margin-right:12rpx" type="number" placeholder="最低库存" value="{{threshold}}" bindinput="onThreshold" />
+      <picker class="grow" mode="selector" range="{{units}}" value="{{unitIndex}}" bindchange="onUnit">
+        <view class="picker">{{units[unitIndex]}} ▾</view>
+      </picker>
+    </view>
+    <button class="btn sm" style="margin-top:16rpx" bindtap="saveSettings">保存设置</button>
+  </view>
+
+  <view class="card">
+    <view class="card-t">交易记录</view>
+    <view class="tx" wx:for="{{txs}}" wx:key="id">
+      <view class="row between">
+        <view>
+          <text class="tag {{item.cls}}">{{item.typeText}}</text>
+          <text class="small muted">{{item.note}}</text>
+        </view>
+        <view class="right">
+          <view class="strong {{item.delta>0?'plus':'minus'}}">{{item.delta>0?'+':''}}{{item.delta}}</view>
+          <view class="small muted">余额 {{item.after}}</view>
+        </view>
+      </view>
+      <view class="tiny muted" style="margin-top:6rpx">{{item.time}}</view>
+    </view>
+    <view class="empty-line" wx:if="{{txs.length===0}}">暂无交易记录</view>
+  </view>
+</view>
