@@ -27,6 +27,9 @@
 
 ## 当前阶段
 - 产品定义完成、范围基线闭合；小程序 MVP 已按产品文档 P0 完整实现（21 页 + 6 云函数 + 13 集合），静态门禁 100/100、冒烟 48/48 全绿；进入提审准备。
+- **2026-11-19 起推进 SDD 规范驱动落地**：在 `iteam/docs/` 建五件套（proposal/design/layouts/tasks/project_rules）+ 治理资产；计划见 `~/.workbuddy/plans/blazing-nebula-newton-CCVhhepe.md`。已确认：docs 落 `iteam/docs/`、V1.1 为主事实源、回溯补建、layouts 先 P0 核心页。
+- **CR-001 重大变更（已批准·V1.2）**：三维主路径由"照片生成 AI 候选模型"改为"用户手动自由编辑三维场景"（手动建房间/添加移动旋转缩放模型/模型与物品及位置绑定）；照片 MVP-004/005/007 降为可选。文档层已同步，代码层待实现。变更提案见 `iteam/docs/CR-001-三维空间模块变更提案.md`。
+- 实测口径纠偏：页面数真值 **21**（旧文档 18/19 为陈旧）；绑定单源原则：复用 `nodes.furnitureId` + `items.currentNodeId`，避免 `furniture.bindings` 双源。
 - 架构决策（2026-11-18）：**离线优先**——store.js 保持同步 API 页面零改动，cloud-sync.js 后台登录/拉快照/异步推送；云不可用本地照常用。前端全走云函数不直连数据库（集合 PRIVATE + openid 隔离）。
 - CloudBase 环境：`kkkyuer-d4g5w54lpb6ac6517`（NoSQL 个人版，上海，与工程 AppID 匹配，有效期 2027-05-17）；6 云函数 Active，backupService 每日 03:00 定时备份触发器生效。
 - 质量门禁脚本（每轮交付前必跑）：`iteam/qa/check_and_score.py`（静态）、`iteam/qa/smoke-test.js`（运行时）。
