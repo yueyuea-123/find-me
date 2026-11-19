@@ -52,6 +52,40 @@ var FURNITURE_LIB = {
   '抽屉':   { size: [0.6, 0.2, 0.5], vars: ['木色', '白色'], icon: '🗳️' }
 };
 
+// 典型场景模板（CR-001 F-07）：创建房间时的静态初始布置，用户主动选择，非 AI 生成/推荐。
+// 坐标为中心原点、Y-up、单位米，按默认 4×4 房间布局；落库时按房间实际宽/深/高钳制。
+// 每件为普通家具初值（category 必须在 FURNITURE_LIB 中存在）；落库后即普通 furniture 对象，可自由编辑。
+var ROOM_TEMPLATES = {
+  bedroom: {
+    key: 'bedroom', name: '卧室',
+    furniture: [
+      { category: '床', name: '双人床', x: -0.8, z: 0.6, rot: 0 },
+      { category: '床头柜', name: '床头柜', x: 0.1, z: 1.1, rot: 0 },
+      { category: '衣柜', name: '衣柜', x: 1.4, z: -1.0, rot: 0 },
+      { category: '窗帘', name: '窗帘', x: 0, z: -1.8, rot: 0 },
+      { category: '台灯', name: '台灯', x: 0.1, z: 1.1, rot: 0 }
+    ]
+  },
+  living: {
+    key: 'living', name: '客厅',
+    furniture: [
+      { category: '沙发', name: '三人沙发', x: 0, z: 1.2, rot: 0 },
+      { category: '茶几', name: '茶几', x: 0, z: 0, rot: 0 },
+      { category: '电视柜', name: '电视柜', x: 0, z: -1.4, rot: 0 },
+      { category: '软包椅', name: '单人椅', x: 1.3, z: 0.4, rot: 1.57 },
+      { category: '书架', name: '书架', x: -1.6, z: -0.6, rot: 0 }
+    ]
+  },
+  bath: {
+    key: 'bath', name: '卫生间',
+    furniture: [
+      { category: '收纳盒', name: '浴室收纳盒', x: -0.9, z: -0.9, rot: 0 },
+      { category: '收纳盒', name: '清洁用品盒', x: -0.9, z: -0.3, rot: 0 },
+      { category: '抽屉', name: '镜柜抽屉', x: 0.9, z: -1.2, rot: 0 }
+    ]
+  }
+};
+
 // 收纳节点类型（PRD 5.2 位置层级）
 var NODE_TYPES = ['房间', '家具', '抽屉/隔层', '收纳盒', '表面', '其他'];
 
@@ -79,6 +113,7 @@ module.exports = {
   ITEM_CATEGORIES: ITEM_CATEGORIES,
   UNITS: UNITS,
   FURNITURE_LIB: FURNITURE_LIB,
+  ROOM_TEMPLATES: ROOM_TEMPLATES,
   NODE_TYPES: NODE_TYPES,
   INVENTORY_TX_TYPES: INVENTORY_TX_TYPES,
   MOVEMENT_TYPES: MOVEMENT_TYPES

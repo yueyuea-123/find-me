@@ -7,7 +7,8 @@
 .mode { color: #cfd8dd; font-size: 24rpx; padding: 10rpx 20rpx; background: rgba(255,255,255,0.12); margin-right: 8rpx; border-radius: 999rpx; }
 .mode.on { background: #2b7a9b; color: #fff; }
 .degrade { position: absolute; left: 24rpx; right: 24rpx; top: 170rpx; background: rgba(255,243,224,0.95); color: #8a5a12; padding: 20rpx; border-radius: 14rpx; }
-.selcard { position: absolute; left: 24rpx; right: 24rpx; bottom: 180rpx; background: rgba(255,255,255,0.96); border-radius: 18rpx; padding: 24rpx; }
+.selcard { position: absolute; left: 24rpx; right: 24rpx; bottom: 180rpx; max-height: 52vh; overflow-y: auto; background: rgba(255,255,255,0.96); border-radius: 18rpx; padding: 24rpx; }
+.bindbox { border-top: 1rpx solid rgba(0,0,0,0.08); margin-top: 10rpx; padding-top: 4rpx; }
 .bottombar { position: absolute; left: 24rpx; right: 24rpx; bottom: 30rpx; display: flex; align-items: center; justify-content: space-between; }
 .seg { display: flex; background: rgba(255,255,255,0.15); border-radius: 12rpx; padding: 4rpx; }
 .seg-i { color: #dbe3e8; font-size: 24rpx; padding: 12rpx 20rpx; border-radius: 10rpx; }

@@ -6,7 +6,8 @@ var RR = require('../../utils/room-renderer.js');
 Page({
   data: {
     roomId: '', roomName: '', dimText: '', mode: 'browse', view: '3d',
-    furniture: [], selected: null, glError: ''
+    furniture: [], selected: null, glError: '',
+    bindings: null // CR-001 F-03：当前选中模型的关联物品汇总
   },
 
   onLoad: function (q) { this.setData({ roomId: q.id || '' }); },
@@ -72,12 +73,15 @@ Page({
     });
   },
 
-  // 触摸：单指旋转/平移，双指缩放；点击选中
+  // 触摸：CR-001 F-02——编辑模式且已选中模型时，单指移动模型/双指缩放模型；否则作用于相机
+  _editingModel: function () {
+    return this.data.mode === 'edit' && this.data.view === '3d' && !!this.data.selected;
+  },
   onTouchStart: function (e) {
     if (!this.renderer) return;
     var ts = e.touches;
     if (ts.length === 1) { this._sx = ts[0].x; this._sy = ts[0].y; this._moved = false; }
-    else if (ts.length === 2) { this._pinch = this._dist(ts); }
+    else if (ts.length === 2) { this._pinch = this._dist(ts); this._moved = true; }
   },
   onTouchMove: function (e) {
     if (!this.renderer) return;
@@ -85,13 +89,25 @@ Page({
     if (ts.length === 1 && this._sx !== undefined) {
       var dx = ts[0].x - this._sx, dy = ts[0].y - this._sy;
       if (Math.abs(dx) + Math.abs(dy) > 5) this._moved = true;
-      if (this.data.mode === 'edit') this._safeGL('pan', [dx, dy]);
+      if (this._editingModel()) {
+        // 像素→世界：按相机距离近似换算，避免与视角缩放脱节
+        var scale = Math.max(1, (this._room && Math.max(this._room.width, this._room.depth)) || 6) / 600;
+        store.transformFurniture(this.data.selected.id, { type: 'move', dx: dx * scale, dz: dy * scale });
+        this._syncSelectedRaw();
+        this._refreshSelectedCard();
+      } else if (this.data.mode === 'edit') this._safeGL('pan', [dx, dy]);
       else this._safeGL('orbit', [dx, dy]);
       this._sx = ts[0].x; this._sy = ts[0].y;
       this._safeRender();
     } else if (ts.length === 2 && this._pinch) {
       var d = this._dist(ts);
-      this._safeGL('zoom', [this._pinch - d]);
+      if (this._editingModel()) {
+        var delta = (this._pinch - d) / Math.max(1, this._pinch);
+        if (Math.abs(delta) > 0.001) {
+          store.transformFurniture(this.data.selected.id, { type: 'scale', factor: delta });
+          this._syncSelectedRaw(); this._refreshSelectedCard();
+        }
+      } else this._safeGL('zoom', [this._pinch - d]);
       this._pinch = d;
       this._safeRender();
     }
@@ -104,6 +120,34 @@ Page({
     }
     this._sx = this._sy = undefined; this._pinch = null;
   },
+  // 变换后：_raw 指向 store 内存对象，updateFurniture 已落盘；这里刷新列表展示值
+  _syncSelectedRaw: function () {
+    var sel = this.data.selected;
+    if (!sel) return;
+    var f = store.getFurniture(sel.id);
+    var row = null;
+    for (var i = 0; i < this._furniture.length; i++) if (this._furniture[i].id === sel.id) { row = this._furniture[i]; break; }
+    if (f && row) {
+      row._raw = f;
+      row.px = (f.position.x || 0).toFixed(2);
+      row.pz = (f.position.z || 0).toFixed(2);
+      row.rot = Math.round((f.rotation || 0) * 180 / Math.PI);
+    }
+  },
+  _refreshSelectedCard: function () {
+    var sel = this.data.selected, row = null;
+    if (!sel) return;
+    for (var i = 0; i < this._furniture.length; i++) if (this._furniture[i].id === sel.id) { row = this._furniture[i]; break; }
+    if (row) this.setData({ selected: {
+      id: row.id, name: row.name, px: row.px, pz: row.pz, rot: row.rot, status: row.status
+    }, furniture: this._furniture });
+  },
+  rotateSelected: function (e) {
+    if (!this.data.selected) return;
+    var deg = Number(e.currentTarget.dataset.deg) || 15;
+    store.transformFurniture(this.data.selected.id, { type: 'rotate', dr: deg * Math.PI / 180 });
+    this._syncSelectedRaw(); this._refreshSelectedCard(); this._safeRender();
+  },
   _dist: function (ts) {
     var dx = ts[0].x - ts[1].x, dy = ts[0].y - ts[1].y;
     return Math.sqrt(dx * dx + dy * dy);
@@ -113,9 +157,11 @@ Page({
     var f = this._furniture[idx];
     if (!f) return;
     this._safeGL('setSelected', [idx]);
-    this.setData({ selected: {
-      id: f.id, name: f.name, px: f.px, pz: f.pz, rot: f.rot, status: f.status
-    } });
+    this.setData({
+      selected: { id: f.id, name: f.name, px: f.px, pz: f.pz, rot: f.rot, status: f.status },
+      // CR-001 F-03：点选模型即展示其关联物品（沿 nodes.furnitureId + items.currentNodeId 单源）
+      bindings: store.bindingsOfFurniture(f.id)
+    });
   },
   selectFromList: function (e) {
     var id = e.currentTarget.dataset.id;
@@ -125,7 +171,7 @@ Page({
   },
   clearSel: function () {
     this._safeGL('setSelected', [-1]);
-    this.setData({ selected: null });
+    this.setData({ selected: null, bindings: null });
     this._safeRender();
   },
 
@@ -144,6 +190,11 @@ Page({
   goNodes: function () {
     if (!this.data.selected) return;
     wx.navigateTo({ url: '/pages/furniture-detail/furniture-detail?id=' + this.data.selected.id });
+  },
+  // CR-001 F-04：从模型关联物品跳转到物品详情（物品侧可再移动，走 moveItem 单物件单位置）
+  goItemDetail: function (e) {
+    var id = e.currentTarget.dataset.id;
+    if (id) wx.navigateTo({ url: '/pages/item-detail/item-detail?id=' + id });
   },
   confirmCandidate: function () {
     var self = this;

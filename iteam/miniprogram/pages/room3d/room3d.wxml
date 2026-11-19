@@ -29,11 +29,23 @@
       <text class="muted" bindtap="clearSel">✕</text>
     </view>
     <view class="small muted" style="margin-top:8rpx">位置 ({{selected.px}}, {{selected.pz}}) m · 旋转 {{selected.rot}}°</view>
+    <!-- CR-001 F-03/F-04：模型关联物品与存放位置（单源 nodes.furnitureId + items.currentNodeId） -->
+    <view class="bindbox" wx:if="{{bindings}}">
+      <view class="small muted" style="margin-top:10rpx">关联收纳 {{bindings.nodeCount}} 处 · 物品 {{bindings.items.length}} 件</view>
+      <view class="row between" wx:for="{{bindings.items}}" wx:key="id" style="margin-top:6rpx" data-id="{{item.id}}" bindtap="goItemDetail">
+        <view class="grow small">{{item.name}} <text class="muted">@ {{item.nodeName || '位置未知'}}</text></view>
+        <text class="muted">▸</text>
+      </view>
+      <view class="small muted" wx:if="{{bindings.items.length===0}}" style="margin-top:6rpx">尚未关联物品，可在「收纳节点」中添加位置后归位</view>
+    </view>
     <view class="row" style="margin-top:14rpx">
       <button class="btn sm primary" wx:if="{{mode==='edit'}}" bindtap="editFurniture">编辑</button>
+      <button class="btn sm" wx:if="{{mode==='edit'}}" data-deg="-15" bindtap="rotateSelected">↺ 15°</button>
+      <button class="btn sm" wx:if="{{mode==='edit'}}" data-deg="15" bindtap="rotateSelected">↻ 15°</button>
       <button class="btn sm" wx:if="{{mode==='store'}}" bindtap="goNodes">收纳节点</button>
       <button class="btn sm" wx:if="{{selected.status==='candidate'}}" bindtap="confirmCandidate">确认候选</button>
     </view>
+    <view class="small muted" wx:if="{{mode==='edit'}}" style="margin-top:8rpx">编辑中：单指拖动移动模型 · 双指捏合缩放模型 · 上方按钮旋转</view>
   </view>
 
   <!-- 底部：视图/列表切换 + 添加家具 -->

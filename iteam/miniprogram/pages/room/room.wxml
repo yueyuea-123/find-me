@@ -40,6 +40,14 @@
   <view class="sheet" wx:if="{{showEditor}}">
     <text class="sheet-title">{{editing?'编辑房间':'新建房间'}}</text>
     <view class="form-error" wx:if="{{formError}}">{{formError}}</view>
+    <!-- CR-001 F-07：起点选择，仅新建时显示；模板为静态预置布置，家具落库后可自由编辑 -->
+    <view class="field" wx:if="{{!editing}}">
+      <text class="label">起点（可随时再调整家具）</text>
+      <view class="row" style="flex-wrap:wrap;gap:12rpx">
+        <view class="mode {{startTemplate===''?'on':''}}" data-key="" bindtap="setStart">空白房间</view>
+        <view class="mode {{startTemplate===item.key?'on':''}}" wx:for="{{templates}}" wx:key="key" data-key="{{item.key}}" bindtap="setStart">{{item.name}}（{{item.count}}件）</view>
+      </view>
+    </view>
     <view class="field">
       <text class="label">房间名称 <text class="req">*</text></text>
       <input class="input" placeholder="例如：主卧 / 客厅" value="{{formName}}" bindinput="onName" maxlength="20" />

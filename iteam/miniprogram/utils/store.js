@@ -137,14 +137,39 @@ function archiveSpace(id) {
   var r = commit(); return r.ok ? { ok: true } : r;
 }
 
-// ---------- 房间（PRD-003 / 业务规则第3章） ----------
+// ---------- 房间（PRD-003 / 业务规则第3章；CR-001 F-01 手动编辑画布） ----------
+// 空白房间布局：地面 + 四面墙 + 默认视角。尺寸单位米，Y-up；默认值保证无尺寸输入也可打开。
+function makeLayout(dims) {
+  dims = dims || {};
+  var w = Number(dims.width) > 0 ? Number(dims.width) : 4;
+  var dpt = Number(dims.depth) > 0 ? Number(dims.depth) : 4;
+  var h = Number(dims.height) > 0 ? Number(dims.height) : 2.8;
+  return {
+    floor: { w: w, d: dpt },
+    walls: [
+      { side: 'north', length: w, height: h },
+      { side: 'south', length: w, height: h },
+      { side: 'west', length: dpt, height: h },
+      { side: 'east', length: dpt, height: h }
+    ],
+    camera: { yaw: -45, pitch: 35, distance: Math.max(w, dpt) * 1.6 }
+  };
+}
+// 历史房间（V1.1 及更早）缺字段时懒兜底，仅在读取时补默认值，不改存储、不动同步契约（CR-001 F-01）
+function ensureRoomFields(rm) {
+  if (!rm) return rm;
+  if (!rm.layout) rm.layout = makeLayout({ width: rm.width, depth: rm.depth, height: rm.height });
+  if (!rm.source) rm.source = 'manual';
+  if (rm.templateKey === undefined) rm.templateKey = '';
+  return rm;
+}
 function listRooms(spaceId) {
   var d = load();
   return d.rooms.filter(function (r) {
     return !r.archived && (!spaceId || r.spaceId === spaceId);
-  }).slice().sort(function (a, b) { return a.createdAt - b.createdAt; });
+  }).map(ensureRoomFields).slice().sort(function (a, b) { return a.createdAt - b.createdAt; });
 }
-function getRoom(id) { return findById(load().rooms, id); }
+function getRoom(id) { return ensureRoomFields(findById(load().rooms, id)); }
 function addRoom(spaceId, name, dims) {
   var d = load();
   if (!findById(d.spaces, spaceId)) return { ok: false, error: 'SPACE_NOT_FOUND' };
@@ -155,6 +180,8 @@ function addRoom(spaceId, name, dims) {
     id: uid('rm'), spaceId: spaceId, name: name,
     width: dims.width || 0, depth: dims.depth || 0, height: dims.height || 0,
     calibrated: !!(dims.width && dims.depth),
+    // CR-001 F-01/F-07：手动编辑画布为主路径；templateKey 为 T9 典型场景模板预留（当前恒空）
+    source: 'manual', templateKey: '', layout: makeLayout(dims),
     photos: [], task: { status: 'none', taskId: '', error: '' },
     archived: false, createdAt: now(), updatedAt: now()
   };
@@ -171,6 +198,13 @@ function updateRoom(id, patch) {
   ['width', 'depth', 'height'].forEach(function (k) { if (patch[k] !== undefined) rm[k] = Number(patch[k]) || 0; });
   if (patch.name !== undefined) rm.name = patch.name;
   if (patch.width !== undefined || patch.depth !== undefined) rm.calibrated = !!(rm.width && rm.depth);
+  // CR-001 F-01：手动编辑字段；尺寸变化时同步空白布局（保留已有 layout 时仅更新地面/墙/视角尺寸）
+  ensureRoomFields(rm);
+  var dimsChanged = patch.width !== undefined || patch.depth !== undefined || patch.height !== undefined;
+  if (dimsChanged) rm.layout = makeLayout(rm);
+  if (patch.source !== undefined && ['manual', 'template', 'legacy_photo'].indexOf(patch.source) >= 0) rm.source = patch.source;
+  if (patch.templateKey !== undefined) rm.templateKey = String(patch.templateKey || '');
+  if (patch.layout !== undefined && patch.layout && typeof patch.layout === 'object') rm.layout = clone(patch.layout);
   rm.updatedAt = now();
   var r = commit(); return r.ok ? { ok: true, data: clone(rm) } : r;
 }
@@ -253,6 +287,54 @@ function addFurniture(roomId, opts) {
   d.nodes.push(node);
   var r = commit(); return r.ok ? { ok: true, data: clone(f), node: clone(node) } : r;
 }
+// CR-001 F-07 典型场景模板：列出可选模板（仅元信息，不含坐标）
+function listRoomTemplates() {
+  var t = C.ROOM_TEMPLATES || {};
+  return Object.keys(t).map(function (k) {
+    return { key: k, name: t[k].name, count: (t[k].furniture || []).length };
+  });
+}
+// 应用模板：按房间实际尺寸钳制预置家具坐标，逐件写为普通可编辑家具；模板缺失/加载失败返回错误供降级空白房间
+function applyRoomTemplate(roomId, templateKey) {
+  var d = load(), rm = findById(d.rooms, roomId);
+  if (!rm) return { ok: false, error: 'ROOM_NOT_FOUND' };
+  var tpl = (C.ROOM_TEMPLATES || {})[templateKey];
+  if (!tpl || !Array.isArray(tpl.furniture) || tpl.furniture.length === 0) return { ok: false, error: 'TEMPLATE_NOT_FOUND' };
+  var halfW = (rm.width || 4) / 2, halfD = (rm.depth || 4) / 2;
+  var created = [];
+  tpl.furniture.forEach(function (item) {
+    var lib = C.FURNITURE_LIB[item.category] || { size: [0.5, 0.5, 0.5], vars: ['默认'] };
+    var size = { w: lib.size[0], h: lib.size[1], d: lib.size[2] };
+    // 按房间尺寸钳制，超大家具居中（复用 T8 的 clampCenter）
+    var px = round2(clampCenter(item.x || 0, -halfW + size.w / 2, halfW - size.w / 2));
+    var pz = round2(clampCenter(item.z || 0, -halfD + size.d / 2, halfD - size.d / 2));
+    var f = {
+      id: uid('fu'), roomId: roomId, category: item.category,
+      name: item.name || item.category,
+      model: lib.vars[0],
+      position: { x: px, y: 0, z: pz },
+      rotation: item.rot || 0,
+      size: size,
+      source: 'manual', status: 'confirmed', confidence: 0,
+      template: templateKey, createdAt: now(), updatedAt: now()
+    };
+    d.furniture.push(f);
+    var n = {
+      id: uid('nd'), roomId: roomId, furnitureId: f.id, parentId: '',
+      name: f.name, type: '家具',
+      order: d.nodes.filter(function (x) { return x.roomId === roomId && !x.parentId; }).length,
+      createdAt: now(), updatedAt: now()
+    };
+    d.nodes.push(n);
+    created.push(f.id);
+  });
+  rm.source = 'template';
+  rm.templateKey = templateKey;
+  rm.updatedAt = now();
+  var r = commit();
+  return r.ok ? { ok: true, data: { roomId: roomId, templateKey: templateKey, furnitureIds: created } } : r;
+}
+
 function updateFurniture(id, patch) {
   var d = load(), f = findById(d.furniture, id);
   if (!f) return { ok: false, error: 'NOT_FOUND' };
@@ -271,6 +353,48 @@ function updateFurniture(id, patch) {
   f.updatedAt = now();
   var r = commit(); return r.ok ? { ok: true, data: clone(f) } : r;
 }
+// CR-001 F-02 模型变换控制：移动/旋转/缩放，统一钳制，保证不产生非法布局（proposal §8 空间边界）
+var SIZE_MIN = 0.1, SIZE_MAX = 12; // 米，家具尺寸合理上下限
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+// 家具尺寸大于房间时 lo>hi，普通 clamp 会错误返回 lo；此时固定在房间中心
+function clampCenter(v, lo, hi) { return lo > hi ? 0 : clamp(v, lo, hi); }
+function transformFurniture(id, op) {
+  var d = load(), f = findById(d.furniture, id);
+  if (!f) return { ok: false, error: 'NOT_FOUND' };
+  var room = findById(d.rooms, f.roomId) || {};
+  var halfW = (room.width || 20) / 2, halfD = (room.depth || 20) / 2;
+  var pos = f.position || { x: 0, y: 0, z: 0 };
+  var size = f.size || { w: 0.6, h: 0.6, d: 0.6 };
+  var patch = {};
+  if (op.type === 'move') {
+    // 新坐标 = 当前 + 增量；钳制到房间边界内（保留半个家具尺寸避免整体出界）
+    var nx = clampCenter((pos.x || 0) + (op.dx || 0), -halfW + size.w / 2, halfW - size.w / 2);
+    var nz = clampCenter((pos.z || 0) + (op.dz || 0), -halfD + size.d / 2, halfD - size.d / 2);
+    patch.position = { x: round2(nx), y: pos.y || 0, z: round2(nz) };
+  } else if (op.type === 'rotate') {
+    // 角度增量（弧度），归一化到 [0, 2π)
+    var r = (f.rotation || 0) + (op.dr || 0);
+    r = r % (Math.PI * 2); if (r < 0) r += Math.PI * 2;
+    patch.rotation = round4(r);
+  } else if (op.type === 'scale') {
+    var s = 1 + (op.factor || 0);
+    patch.size = {
+      w: round2(clamp(size.w * s, SIZE_MIN, SIZE_MAX)),
+      h: round2(clamp(size.h * s, SIZE_MIN, SIZE_MAX)),
+      d: round2(clamp(size.d * s, SIZE_MIN, SIZE_MAX))
+    };
+    // 缩放后位置可能越界，同步钳制
+    patch.position = {
+      x: round2(clampCenter(pos.x || 0, -halfW + patch.size.w / 2, halfW - patch.size.w / 2)),
+      y: pos.y || 0,
+      z: round2(clampCenter(pos.z || 0, -halfD + patch.size.d / 2, halfD - patch.size.d / 2))
+    };
+  } else return { ok: false, error: 'INVALID_OP' };
+  return updateFurniture(id, patch);
+}
+function round2(v) { return Math.round(v * 100) / 100; }
+function round4(v) { return Math.round(v * 10000) / 10000; }
+
 function removeFurniture(id) {
   var d = load(), f = findById(d.furniture, id);
   if (!f) return { ok: false, error: 'NOT_FOUND' };
@@ -363,6 +487,28 @@ function itemsInNode(nodeId) {
   return d.items.filter(function (it) {
     return it.currentNodeId === nodeId && it.managementStatus !== 'ended';
   });
+}
+// CR-001 F-03 模型—物品绑定：沿该家具的全部逻辑节点聚合物品（单源 nodes.furnitureId + items.currentNodeId）
+// 换模型只改 furniture.model，节点与物品不变，故此处关联天然解耦；不写 furniture.bindings，避免双绑定源
+function itemsOfFurniture(furnitureId) {
+  var d = load();
+  var nodeIds = {};
+  d.nodes.forEach(function (n) { if (n.furnitureId === furnitureId) nodeIds[n.id] = 1; });
+  var seen = {}, out = [];
+  d.items.forEach(function (it) {
+    if (it.currentNodeId && nodeIds[it.currentNodeId] && !seen[it.id] && it.managementStatus !== 'ended') {
+      seen[it.id] = 1;
+      var node = findById(d.nodes, it.currentNodeId);
+      out.push({ id: it.id, name: it.name, nodeId: it.currentNodeId, nodeName: node ? node.name : '', locationStatus: it.locationStatus || '' });
+    }
+  });
+  return out;
+}
+// 绑定汇总（供三维选中卡展示）：节点数 + 物品列表
+function bindingsOfFurniture(furnitureId) {
+  var d = load();
+  var nodes = d.nodes.filter(function (n) { return n.furnitureId === furnitureId; });
+  return { furnitureId: furnitureId, nodeCount: nodes.length, items: itemsOfFurniture(furnitureId) };
 }
 
 // ---------- 物品档案（PRD-018~024 / BR-001~006） ----------
@@ -635,6 +781,7 @@ function seedDemo() {
   d.spaces.push(sp);
   var rm = {
     id: uid('rm'), spaceId: sp.id, name: '主卧', width: 4.6, depth: 4.2, height: 2.8, calibrated: true,
+    source: 'manual', templateKey: '', layout: makeLayout({ width: 4.6, depth: 4.2, height: 2.8 }),
     photos: [], task: { status: 'none', taskId: '', error: '' }, archived: false, createdAt: now(), updatedAt: now()
   };
   d.rooms.push(rm);
@@ -701,10 +848,12 @@ module.exports = {
   addPhotos: addPhotos, removePhoto: removePhoto, startTask: startTask, finishTask: finishTask,
   // 家具
   listFurniture: listFurniture, getFurniture: getFurniture, addFurniture: addFurniture,
-  updateFurniture: updateFurniture, removeFurniture: removeFurniture,
+  listRoomTemplates: listRoomTemplates, applyRoomTemplate: applyRoomTemplate,
+  updateFurniture: updateFurniture, transformFurniture: transformFurniture, removeFurniture: removeFurniture,
   // 节点
   listNodes: listNodes, getNode: getNode, nodePath: nodePath, childrenOf: childrenOf,
   addNode: addNode, updateNode: updateNode, reorderNode: reorderNode, removeNode: removeNode, itemsInNode: itemsInNode,
+  itemsOfFurniture: itemsOfFurniture, bindingsOfFurniture: bindingsOfFurniture,
   // 物品
   listItems: listItems, getItem: getItem, addItem: addItem, updateItem: updateItem,
   setItemTrackingMode: setItemTrackingMode, moveItem: moveItem, listMovements: listMovements,

@@ -5,7 +5,9 @@ Page({
   data: {
     spaceName: '', rooms: [],
     showEditor: false, editing: false, editingId: '',
-    formName: '', formW: '', formD: '', formH: '', formError: ''
+    formName: '', formW: '', formD: '', formH: '', formError: '',
+    // CR-001 F-07 典型场景起点：'' = 空白房间；否则为模板 key
+    templates: [], startTemplate: ''
   },
 
   onLoad: function (q) { if (q && q.create) this.openCreate(); },
@@ -46,8 +48,13 @@ Page({
   goSpaces: function () { wx.navigateTo({ url: '/pages/space/space' }); },
 
   openCreate: function () {
-    this.setData({ showEditor: true, editing: false, editingId: '', formName: '', formW: '', formD: '', formH: '', formError: '' });
+    this.setData({
+      showEditor: true, editing: false, editingId: '', formName: '', formW: '', formD: '', formH: '', formError: '',
+      templates: store.listRoomTemplates(), startTemplate: ''
+    });
   },
+  // CR-001 F-07：选择新建房间起点（'' 空白 / 模板 key）
+  setStart: function (e) { this.setData({ startTemplate: e.currentTarget.dataset.key || '' }); },
   rename: function (e) {
     var d = e.currentTarget.dataset;
     var r = store.getRoom(d.id);
@@ -76,6 +83,11 @@ Page({
       r = store.addRoom(sp.id, f.formName, dims);
     }
     if (!r.ok) { this.setData({ formError: '保存失败：' + r.error }); return; }
+    // CR-001 F-07：新建且选了模板时应用预置家具；模板缺失则降级空白房间，不阻断建房
+    if (!f.editing && f.startTemplate) {
+      var tr = store.applyRoomTemplate(r.data.id, f.startTemplate);
+      if (!tr.ok) wx.showToast({ title: '模板暂不可用，已建空白房间', icon: 'none' });
+    }
     this.setData({ showEditor: false });
     wx.showToast({ title: '已保存', icon: 'success' });
     this.load();
