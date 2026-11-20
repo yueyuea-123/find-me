@@ -31,16 +31,41 @@
     "enablePullDownRefresh": false
   },
   "tabBar": {
-    "color": "#8A94A0",
-    "selectedColor": "#2B7A9B",
-    "backgroundColor": "#FFFFFF",
+    "color": "#A29481",
+    "selectedColor": "#9C6B3F",
+    "backgroundColor": "#FFFDF9",
     "borderStyle": "black",
     "list": [
-      { "pagePath": "pages/index/index", "text": "首页", "iconPath": "images/icons/home.png", "selectedIconPath": "images/icons/home-active.png" },
-      { "pagePath": "pages/room/room", "text": "空间", "iconPath": "images/icons/business.png", "selectedIconPath": "images/icons/business-active.png" },
-      { "pagePath": "pages/item-list/item-list", "text": "物品", "iconPath": "images/icons/goods.png", "selectedIconPath": "images/icons/goods-active.png" },
-      { "pagePath": "pages/inventory/inventory", "text": "库存", "iconPath": "images/icons/examples.png", "selectedIconPath": "images/icons/examples-active.png" },
-      { "pagePath": "pages/profile/profile", "text": "我的", "iconPath": "images/icons/usercenter.png", "selectedIconPath": "images/icons/usercenter-active.png" }
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "images/icons/home.png",
+        "selectedIconPath": "images/icons/home-active.png"
+      },
+      {
+        "pagePath": "pages/room/room",
+        "text": "空间",
+        "iconPath": "images/icons/business.png",
+        "selectedIconPath": "images/icons/business-active.png"
+      },
+      {
+        "pagePath": "pages/item-list/item-list",
+        "text": "物品",
+        "iconPath": "images/icons/goods.png",
+        "selectedIconPath": "images/icons/goods-active.png"
+      },
+      {
+        "pagePath": "pages/inventory/inventory",
+        "text": "库存",
+        "iconPath": "images/icons/examples.png",
+        "selectedIconPath": "images/icons/examples-active.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "images/icons/usercenter.png",
+        "selectedIconPath": "images/icons/usercenter-active.png"
+      }
     ]
   },
   "sitemapLocation": "sitemap.json",

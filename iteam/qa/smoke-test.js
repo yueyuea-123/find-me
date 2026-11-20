@@ -391,6 +391,36 @@ check('TBD-005 提醒中心可查询已恢复周期', () => {
   return Array.isArray(list) && list.some(a => a.status === 'recovered');
 });
 
+// ----- 首页户型总览（对齐 demo 视觉口径；不删 P0、仅聚合展示）-----
+check('首页户型总览：聚合空间内房间/面积/家具/物品数，含排布与配色分档', () => {
+  const ov = store.getHomeOverview();
+  return !!(ov && ov.rooms.length >= 3 && ov.area > 0 &&
+    ov.cols === 6 && ov.maxRows === 8 &&
+    ov.rooms.every(r => r.floor && r.floor.x >= 1 && r.floor.w >= 1 && Array.isArray(r.furn)) &&
+    ov.rooms.some(r => r.itemCount > 0) &&
+    ov.rooms.some(r => ['bedroom', 'living', 'bath'].indexOf(r.tone) >= 0));
+});
+check('户型排布校验：重叠与越界拒绝，合法位置通过', () => {
+  const ov = store.getHomeOverview();
+  const others = ov.rooms.map(r => ({ id: r.id, floor: r.floor }));
+  const overlap = store.floorValid(others, ov.rooms[0].id, ov.rooms[1].floor);
+  const outOfBounds = store.floorValid(others, ov.rooms[0].id, { x: 1, y: 1, w: 9, h: 2 });
+  const okPos = store.floorValid([], 'none', { x: 2, y: 3, w: 3, h: 2 });
+  return !!(overlap === false && outOfBounds === false && okPos === true);
+});
+check('户型排布可持久化到房间 floor 字段', () => {
+  const ov = store.getHomeOverview();
+  const r = ov.rooms[0];
+  const target = { x: 2, y: 2, w: 3, h: 2 };
+  const up = store.updateRoom(r.id, { floor: target });
+  const after = store.getHomeOverview().rooms.filter(x => x.id === r.id)[0];
+  const raw = store.getRoom(r.id);
+  const ok = !!(up.ok && after.floor.x === 2 && after.floor.y === 2 &&
+    raw.floor && raw.floor.w === 3 && raw.floor.h === 2);
+  store.updateRoom(r.id, { floor: r.floor }); // 还原，避免影响后续页面执行
+  return ok;
+});
+
 // ---------------------------------------------------------------- C/D. 页面真实执行
 const woolItem = byName('羊毛毯');
 const shampooItem = byName('洗发水');

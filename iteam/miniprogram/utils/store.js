@@ -176,6 +176,80 @@ function ensureRoomFields(rm) {
   if (rm.templateKey === undefined) rm.templateKey = '';
   return rm;
 }
+
+// 户型总览：6 列网格；房间 floor 为用户可编辑排布 {x,y,w,h}（单位=格），
+// 未编辑的房间按创建顺序回退到默认槽位。位置为布局输入，不承诺测量精度。
+var FLOOR_COLS = 6;
+var FLOOR_MAX_ROWS = 8;
+var FLOOR_SLOTS = [
+  { c: 1, r: 1, cw: 3, rh: 3 }, { c: 4, r: 1, cw: 3, rh: 4 },
+  { c: 1, r: 4, cw: 3, rh: 2 }, { c: 4, r: 5, cw: 3, rh: 2 },
+  { c: 1, r: 6, cw: 3, rh: 2 }, { c: 4, r: 7, cw: 3, rh: 2 },
+  { c: 1, r: 8, cw: 3, rh: 2 }, { c: 4, r: 9, cw: 3, rh: 2 }
+];
+function floorSlot(i) { return FLOOR_SLOTS[i] || { c: 1, r: 10 + (i - 8) * 2, cw: 6, rh: 2 }; }
+function floorOf(r, i) {
+  if (r.floor) return r.floor;
+  var s = floorSlot(i);
+  return { x: s.c, y: s.r, w: s.cw, h: s.rh };
+}
+function floorOverlap(a, b) {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+function floorValid(rooms, selfId, cand) {
+  if (!cand || cand.x < 1 || cand.y < 1 || cand.w < 1 || cand.h < 1) return false;
+  if (cand.x + cand.w - 1 > FLOOR_COLS || cand.y + cand.h - 1 > FLOOR_MAX_ROWS) return false;
+  return !rooms.some(function (r, i) { return r.id !== selfId && floorOverlap(floorOf(r, i), cand); });
+}
+function autoFloorPlace(sid) {
+  var rooms = listRooms(sid);
+  var used = rooms.map(function (r, i) { return floorOf(r, i); });
+  for (var y = 1; y <= FLOOR_MAX_ROWS; y++) for (var x = 1; x + 2 <= FLOOR_COLS; x++) {
+    var c = { x: x, y: y, w: 3, h: 2 };
+    if (!used.some(function (u) { return floorOverlap(u, c); })) return c;
+  }
+  return { x: 1, y: FLOOR_MAX_ROWS, w: 3, h: 2 };
+}
+// 首页户型总览聚合数据（纯计算，不落库、不进云契约）
+function getHomeOverview(spaceId) {
+  var d = load();
+  var sp = spaceId ? findById(d.spaces, spaceId) : getActiveSpace();
+  if (!sp) return { rooms: [], area: 0, cols: FLOOR_COLS, maxRows: FLOOR_MAX_ROWS };
+  var rooms = d.rooms.filter(function (r) { return !r.archived && r.spaceId === sp.id; })
+    .map(ensureRoomFields).slice().sort(function (a, b) { return a.createdAt - b.createdAt; });
+  var area = rooms.reduce(function (n, r) { return n + (Number(r.width) || 0) * (Number(r.depth) || 0); }, 0);
+  var blocks = rooms.map(function (r, i) {
+    var slot = floorOf(r, i);
+    var fs = d.furniture.filter(function (f) { return f.roomId === r.id; });
+    var rw = Number(r.width) || 4, rd = Number(r.depth) || 4;
+    var furn = fs.map(function (f) {
+      var pos = f.position || { x: 0, z: 0 }, size = f.size || { w: 0.6, d: 0.6 };
+      var clamp = function (v, lo, hi) { return Math.max(lo, Math.min(hi, v)); };
+      return {
+        id: f.id, name: f.name,
+        icon: (C.FURNITURE_LIB[f.category] || {}).icon || '▪',
+        left: clamp(((pos.x || 0) + rw / 2) / rw * 100, 4, 96),
+        top: clamp(((pos.z || 0) + rd / 2) / rd * 100, 4, 96),
+        w: clamp((size.w || 0.6) / rw * 100, 6, 48),
+        h: clamp((size.d || 0.6) / rd * 100, 6, 48)
+      };
+    });
+    // 物品经 currentNodeId → nodes.furnitureId 聚合到该房间（单源，去重）；与 itemsOfFurniture 同口径
+    var nodeIdMap = {};
+    d.nodes.forEach(function (n) { if (n.roomId === r.id) nodeIdMap[n.id] = 1; });
+    var itemCount = d.items.filter(function (it) {
+      return it.managementStatus !== 'ended' && it.currentNodeId && nodeIdMap[it.currentNodeId];
+    }).length;
+    return {
+      id: r.id, name: r.name, width: r.width, depth: r.depth,
+      templateKey: r.templateKey || '',
+      floor: slot, furn: furn, itemCount: itemCount,
+      tone: r.templateKey === 'bedroom' ? 'bedroom' : r.templateKey === 'living' ? 'living' : r.templateKey === 'bath' ? 'bath' : 'blank'
+    };
+  });
+  var rows = Math.max.apply(null, [1].concat(blocks.map(function (b) { return b.floor.y + b.floor.h - 1; })));
+  return { rooms: blocks, area: area, cols: FLOOR_COLS, maxRows: FLOOR_MAX_ROWS, rows: rows, spaceName: sp.name };
+}
 function listRooms(spaceId) {
   var d = load();
   return d.rooms.filter(function (r) {
@@ -218,6 +292,16 @@ function updateRoom(id, patch) {
   if (patch.source !== undefined && ['manual', 'template', 'legacy_photo'].indexOf(patch.source) >= 0) rm.source = patch.source;
   if (patch.templateKey !== undefined) rm.templateKey = String(patch.templateKey || '');
   if (patch.layout !== undefined && patch.layout && typeof patch.layout === 'object') rm.layout = clone(patch.layout);
+  // 户型总览排布：用户拖拽/缩放后的网格位置；仅接受合法整数区间，越界由页面层校验后传入
+  if (patch.floor !== undefined) {
+    if (patch.floor === null || patch.floor === '') rm.floor = undefined;
+    else if (patch.floor && typeof patch.floor === 'object') {
+      rm.floor = {
+        x: Math.round(Number(patch.floor.x) || 1), y: Math.round(Number(patch.floor.y) || 1),
+        w: Math.round(Number(patch.floor.w) || 1), h: Math.round(Number(patch.floor.h) || 1)
+      };
+    }
+  }
   rm.updatedAt = now();
   var r = commit(); return r.ok ? { ok: true, data: clone(rm) } : r;
 }
@@ -872,7 +956,42 @@ function seedDemo() {
     photos: [], task: { status: 'none', taskId: '', error: '' }, archived: false, createdAt: now(), updatedAt: now()
   };
   d.rooms.push(rm);
+  // 主卧在户型总览中的排布（与 demo 默认槽位一致）
+  rm.floor = { x: 1, y: 1, w: 3, h: 3 };
+  rm.templateKey = 'bedroom';
   d.settings.activeSpaceId = sp.id;
+
+  // 追加客厅/卫生间，使首页户型总览接近既定演示样貌（仅新增，不改主卧既有数据）
+  function seedExtraRoom(name, width, depth, height, tpl, floor, furnList) {
+    var r = {
+      id: uid('rm'), spaceId: sp.id, name: name, width: width, depth: depth, height: height, calibrated: true,
+      source: 'manual', templateKey: tpl, layout: makeLayout({ width: width, depth: depth, height: height }),
+      floor: floor, photos: [], task: { status: 'none', taskId: '', error: '' },
+      archived: false, createdAt: now(), updatedAt: now()
+    };
+    d.rooms.push(r);
+    furnList.forEach(function (f) {
+      var lib = C.FURNITURE_LIB[f[0]] || { size: [0.5, 0.5, 0.5], vars: ['默认'] };
+      var fu = {
+        id: uid('fu'), roomId: r.id, category: f[0], name: f[1], model: lib.vars[0],
+        position: { x: f[2], y: 0, z: f[3] }, rotation: 0,
+        size: { w: lib.size[0], h: lib.size[1], d: lib.size[2] },
+        source: 'manual', status: 'confirmed', confidence: 0, createdAt: now(), updatedAt: now()
+      };
+      d.furniture.push(fu);
+      d.nodes.push({
+        id: uid('nd'), roomId: r.id, furnitureId: fu.id, parentId: '', name: f[1], type: '家具',
+        order: d.nodes.filter(function (x) { return x.roomId === r.id && !x.parentId; }).length,
+        createdAt: now(), updatedAt: now()
+      });
+    });
+  }
+  seedExtraRoom('客厅', 4.2, 3.8, 2.8, 'living', { x: 4, y: 1, w: 3, h: 4 }, [
+    ['电视柜', '电视柜', 0, -1.4], ['沙发', '三人沙发', 0, 1.2], ['茶几', '茶几', 0, 0]
+  ]);
+  seedExtraRoom('卫生间', 2.4, 2.0, 2.6, 'bath', { x: 1, y: 4, w: 3, h: 2 }, [
+    ['收纳盒', '浴室收纳盒', -0.8, -0.8], ['抽屉', '镜柜抽屉', 0.8, -1]
+  ]);
 
   function addF(cat, name, x, z, rot) {
     var lib = C.FURNITURE_LIB[cat] || { size: [0.5, 0.5, 0.5], vars: ['默认'] };
@@ -951,7 +1070,10 @@ module.exports = {
   // 提醒
   listAlerts: listAlerts, ignoreAlert: ignoreAlert,
   // 统计与演示
-  getStats: getStats, seedDemo: seedDemo, clearAll: clearAll,
+  getStats: getStats, getHomeOverview: getHomeOverview,
+  floorValid: floorValid, autoFloorPlace: autoFloorPlace,
+  FLOOR_COLS: FLOOR_COLS, FLOOR_MAX_ROWS: FLOOR_MAX_ROWS,
+  seedDemo: seedDemo, clearAll: clearAll,
   // 工具
   fmtTime: fmtTime, uid: uid,
 
