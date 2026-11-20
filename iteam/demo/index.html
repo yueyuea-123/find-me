@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>居所收纳 · MVP 可交互演示</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- 图标 sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <g id="i-home" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5 8 3l5 4.5V13H3z"/><path d="M6.3 13V9.6h3.4V13"/></g>
+  <g id="i-grid" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1"/><rect x="9" y="2.5" width="4.5" height="4.5" rx="1"/><rect x="2.5" y="9" width="4.5" height="4.5" rx="1"/><rect x="9" y="9" width="4.5" height="4.5" rx="1"/></g>
+  <g id="i-box" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 5.3 8 2.6l5.4 2.7v5.4L8 13.4 2.6 10.7z"/><path d="M2.6 5.3 8 8l5.4-2.7M8 8v5.4"/></g>
+  <g id="i-list" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5.5 4h8M5.5 8h8M5.5 12h8"/><circle cx="3" cy="4" r=".6" fill="currentColor" stroke="none"/><circle cx="3" cy="8" r=".6" fill="currentColor" stroke="none"/><circle cx="3" cy="12" r=".6" fill="currentColor" stroke="none"/></g>
+  <g id="i-user" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="5.4" r="2.5"/><path d="M3.5 13.5c0-2.5 2-4.3 4.5-4.3s4.5 1.8 4.5 4.3"/></g>
+  <g id="i-bell" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.2 7a3.8 3.8 0 0 1 7.6 0v3l1.2 2H3l1.2-2z"/><path d="M6.6 12.5a1.4 1.4 0 0 0 2.8 0"/></g>
+  <g id="i-plus" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></g>
+  <g id="i-chev" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l4 4-4 4"/></g>
+  <g id="i-chev-d" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></g>
+  <g id="i-back" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4l-4 4 4 4"/></g>
+  <g id="i-edit" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3l2 2-7 7-2.6.6.6-2.6z"/></g>
+  <g id="i-clock" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M8 4.8V8l2.2 1.6"/></g>
+  <g id="i-move" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.6v10.8M2.6 8h10.8M8 2.6 6.4 4.2M8 2.6 9.6 4.2M8 13.4l-1.6-1.6M8 13.4l1.6-1.6M2.6 8 4.2 6.4M2.6 8 4.2 9.6M13.4 8 11.8 6.4M13.4 8 11.8 9.6"/></g>
+  <g id="i-layers" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.6 2.8 5.5 8 8.4l5.2-2.9z"/><path d="M2.8 8.4 8 11.3l5.2-2.9M2.8 11 8 14l5.2-3"/></g>
+  <g id="i-eye" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1.8 8S4.3 4.4 8 4.4 14.2 8 14.2 8 11.7 11.6 8 11.6 1.8 8 1.8 8z"/><circle cx="8" cy="8" r="1.7"/></g>
+  <g id="i-warn" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.6v4M8 11v.6"/></g>
+  <g id="i-link" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 9.4 9.4 6.6"/><path d="M7.4 4.8 8.6 3.6a2.6 2.6 0 0 1 3.7 3.7l-1.2 1.2M8.6 11.2l-1.2 1.2a2.6 2.6 0 0 1-3.7-3.7l1.2-1.2"/></g>
+  <g id="i-trash" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5h10M6 4.5V3h4v1.5M4.5 4.5l.6 8h5.8l.6-8"/></g>
+  <g id="i-sync" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13 6A5 5 0 0 0 4 5M3 10a5 5 0 0 0 9 1"/><path d="M13 3v3h-3M3 13v-3h3"/></g>
+</defs></svg>
+
+<header class="topbar">
+  <div class="tb-left">
+    <div class="tb-mark">居</div>
+    <div>
+      <h1>居所收纳 · MVP 可交互演示</h1>
+      <p>依据产品方案 V1.2（CR-001）与 MVP 冻结清单 V1.1 · 数据为模拟，仅用于确认界面与流程</p>
+    </div>
+  </div>
+  <div class="tb-right">
+    <span class="badge">本地演示模式</span>
+    <button class="ghost-btn" data-act="reset-demo">重置演示数据</button>
+  </div>
+</header>
+
+<main class="stage">
+
+  <!-- ============ 左：手机 ============ -->
+  <section class="device-col">
+    <div class="device-caption">
+      <span class="dc-title">应用界面</span>
+      <span class="dc-hint">可直接点击界面操作，或用右侧引导逐步演示</span>
+    </div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen" id="screen"><!-- JS 渲染 --></div>
+    </div>
+    <div class="device-foot">
+      <span id="crumb">当前：首页</span>
+      <span class="df-tip">支持浏览器前进 / 后退</span>
+    </div>
+  </section>
+
+  <!-- ============ 右：流程引导 ============ -->
+  <aside class="guide-col">
+    <div class="guide-head">
+      <h2>主路径演示</h2>
+      <p>选择流程后点「演示下一步」，界面会按方案口径真实变更数据；也可在左侧手机里手动操作。</p>
+    </div>
+
+    <div class="flow-tabs" id="flowTabs"><!-- JS 渲染 --></div>
+
+    <div class="flow-body">
+      <div class="flow-meta">
+        <div>
+          <div class="fm-title" id="flowTitle">—</div>
+          <div class="fm-goal" id="flowGoal">—</div>
+        </div>
+        <div class="fm-progress" id="flowProgress">0 / 0</div>
+      </div>
+      <ol class="steps" id="steps"><!-- JS 渲染 --></ol>
+      <div class="step-note" id="stepNote">—</div>
+      <div class="flow-actions">
+        <button class="secondary-btn" data-act="flow-prev">上一步</button>
+        <button class="primary-btn" data-act="flow-next">演示下一步 →</button>
+      </div>
+    </div>
+
+    <div class="data-panel">
+      <div class="dp-head">
+        <h3>内存数据快照</h3>
+        <span class="dp-live"><i></i>实时</span>
+      </div>
+      <div class="dp-grid" id="dataGrid"><!-- JS 渲染 --></div>
+      <div class="dp-log" id="dataLog"><!-- JS 渲染 --></div>
+    </div>
+
+    <details class="edge-panel">
+      <summary>异常与降级口径（可手动验证）</summary>
+      <ul>
+        <li>库存消耗导致余额为负 → 拒绝操作，纠错走「调整」交易</li>
+        <li>删除含物品的节点 / 家具 → 阻断并提示先迁移或归档</li>
+        <li>三维不可用 → 切换「列表」视图，物品管理仍可完成</li>
+        <li>位置未知首次确认到具体位置 → 记为独立事件，不伪装为移动</li>
+      </ul>
+    </details>
+  </aside>
+</main>
+
+<div class="toast-host" id="toastHost"></div>
+<div class="sheet-mask" id="sheetMask"></div>
+<div class="sheet" id="sheet"><!-- JS 渲染 --></div>
+
+<script src="app.js"></script>
+</body>
+</html>
