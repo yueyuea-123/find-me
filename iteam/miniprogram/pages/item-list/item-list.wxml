@@ -13,6 +13,17 @@
       </picker>
       <view class="filter-pill {{includeEnded?'on':''}}" bindtap="toggleEnded">含已结束</view>
     </view>
+    <view class="filter-row">
+      <picker mode="selector" range="{{spaceOptions}}" range-key="name" value="{{spaceIndex}}" bindchange="onSpace">
+        <view class="filter-pill">{{spaceOptions[spaceIndex].name}} ▾</view>
+      </picker>
+      <picker mode="selector" range="{{roomOptions}}" range-key="name" value="{{roomIndex}}" bindchange="onRoom">
+        <view class="filter-pill">{{roomOptions[roomIndex].name}} ▾</view>
+      </picker>
+      <picker mode="selector" range="{{nodeOptions}}" range-key="label" value="{{nodeIndex}}" bindchange="onNode">
+        <view class="filter-pill">{{nodeOptions[nodeIndex].label}} ▾</view>
+      </picker>
+    </view>
   </view>
 
   <view class="card item-card" wx:for="{{items}}" wx:key="id" bindtap="openItem" data-id="{{item.id}}">
@@ -21,6 +32,7 @@
         <view class="strong" style="font-size:30rpx">{{item.name}} <text class="tag {{item.mgmtClass}}">{{item.mgmtText}}</text> <text class="tag {{item.locClass}}">{{item.locText}}</text></view>
         <view class="small muted" style="margin-top:8rpx">{{item.catText}} · {{item.modeText}} · 完善度 {{item.completed}}%</view>
         <view class="small muted" style="margin-top:6rpx">位置：{{item.locPath}}</view>
+        <view class="small" style="margin-top:6rpx;color:#8A94A0" wx:if="{{item.disposalText}}">处置：{{item.disposalText}}</view>
       </view>
       <text class="muted">▸</text>
     </view>

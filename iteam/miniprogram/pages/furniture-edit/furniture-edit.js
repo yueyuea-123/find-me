@@ -8,7 +8,7 @@ Page({
   data: {
     editing: false, id: '', roomId: '', formError: '',
     categories: cats, catIndex: 0, models: [], modelIndex: 0,
-    formName: '', fw: '', fh: '', fd: '', px: '', pz: ''
+    formName: '', fw: '', fh: '', fd: '', px: '', pz: '', rotDeg: '0'
   },
 
   onLoad: function (q) {
@@ -25,7 +25,8 @@ Page({
         models: mv, modelIndex: Math.max(0, mv.indexOf(f.model)),
         formName: f.name,
         fw: String(f.size.w), fh: String(f.size.h), fd: String(f.size.d),
-        px: String(f.position.x || 0), pz: String(f.position.z || 0)
+        px: String(f.position.x || 0), pz: String(f.position.z || 0),
+        rotDeg: String(Math.round((f.rotation || 0) * 180 / Math.PI))
       });
     }
   },
@@ -42,6 +43,7 @@ Page({
   onD: function (e) { this.setData({ fd: e.detail.value }); },
   onX: function (e) { this.setData({ px: e.detail.value }); },
   onZ: function (e) { this.setData({ pz: e.detail.value }); },
+  onRot: function (e) { this.setData({ rotDeg: e.detail.value }); },
 
   save: function () {
     var d = this.data;
@@ -49,13 +51,16 @@ Page({
     var name = (d.formName || '').trim() || cats[d.catIndex];
     var size = { w: Number(d.fw) || 0.5, h: Number(d.fh) || 0.5, d: Number(d.fd) || 0.5 };
     var pos = { x: Number(d.px) || 0, y: 0, z: Number(d.pz) || 0 };
+    // UI-007：旋转输入（角度→弧度），归一化到 [0, 2π)
+    var rot = (Number(d.rotDeg) || 0) * Math.PI / 180;
+    rot = ((rot % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
     var r;
     if (d.editing) {
-      r = store.updateFurniture(d.id, { name: name, model: d.models[d.modelIndex], size: size, position: pos });
+      r = store.updateFurniture(d.id, { name: name, model: d.models[d.modelIndex], size: size, position: pos, rotation: rot });
     } else {
       r = store.addFurniture(d.roomId, {
         category: cats[d.catIndex], name: name, model: d.models[d.modelIndex],
-        size: size, position: pos, source: 'manual'
+        size: size, position: pos, rotation: rot, source: 'manual'
       });
     }
     if (!r.ok) { this.setData({ formError: '保存失败：' + r.error }); return; }

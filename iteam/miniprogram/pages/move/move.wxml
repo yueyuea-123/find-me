@@ -17,11 +17,24 @@
     <view class="hint-box" wx:if="{{statusKey==='out'||statusKey==='borrowed'}}">记录外出/借出后，物品不再显示为在某个家庭内位置。日常随带无需记录；返回时再更新即可。</view>
   </view>
 
+  <view class="card" wx:if="{{statusKey==='borrowed'}}">
+    <view class="card-t">② 借出信息（可选）</view>
+    <view class="field">
+      <text class="label">借出对象</text>
+      <input class="input" placeholder="例如：同事小张" value="{{borrowTo}}" bindinput="onBorrowTo" />
+    </view>
+    <view class="field">
+      <text class="label">预计归还时间</text>
+      <input class="input" placeholder="例如：2026-12-01" value="{{dueDate}}" bindinput="onDueDate" />
+    </view>
+  </view>
+
   <view class="card" wx:if="{{statusKey==='at_home'}}">
     <view class="card-t">② 选择目标位置</view>
     <picker mode="selector" range="{{nodeOptions}}" range-key="label" value="{{nodeIndex}}" bindchange="onNode">
       <view class="picker">{{nodeOptions[nodeIndex].label}} ▾</view>
     </picker>
+    <view class="hint-box" wx:if="{{nodeIndex===0}}">选择索引 0 表示"在家，位置未知"，返回场景将记为"已带回/已归还"。</view>
   </view>
 
   <view class="card">

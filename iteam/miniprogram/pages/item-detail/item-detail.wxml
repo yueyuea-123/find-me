@@ -17,6 +17,9 @@
     <view class="card-t">当前状态</view>
     <view class="kv"><text class="muted">位置状态</text><text class="tag {{item.locClass}}">{{item.locText}}</text></view>
     <view class="kv"><text class="muted">存放位置</text><text>{{item.locPath}}</text></view>
+    <view class="kv" wx:if="{{item.borrowTo}}"><text class="muted">借出对象</text><text>{{item.borrowTo}}</text></view>
+    <view class="kv" wx:if="{{item.dueDate}}"><text class="muted">预计归还</text><text>{{item.dueDate}}</text></view>
+    <view class="kv" wx:if="{{item.disposalText}}"><text class="muted">处置类型</text><text>{{item.disposalText}}</text></view>
     <view class="kv" wx:if="{{item.photo}}"><text class="muted">照片</text><image class="thumb" src="{{item.photo}}" mode="aspectFill" bindtap="previewPhoto"></image></view>
     <view class="kv" wx:if="{{item.note}}"><text class="muted">备注</text><text class="grow">{{item.note}}</text></view>
   </view>
@@ -30,20 +33,26 @@
       </view>
       <text class="tag {{inv.low?'red':'green'}}" wx:if="{{inv.threshold>0}}">{{inv.low?'低库存':'正常'}}</text>
     </view>
-    <view class="row" style="margin-top:16rpx">
+    <view class="row" style="margin-top:16rpx" wx:if="{{item.mgmt==='active'}}">
       <button class="btn sm primary" bindtap="goInventory">入库/消耗/调整</button>
       <button class="btn sm" bindtap="goTx">交易记录</button>
+    </view>
+    <view class="row" style="margin-top:16rpx" wx:else>
+      <button class="btn sm" bindtap="goTx">交易记录（只读）</button>
     </view>
   </view>
 
   <view class="card">
     <view class="card-t">操作</view>
     <view class="row wrap">
-      <button class="btn sm primary" bindtap="editItem">编辑资料</button>
-      <button class="btn sm" bindtap="moveItem">移动 / 改状态</button>
+      <block wx:if="{{item.mgmt==='active'}}">
+        <button class="btn sm primary" bindtap="editItem">编辑资料</button>
+        <button class="btn sm" bindtap="moveItem">移动 / 改状态</button>
+        <button class="btn sm danger" bindtap="endManage">结束管理</button>
+      </block>
       <button class="btn sm" bindtap="goHistory">位置历史</button>
-      <button class="btn sm danger" wx:if="{{item.mgmt==='active'}}" bindtap="endManage">结束管理</button>
       <button class="btn sm" wx:if="{{item.mgmt==='ended'}}" bindtap="restore">恢复日常管理</button>
     </view>
+    <view class="small muted" wx:if="{{item.mgmt==='ended'}}" style="margin-top:12rpx">已结束管理物品默认只读：可查看档案与历史，不可移动或进行库存交易。</view>
   </view>
 </view>

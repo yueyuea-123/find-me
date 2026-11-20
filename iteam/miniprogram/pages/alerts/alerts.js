@@ -2,9 +2,19 @@
 var store = require('../../utils/store.js');
 
 Page({
-  data: { alerts: [] },
+  data: {
+    alerts: [],
+    tabs: [
+      { key: 'pending', name: '待处理' },
+      { key: 'ignored', name: '已忽略' },
+      { key: 'recovered', name: '已恢复' }
+    ],
+    tabKey: 'pending'
+  },
   onShow: function () {
-    this.setData({ alerts: store.listAlerts().map(function (a) {
+    var key = this.data.tabKey;
+    var list = store.listAlerts({ includeRecovered: true }).filter(function (a) { return a.status === key; });
+    this.setData({ alerts: list.map(function (a) {
       return {
         id: a.id, itemId: a.itemId, name: a.name, status: a.status,
         balance: a.balance, threshold: a.threshold, unit: a.unit,
@@ -12,6 +22,7 @@ Page({
       };
     }) });
   },
+  switchTab: function (e) { this.setData({ tabKey: e.currentTarget.dataset.key }, this.onShow); },
   goDetail: function (e) { wx.navigateTo({ url: '/pages/inventory-detail/inventory-detail?id=' + e.currentTarget.dataset.id }); },
   ignore: function (e) {
     if (store.ignoreAlert(e.currentTarget.dataset.id).ok) {

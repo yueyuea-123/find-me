@@ -89,11 +89,20 @@ var ROOM_TEMPLATES = {
 // 收纳节点类型（PRD 5.2 位置层级）
 var NODE_TYPES = ['房间', '家具', '抽屉/隔层', '收纳盒', '表面', '其他'];
 
-// 库存变更类型（BR-010：调整与消耗分开记录）
+// 库存变更类型（BR-010：调整与消耗分开记录；处置结存单独成类，不伪装成消耗）
 var INVENTORY_TX_TYPES = [
   { key: 'in', name: '入库' },
   { key: 'consume', name: '消耗' },
-  { key: 'adjust', name: '调整' }
+  { key: 'adjust', name: '调整' },
+  { key: 'disposal', name: '处置结存' }
+];
+
+// 处置类型（TBD-003：'已结束管理'是管理状态，处置原因另设类型，不覆盖原分类）
+var DISPOSAL_TYPES = [
+  { key: 'discard', name: '丢弃' },
+  { key: 'gift', name: '赠送' },
+  { key: 'sale', name: '出售' },
+  { key: 'other', name: '其他' }
 ];
 
 // 位置事件类型（TBD-001 首次位置确认独立成类）
@@ -103,6 +112,7 @@ var MOVEMENT_TYPES = {
   move: '移动',
   out: '外出/借出',
   return: '带回/归还',
+  restore: '恢复日常管理',
   end: '结束管理'
 };
 
@@ -116,5 +126,6 @@ module.exports = {
   ROOM_TEMPLATES: ROOM_TEMPLATES,
   NODE_TYPES: NODE_TYPES,
   INVENTORY_TX_TYPES: INVENTORY_TX_TYPES,
+  DISPOSAL_TYPES: DISPOSAL_TYPES,
   MOVEMENT_TYPES: MOVEMENT_TYPES
 };

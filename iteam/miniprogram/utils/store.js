@@ -19,6 +19,9 @@ function blank() {
     version: 1,
     spaces: [], rooms: [], furniture: [], nodes: [], items: [],
     movements: [], inventory: [], transactions: [], alerts: [],
+    // 幂等去重：记录已处理的请求 id（moveItem / inventoryTx），避免重复提交产生重复历史/流水
+    // 说明：该字段仅用于本地单次操作去重，不属于云端集合契约，不进入 exportSnapshot
+    processedRequests: [],
     settings: { activeSpaceId: '', seeded: false }
   };
 }
@@ -82,6 +85,16 @@ function findById(list, id) {
 }
 
 function now() { return Date.now(); }
+
+// 幂等辅助：requestId 为空时不限制；已处理则命中去重
+function claimRequest(d, requestId) {
+  if (!requestId) return false;
+  if (!Array.isArray(d.processedRequests)) d.processedRequests = [];
+  if (d.processedRequests.indexOf(requestId) >= 0) return true;
+  d.processedRequests.push(requestId);
+  if (d.processedRequests.length > 500) d.processedRequests = d.processedRequests.slice(-500);
+  return false;
+}
 
 function fmtTime(ts) {
   var d = new Date(ts);
@@ -516,6 +529,8 @@ function listItems(filters) {
   var d = load();
   filters = filters || {};
   var list = d.items.slice();
+  // 显式筛选"已结束管理"时自动纳入已结束物品，避免结果恒为空（TBD-008）
+  if (filters.managementStatus === 'ended') filters.includeEnded = true;
   if (!filters.includeEnded) list = list.filter(function (it) { return it.managementStatus !== 'ended'; });
   if (filters.spaceId) list = list.filter(function (it) { return it.spaceId === filters.spaceId; });
   if (filters.keyword) {
@@ -526,6 +541,7 @@ function listItems(filters) {
   if (filters.locationStatus) list = list.filter(function (it) { return it.locationStatus === filters.locationStatus; });
   if (filters.managementStatus) list = list.filter(function (it) { return it.managementStatus === filters.managementStatus; });
   if (filters.trackingMode) list = list.filter(function (it) { return it.trackingMode === filters.trackingMode; });
+  if (filters.currentNodeId) list = list.filter(function (it) { return it.currentNodeId === filters.currentNodeId; });
   if (filters.roomId) {
     var roomNodeIds = d.nodes.filter(function (n) { return n.roomId === filters.roomId; }).map(function (n) { return n.id; });
     list = list.filter(function (it) { return roomNodeIds.indexOf(it.currentNodeId) >= 0; });
@@ -578,6 +594,8 @@ function calcCompletion(it) {
 function updateItem(id, patch) {
   var d = load(), it = findById(d.items, id);
   if (!it) return { ok: false, error: 'NOT_FOUND' };
+  // TBD-003：已结束管理物品默认只读，禁止普通资料编辑
+  if (it.managementStatus === 'ended') return { ok: false, error: 'ENDED_ITEM' };
   if (patch.name !== undefined) {
     patch.name = (patch.name || '').trim();
     if (!patch.name) return { ok: false, error: 'INVALID_NAME' };
@@ -591,6 +609,7 @@ function updateItem(id, patch) {
 function setItemTrackingMode(id, mode) {
   var d = load(), it = findById(d.items, id);
   if (!it) return { ok: false, error: 'NOT_FOUND' };
+  if (it.managementStatus === 'ended') return { ok: false, error: 'ENDED_ITEM' };
   if (!C.TRACK_MODES.some(function (m) { return m.key === mode; })) return { ok: false, error: 'INVALID_MODE' };
   it.trackingMode = mode; it.updatedAt = now();
   if ((mode === 'inventory' || mode === 'hybrid') && !findInventoryByItem(id)) {
@@ -612,22 +631,40 @@ function moveItem(id, opts) {
   var wasUnknown = it.locationStatus === 'unknown' || !it.currentNodeId;
   var goingOut = (newStatus === 'out' || newStatus === 'borrowed') && it.locationStatus === 'at_home';
   var returning = it.locationStatus === 'out' || it.locationStatus === 'borrowed';
+  // 同一位置/状态重复确认：不产生无意义的重复历史（业务规则 §8.2）
+  if (newStatus === it.locationStatus && (newPos || '') === (it.currentNodeId || '')) {
+    return { ok: true, data: clone(it), unchanged: true };
+  }
+  // 幂等：校验全部通过后、写入前占用 requestId；重复提交不重复写历史（PRD §12 / 业务规则 §8.2）
+  if (opts.requestId && claimRequest(d, opts.requestId)) {
+    return { ok: true, data: clone(it), idempotent: true };
+  }
   var type;
   if (wasUnknown && newPos && newStatus === 'at_home') type = 'first_confirm'; // TBD-001
   else if (goingOut) type = 'out';
-  else if (returning && newStatus === 'at_home') type = 'return';
+  // TBD-002：返回可选择具体位置，或"在家，位置未知"；两者都记为 return
+  else if (returning && (newStatus === 'at_home' || newStatus === 'unknown')) type = 'return';
   else type = 'move';
 
   var from = it.currentNodeId, fromStatus = it.locationStatus;
   it.currentNodeId = newPos || '';
   it.locationStatus = newStatus;
+  // TBD-002 可选字段：借出对象、预计归还时间（仅 borrowed 状态写入，其余清空）
+  if (newStatus === 'borrowed') {
+    it.borrowTo = opts.borrowTo || '';
+    it.dueDate = opts.dueDate || '';
+  } else {
+    it.borrowTo = '';
+    it.dueDate = '';
+  }
   it.updatedAt = now();
   it.completed = calcCompletion(it);
   d.movements.push({
     id: uid('mv'), itemId: id, type: type,
     fromNodeId: from, fromStatus: fromStatus,
     toNodeId: it.currentNodeId, toStatus: newStatus,
-    note: opts.note || '', createdAt: now()
+    borrowTo: it.borrowTo, dueDate: it.dueDate,
+    note: opts.note || '', requestId: opts.requestId || '', createdAt: now()
   });
   var r = commit(); return r.ok ? { ok: true, data: clone(it), eventType: type } : r;
 }
@@ -642,15 +679,47 @@ function endManagement(id, disposal) {
   // TBD-003：结束管理前须明确剩余库存去向，处置单独记录，不伪装成消耗
   var iv = findInventoryByItem(id);
   if (iv && iv.balance > 0 && !disposal) return { ok: false, error: 'NEED_DISPOSAL', balance: iv.balance };
-  it.managementStatus = 'ended'; it.updatedAt = now();
-  d.movements.push({ id: uid('mv'), itemId: id, type: 'end', note: disposal || '结束管理', createdAt: now() });
+  // 解析处置类型（兼容旧的字符串写法；对象写法区分处置类型与说明）
+  var dtype = 'other', dnote = '';
+  if (typeof disposal === 'string') { dnote = disposal || ''; }
+  else if (disposal && typeof disposal === 'object') {
+    dtype = C.DISPOSAL_TYPES.some(function (t) { return t.key === disposal.type; }) ? disposal.type : 'other';
+    dnote = disposal.note || '';
+  }
+  // 有剩余库存：先用"处置结存"交易清零，留痕且不伪装成消耗（业务规则附录 A）
+  if (iv && iv.balance > 0) {
+    var dname = (C.DISPOSAL_TYPES.filter(function (t) { return t.key === dtype; })[0] || {}).name || '其他';
+    var r0 = inventoryTx(id, 'disposal', iv.balance, '处置结存（' + dname + '）', { internal: true });
+    if (!r0.ok) return r0;
+  }
+  it.managementStatus = 'ended'; it.disposalType = dtype; it.updatedAt = now();
+  d.movements.push({
+    id: uid('mv'), itemId: id, type: 'end', disposalType: dtype,
+    note: dnote || '结束管理', createdAt: now()
+  });
+  // 结束管理后关闭该物品未结束的提醒周期
+  d.alerts.forEach(function (a) {
+    if (a.itemId === id && a.status !== 'recovered') { a.status = 'recovered'; a.recoveredAt = now(); }
+  });
   var r = commit(); return r.ok ? { ok: true } : r;
 }
-function restoreItem(id) {
+// TBD-003：恢复时不自动恢复旧位置为当前事实；默认回到"位置未知"，由用户在移动页重新确认
+function restoreItem(id, opts) {
   var d = load(), it = findById(d.items, id);
   if (!it) return { ok: false, error: 'NOT_FOUND' };
-  it.managementStatus = 'active'; it.updatedAt = now();
-  return commit();
+  opts = opts || {};
+  it.managementStatus = 'active';
+  it.locationStatus = opts.locationStatus || 'unknown';
+  it.currentNodeId = opts.currentNodeId || '';
+  it.borrowTo = ''; it.dueDate = '';
+  delete it.disposalType;
+  it.updatedAt = now();
+  d.movements.push({
+    id: uid('mv'), itemId: id, type: 'restore',
+    toStatus: it.locationStatus, toNodeId: it.currentNodeId,
+    note: opts.note || '恢复日常管理，位置需重新确认', createdAt: now()
+  });
+  var r = commit(); return r.ok ? { ok: true, data: clone(it) } : r;
 }
 
 // ---------- 库存（PRD-025~029 / BR-010~012 / TBD-005/007） ----------
@@ -676,6 +745,8 @@ function listInventory() {
 function updateInventory(itemId, patch) {
   var d = load(), iv = findInventoryByItem(itemId);
   if (!iv) return { ok: false, error: 'NOT_FOUND' };
+  var _it = findById(d.items, itemId);
+  if (_it && _it.managementStatus === 'ended') return { ok: false, error: 'ENDED_ITEM' };
   if (patch.unit !== undefined) {
     if (C.UNITS.indexOf(patch.unit) < 0) return { ok: false, error: 'INVALID_UNIT' };
     iv.unit = patch.unit;
@@ -686,20 +757,33 @@ function updateInventory(itemId, patch) {
   if (r.ok) refreshAlertsForItem(itemId);
   return r;
 }
-function inventoryTx(itemId, type, amount, note) {
+function inventoryTx(itemId, type, amount, note, opts) {
   var d = load(), iv = findInventoryByItem(itemId);
   if (!iv) return { ok: false, error: 'NOT_FOUND' };
+  var _it = findById(d.items, itemId);
+  if (_it && _it.managementStatus === 'ended') return { ok: false, error: 'ENDED_ITEM' };
+  opts = opts || {};
   if (C.INVENTORY_TX_TYPES.map(function (t) { return t.key; }).indexOf(type) < 0) return { ok: false, error: 'INVALID_TYPE' };
   amount = Number(amount);
   if (!isFinite(amount) || amount <= 0) return { ok: false, error: 'INVALID_AMOUNT' };
-  var delta = (type === 'consume') ? -amount : amount;
+  // TBD-003：处置结存用于结束管理时清零剩余库存，不伪装成消耗
+  if (type === 'disposal' && !opts.internal) return { ok: false, error: 'INVALID_TYPE' };
+  if (type === 'adjust' && !opts.internal && !(opts.reason || (note || '').trim())) {
+    return { ok: false, error: 'REASON_REQUIRED' };
+  }
+  var delta = (type === 'consume' || type === 'disposal') ? -amount : amount;
   var next = iv.balance + delta;
   if (next < 0) return { ok: false, error: 'BELOW_ZERO', balance: iv.balance }; // BR-011 库存不为负
+  // 幂等：全部校验通过后、写入前占用 requestId；重复提交不重复入账（业务规则 §9.2/§12）
+  if (opts.requestId && claimRequest(d, opts.requestId)) {
+    return { ok: true, balance: iv.balance, idempotent: true };
+  }
   // BR-010：每次变更都有交易记录，余额与结果一致；adjust 与 consume 分开记录
   iv.balance = next; iv.updatedAt = now();
   d.transactions.push({
     id: uid('tx'), itemId: itemId, type: type, delta: delta,
-    balanceAfter: next, note: note || '', createdAt: now()
+    balanceAfter: next, note: note || '', reason: opts.reason || '',
+    requestId: opts.requestId || '', createdAt: now()
   });
   var r = commit();
   if (r.ok) refreshAlertsForItem(itemId);
@@ -735,9 +819,12 @@ function refreshAlertsForItem(itemId) {
   }
   commit();
 }
-function listAlerts() {
+function listAlerts(opts) {
   var d = load();
-  return d.alerts.filter(function (a) { return a.status === 'pending' || a.status === 'ignored'; })
+  opts = opts || {};
+  return d.alerts.filter(function (a) {
+    return opts.includeRecovered ? true : (a.status === 'pending' || a.status === 'ignored');
+  })
     .map(function (a) {
       var it = findById(d.items, a.itemId);
       var iv = findInventoryByItem(a.itemId);

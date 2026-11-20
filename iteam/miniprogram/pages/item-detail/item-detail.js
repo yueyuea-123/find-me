@@ -12,6 +12,8 @@ Page({
     if (!it) { wx.showToast({ title: '物品不存在', icon: 'none' }); return; }
     var stMap = { at_home: '在家', unknown: '位置未知', out: '外出', borrowed: '借出' };
     var modeMap = { location: '只记位置', inventory: '只记库存', hybrid: '位置+库存' };
+    var dMap = {};
+    (C.DISPOSAL_TYPES || []).forEach(function (d) { dMap[d.key] = d.name; });
     var iv = store.findInventoryByItem(it.id);
     var inv = null;
     if (iv && it.trackingMode !== 'location') {
@@ -28,7 +30,9 @@ Page({
         trackingMode: it.trackingMode,
         mgmt: it.managementStatus,
         mgmtText: it.managementStatus === 'ended' ? '已结束管理' : '日常管理',
-        mgmtClass: it.managementStatus === 'ended' ? 'gray' : 'green'
+        mgmtClass: it.managementStatus === 'ended' ? 'gray' : 'green',
+        disposalText: it.disposalType ? (dMap[it.disposalType] || it.disposalType) : '',
+        borrowTo: it.borrowTo || '', dueDate: it.dueDate || ''
       },
       inv: inv
     });
@@ -47,37 +51,37 @@ Page({
 
   endManage: function () {
     var self = this;
-    wx.showModal({
-      title: '结束管理',
-      content: '档案与历史会长期保留，但退出日常列表（可搜索、可恢复）。若有剩余库存需先明确去向。',
+    var types = (C.DISPOSAL_TYPES || []).map(function (d) { return d.name; });
+    wx.showActionSheet({
+      itemList: types,
       success: function (res) {
-        if (!res.confirm) return;
-        var r = store.endManagement(self._id, '手动结束管理');
-        if (!r.ok) {
-          if (r.error === 'NEED_DISPOSAL') {
-            wx.showModal({
-              title: '尚有剩余库存',
-              content: '该物品库存为 ' + r.balance + '，请先通过「入库/消耗/调整」处理剩余库存，或在下方填写处置说明。',
-              editable: true, placeholderText: '如：已赠送 / 已丢弃',
-              success: function (r2) {
-                if (!r2.confirm || !(r2.content || '').trim()) return;
-                var r3 = store.endManagement(self._id, r2.content.trim());
-                if (r3.ok) { wx.showToast({ title: '已结束管理', icon: 'success' }); self.load(); }
-              }
-            });
-          } else wx.showToast({ title: '操作失败：' + r.error, icon: 'none' });
-          return;
-        }
-        wx.showToast({ title: '已结束管理', icon: 'success' }); self.load();
+        var idx = res.tapIndex;
+        if (idx === undefined || idx < 0 || idx >= types.length) return;
+        var dtype = C.DISPOSAL_TYPES[idx].key;
+        wx.showModal({
+          title: '结束管理',
+          content: '档案与历史会长期保留，退出日常列表后仍可搜索与恢复。若有剩余库存，将按「处置结存」记一笔交易并清零（不伪装成消耗）。',
+          editable: true, placeholderText: '处置说明（可选）',
+          success: function (m) {
+            if (!m.confirm) return;
+            var r = store.endManagement(self._id, { type: dtype, note: (m.content || '').trim() });
+            if (!r.ok) { wx.showToast({ title: '操作失败：' + r.error, icon: 'none' }); return; }
+            wx.showToast({ title: '已结束管理', icon: 'success' }); self.load();
+          }
+        });
       }
     });
   },
   restore: function () {
     var self = this;
     wx.showModal({
-      title: '恢复日常管理', content: '将该物品重新纳入日常列表？',
+      title: '恢复日常管理',
+      content: '恢复后不会自动沿用旧位置，需重新确认现实状态与当前位置；确认后请到「移动 / 改状态」补充位置。',
       success: function (res) {
-        if (res.confirm && store.restoreItem(self._id).ok) { wx.showToast({ title: '已恢复', icon: 'success' }); self.load(); }
+        if (!res.confirm) return;
+        var r = store.restoreItem(self._id);
+        if (!r.ok) { wx.showToast({ title: '恢复失败：' + r.error, icon: 'none' }); return; }
+        wx.showToast({ title: '已恢复，请补充当前位置', icon: 'none' }); self.load();
       }
     });
   }

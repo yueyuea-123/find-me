@@ -9,7 +9,7 @@ Page({
     modes: C.TRACK_MODES, modeIndex: 0, needInventory: false,
     balance: '', units: C.UNITS, unitIndex: 0, threshold: '',
     nodeOptions: [{ id: '', label: '位置未知 / 暂不指定' }], nodeIndex: 0, hasNode: false,
-    locStatus: C.LOCATION_STATUS, locIndex: 1, note: ''
+    locStatus: C.LOCATION_STATUS, locIndex: 1, note: '', photoPath: ''
   },
 
   onLoad: function (q) {
@@ -47,7 +47,8 @@ Page({
         modeIndex: modeI, needInventory: need,
         balance: iv.balance !== undefined ? String(iv.balance) : '',
         unitIndex: unitI, threshold: iv.threshold ? String(iv.threshold) : '',
-        nodeIndex: nI, hasNode: hasN, locIndex: locI, note: it.note || ''
+        nodeIndex: nI, hasNode: hasN, locIndex: locI, note: it.note || '',
+        photoPath: it.photoPath || ''
       });
     }
   },
@@ -68,6 +69,17 @@ Page({
   },
   onLoc: function (e) { this.setData({ locIndex: Number(e.detail.value) }); },
   onNote: function (e) { this.setData({ note: e.detail.value }); },
+  choosePhoto: function () {
+    var self = this;
+    wx.chooseMedia({
+      count: 1, mediaType: ['image'], sourceType: ['album', 'camera'],
+      success: function (res) {
+        var f = res && res.tempFiles && res.tempFiles[0];
+        if (f && f.tempFilePath) self.setData({ photoPath: f.tempFilePath });
+      }
+    });
+  },
+  clearPhoto: function () { this.setData({ photoPath: '' }); },
 
   buildOpts: function () {
     var d = this.data;
@@ -75,7 +87,7 @@ Page({
     var opts = {
       name: (d.formName || '').trim(),
       category: d.categories[d.catIndex],
-      note: d.note,
+      note: d.note, photoPath: d.photoPath,
       trackingMode: C.TRACK_MODES[d.modeIndex].key,
       currentNodeId: nodeId,
       locationStatus: nodeId ? 'at_home' : C.LOCATION_STATUS[d.locIndex].key
@@ -106,7 +118,8 @@ Page({
     if (this.data.editing) {
       // 编辑：只更新基础字段；跟踪模式/库存单独处理
       r = store.updateItem(this.data.id, {
-        name: opts.name, category: opts.category, note: opts.note, locationStatus: opts.locationStatus
+        name: opts.name, category: opts.category, note: opts.note,
+        photoPath: opts.photoPath, locationStatus: opts.locationStatus
       });
       if (r.ok && this.data.needInventory) {
         store.updateInventory(this.data.id, { unit: opts.unit, threshold: opts.threshold });
@@ -118,6 +131,7 @@ Page({
       }
     }
     if (!r.ok) { this.setData({ formError: '保存失败：' + r.error }); return; }
+    if (cont) this.setData({ continuous: true }); // UI-011 连续添加态标识
     wx.showToast({ title: cont ? '已保存，继续添加' : '已保存', icon: 'success' });
     if (cont) {
       this.setData({ formName: '', note: '', formError: '' });

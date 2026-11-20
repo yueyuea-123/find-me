@@ -8,10 +8,28 @@ Page({
     statusOptions: [{ key: '', name: '全部状态' }, { key: 'active', name: '日常管理' }, { key: 'ended', name: '已结束管理' }],
     stIndex: 0,
     catOptions: ['全部分类'].concat(C.ITEM_CATEGORIES), catIndex: 0,
-    locOptions: [{ key: '', name: '全部位置' }].concat(C.LOCATION_STATUS), locIndex: 0
+    locOptions: [{ key: '', name: '全部位置' }].concat(C.LOCATION_STATUS), locIndex: 0,
+    spaceOptions: [], spaceIndex: 0,
+    roomOptions: [], roomIndex: 0,
+    nodeOptions: [], nodeIndex: 0
   },
   onLoad: function (q) { if (q && q.ended) this.setData({ includeEnded: true, stIndex: 2 }); },
-  onShow: function () { this.load(); },
+  onShow: function () { this.loadFilterOptions(); this.load(); },
+
+  loadFilterOptions: function () {
+    var spaces = [{ id: '', name: '全部空间' }].concat(store.listAllSpaces());
+    var rooms = [{ id: '', name: '全部房间' }];
+    store.listAllSpaces().forEach(function (sp) {
+      store.listRooms(sp.id).forEach(function (rm) { rooms.push({ id: rm.id, name: sp.name + ' / ' + rm.name }); });
+    });
+    var nodes = [{ id: '', label: '全部当前位置' }];
+    store.listAllSpaces().forEach(function (sp) {
+      store.listRooms(sp.id).forEach(function (rm) {
+        store.listNodes(rm.id).forEach(function (n) { nodes.push({ id: n.id, label: store.nodePath(n.id).join(' / ') }); });
+      });
+    });
+    this.setData({ spaceOptions: spaces, roomOptions: rooms, nodeOptions: nodes });
+  },
 
   load: function () {
     var d = this.data;
@@ -21,7 +39,14 @@ Page({
     if (d.catIndex > 0) filters.category = d.catOptions[d.catIndex];
     var loc = d.locOptions[d.locIndex].key;
     if (loc) filters.locationStatus = loc;
-    var hasFilter = !!(d.keyword || st || d.catIndex > 0 || loc || d.includeEnded);
+    var sp = d.spaceOptions[d.spaceIndex];
+    if (sp && sp.id) filters.spaceId = sp.id;
+    var rm = d.roomOptions[d.roomIndex];
+    if (rm && rm.id) filters.roomId = rm.id;
+    var nd = d.nodeOptions[d.nodeIndex];
+    if (nd && nd.id) filters.currentNodeId = nd.id;
+    var hasFilter = !!(d.keyword || st || d.catIndex > 0 || loc || d.includeEnded ||
+      (sp && sp.id) || (rm && rm.id) || (nd && nd.id));
 
     var list = store.listItems(filters).map(function (it) {
       var stMap = { at_home: '在家', unknown: '位置未知', out: '外出', borrowed: '借出' };
@@ -34,6 +59,7 @@ Page({
         locClass: it.locationStatus === 'at_home' ? 'green' : 'orange',
         mgmtText: it.managementStatus === 'ended' ? '已结束' : '',
         mgmtClass: it.managementStatus === 'ended' ? 'gray' : 'green',
+        disposalText: it.disposalType ? (C.DISPOSAL_TYPES.filter(function (x) { return x.key === it.disposalType; })[0] || {}).name || it.disposalType : '',
         locPath: path
       };
     });
@@ -44,6 +70,19 @@ Page({
   onStatus: function (e) { this.setData({ stIndex: Number(e.detail.value) }, this.load); },
   onCat: function (e) { this.setData({ catIndex: Number(e.detail.value) }, this.load); },
   onLoc: function (e) { this.setData({ locIndex: Number(e.detail.value) }, this.load); },
+  onSpace: function (e) { this.setData({ spaceIndex: Number(e.detail.value), roomIndex: 0, roomOptions: this._roomsFor(this.data.spaceOptions[Number(e.detail.value)].id) }, this.load); },
+  _roomsFor: function (spaceId) {
+    var rooms = [{ id: '', name: '全部房间' }];
+    (spaceId ? [spaceId] : store.listAllSpaces().map(function (s) { return s.id; })).forEach(function (sid) {
+      store.listRooms(sid).forEach(function (rm) {
+        var sp = store.listAllSpaces().filter(function (x) { return x.id === sid; })[0];
+        rooms.push({ id: rm.id, name: (sp ? sp.name + ' / ' : '') + rm.name });
+      });
+    });
+    return rooms;
+  },
+  onRoom: function (e) { this.setData({ roomIndex: Number(e.detail.value) }, this.load); },
+  onNode: function (e) { this.setData({ nodeIndex: Number(e.detail.value) }, this.load); },
   toggleEnded: function () { this.setData({ includeEnded: !this.data.includeEnded }, this.load); },
   openItem: function (e) { wx.navigateTo({ url: '/pages/item-detail/item-detail?id=' + e.currentTarget.dataset.id }); },
   addItem: function () { wx.navigateTo({ url: '/pages/item-edit/item-edit' }); }

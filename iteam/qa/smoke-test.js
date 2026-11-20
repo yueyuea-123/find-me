@@ -6,6 +6,8 @@
  *   A. App.onLaunch 初始化（演示数据）
  *   B. 数据层核心业务规则断言（BR-001/004/005/008/010/011/012、TBD-001/003/005）
  *   B2. CR-001/V1.2 新增能力断言（F-01 布局字段 / F-02 模型变换 / F-03 绑定 / F-07 模板）
+ *   B3. 已确认规则增补断言（TBD-002 借出/归还、TBD-003 只读与处置结存、TBD-005 提醒分类、
+ *       TBD-007 调整原因、TBD-008 组合筛选、移动/库存幂等与同址去抖）
  *   C. 21 个页面 onLoad/onShow/onReady 真实执行
  *   D. 每个页面全部 WXML 事件方法用模拟事件真实调用
  *   E. 所有跳转目标均为已注册页面
@@ -41,6 +43,7 @@ global.wx = {
   showToast: o => events.toast.push(o.title || ''),
   showLoading: () => {}, hideLoading: () => {},
   showModal: o => events.modal.push(o.title || ''),
+  showActionSheet: o => { events.modal.push('操作菜单'); if (o && o.success) o.success({ tapIndex: 0 }); },
   navigateTo: o => events.navigate.push(o.url),
   switchTab: o => events.navigate.push(o.url),
   redirectTo: o => events.navigate.push(o.url),
@@ -307,6 +310,86 @@ check('F-07/T9 应用模板批量写家具并按房间尺寸钳制，房间记 s
 });
 expectFail('F-07/T9 模板缺失时返回错误（供降级空白房间）',
   () => store.applyRoomTemplate(room.id, '__not_exist__'), 'TEMPLATE_NOT_FOUND');
+
+// ---------------------------------------------------------------- B3. 已确认规则增补断言（TBD-002/003/005/007/008）
+// 依据：业务规则说明书 V1.1 增补 A~E / PRD V1.1 增补章节；关闭审计发现的规则落地缺口。
+check('TBD-003 已结束管理物品禁止编辑资料', () => {
+  const t = store.addItem({ name: '只读测试-资料' }).data;
+  store.endManagement(t.id, { type: 'discard', note: '测试' });
+  const edit = store.updateItem(t.id, { name: '篡改' });
+  return edit.ok === false && edit.error === 'ENDED_ITEM';
+});
+expectFail('TBD-003 已结束管理物品禁止库存交易', () => {
+  const t = store.addItem({ name: '只读测试-库存', trackingMode: 'inventory', balance: 2, unit: '个' }).data;
+  store.endManagement(t.id, { type: 'discard' });
+  return store.inventoryTx(t.id, 'in', 1, '已结束仍入库');
+}, 'ENDED_ITEM');
+check('TBD-003 恢复不自动恢复旧位置，记为 restore 事件', () => {
+  const t = store.addItem({ name: '恢复测试', currentNodeId: drawer.id, locationStatus: 'at_home' }).data;
+  store.endManagement(t.id, { type: 'gift' });
+  const r = store.restoreItem(t.id);
+  return !!(r.ok && r.data.locationStatus === 'unknown' && r.data.currentNodeId === '' &&
+    store.listMovements(t.id).some(e => e.type === 'restore'));
+});
+check('TBD-003 处置类型独立建模，剩余库存以"处置结存"清零而非消耗', () => {
+  const t = store.addItem({ name: '处置测试', trackingMode: 'inventory', balance: 5, unit: '个' }).data;
+  const r = store.endManagement(t.id, { type: 'gift', note: '赠送邻居' });
+  const it = store.getItem(t.id);
+  const iv = store.findInventoryByItem(t.id);
+  const txs = store.listTransactions(t.id);
+  const dis = txs.filter(x => x.type === 'disposal');
+  const ev = store.listMovements(t.id).filter(e => e.type === 'end')[0];
+  return !!(r.ok && it.disposalType === 'gift' && iv.balance === 0 &&
+    dis.length === 1 && dis[0].delta === -5 && !!ev && ev.disposalType === 'gift');
+});
+check('TBD-002 借出记录对象/预计归还，返回记为 return 并清空借出字段', () => {
+  const t = store.addItem({ name: '借出测试', currentNodeId: drawer.id, locationStatus: 'at_home' }).data;
+  const out = store.moveItem(t.id, { locationStatus: 'borrowed', borrowTo: '小张', dueDate: '2026-12-01' });
+  const borrowedSnap = JSON.parse(JSON.stringify(store.getItem(t.id)));
+  const back = store.moveItem(t.id, { locationStatus: 'unknown' });
+  const after = store.getItem(t.id);
+  const evs = store.listMovements(t.id);
+  return !!(out.ok && borrowedSnap.borrowTo === '小张' && borrowedSnap.dueDate === '2026-12-01' &&
+    back.ok && back.eventType === 'return' && !after.borrowTo &&
+    evs.some(e => e.type === 'out' && e.borrowTo === '小张'));
+});
+check('幂等：同一 requestId 重复提交只产生一条历史', () => {
+  const t = store.addItem({ name: '幂等测试' }).data;
+  const req = store.uid('req');
+  // 两次使用不同目标位置，确保不是被"同位置不变更"短路，而是 requestId 去重生效
+  const r1 = store.moveItem(t.id, { currentNodeId: drawer.id, locationStatus: 'at_home', requestId: req });
+  const r2 = store.moveItem(t.id, { currentNodeId: '__different__', locationStatus: 'at_home', requestId: req });
+  const cnt = store.listMovements(t.id).filter(m => m.itemId === t.id).length;
+  return !!(r1.ok && r2.ok && r2.idempotent === true && cnt === 1);
+});
+check('幂等：同位置/状态重复确认不产生无意义历史', () => {
+  const t = store.addItem({ name: '重复确认测试' }).data;
+  store.moveItem(t.id, { currentNodeId: drawer.id, locationStatus: 'at_home' });
+  const r2 = store.moveItem(t.id, { currentNodeId: drawer.id, locationStatus: 'at_home' });
+  return !!(r2.ok && r2.unchanged === true && store.listMovements(t.id).length === 1);
+});
+check('TBD-007 库存调整必须填写原因', () => {
+  const t = store.addItem({ name: '调整原因测试', trackingMode: 'inventory', balance: 3, unit: '个' }).data;
+  const noReason = store.inventoryTx(t.id, 'adjust', 1, '', {});
+  const withReason = store.inventoryTx(t.id, 'adjust', 1, '盘点差异', { reason: '盘点差异' });
+  return !!(noReason.ok === false && noReason.error === 'REASON_REQUIRED' && withReason.ok);
+});
+check('TBD-008 组合筛选：管理状态=ended 自动纳入已结束物品', () => {
+  const t = store.addItem({ name: '筛选测试-结束' }).data;
+  store.endManagement(t.id, { type: 'discard' });
+  const list = store.listItems({ managementStatus: 'ended' });
+  return list.some(i => i.id === t.id);
+});
+check('TBD-008 组合筛选：当前位置维度生效', () => {
+  const t = store.addItem({ name: '筛选测试-位置', currentNodeId: drawer.id, locationStatus: 'at_home' }).data;
+  const hit = store.listItems({ currentNodeId: drawer.id });
+  const miss = store.listItems({ currentNodeId: 'node_not_exist' });
+  return hit.some(i => i.id === t.id) && !miss.some(i => i.id === t.id);
+});
+check('TBD-005 提醒中心可查询已恢复周期', () => {
+  const list = store.listAlerts({ includeRecovered: true });
+  return Array.isArray(list) && list.some(a => a.status === 'recovered');
+});
 
 // ---------------------------------------------------------------- C/D. 页面真实执行
 const woolItem = byName('羊毛毯');

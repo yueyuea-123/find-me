@@ -23,8 +23,8 @@
       <input class="input" type="digit" placeholder="输入正数" value="{{amount}}" bindinput="onAmount" />
     </view>
     <view class="field">
-      <text class="label">备注（可选）</text>
-      <input class="input" placeholder="例如：采购入库 / 日常使用" value="{{txNote}}" bindinput="onTxNote" />
+      <text class="label">{{txType==='adjust'?'调整原因（必填）':'备注（可选）'}}</text>
+      <input class="input" placeholder="{{txType==='adjust'?'例如：盘点差异修正':'例如：采购入库 / 日常使用'}}" value="{{txNote}}" bindinput="onTxNote" />
     </view>
     <button class="btn primary block" bindtap="submitTx">提交变更</button>
     <view class="small muted" style="margin-top:12rpx">调整与消耗分开记录；超额消耗被拒绝，库存不会低于零（BR-011）。</view>

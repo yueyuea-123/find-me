@@ -43,9 +43,18 @@ Page({
     var d = this.data;
     var amount = Number(d.amount);
     if (!(amount > 0)) { wx.showToast({ title: '请输入正数', icon: 'none' }); return; }
-    var r = store.inventoryTx(this._id, d.txType, amount, d.txNote);
+    if (d.txType === 'adjust' && !(d.txNote || '').trim()) {
+      wx.showToast({ title: '请填写调整原因', icon: 'none' }); return;
+    }
+    if (this._submitting) return;
+    this._submitting = true;
+    var r = store.inventoryTx(this._id, d.txType, amount, d.txNote, {
+      reason: d.txType === 'adjust' ? (d.txNote || '').trim() : '',
+      requestId: store.uid('req')
+    });
+    this._submitting = false;
     if (!r.ok) {
-      wx.showToast({ title: r.error === 'BELOW_ZERO' ? ('库存不足，当前 ' + r.balance) : '操作失败：' + r.error, icon: 'none' });
+      wx.showToast({ title: r.error === 'BELOW_ZERO' ? ('库存不足，当前 ' + r.balance) : (r.error === 'REASON_REQUIRED' ? '请填写调整原因' : '操作失败：' + r.error), icon: 'none' });
       return;
     }
     this.setData({ amount: '', txNote: '' });

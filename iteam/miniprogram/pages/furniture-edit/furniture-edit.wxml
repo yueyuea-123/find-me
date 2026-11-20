@@ -37,6 +37,10 @@
         <input class="input grow" type="number" placeholder="Z 前后" value="{{pz}}" bindinput="onZ" />
       </view>
     </view>
+    <view class="field">
+      <text class="label">旋转角度（度，0~360）</text>
+      <input class="input" type="number" placeholder="0" value="{{rotDeg}}" bindinput="onRot" />
+    </view>
     <button class="btn primary block" bindtap="save">保存家具</button>
     <button class="btn danger block" wx:if="{{editing}}" bindtap="remove">删除家具</button>
   </view>

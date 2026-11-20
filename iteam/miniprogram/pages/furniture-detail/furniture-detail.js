@@ -15,6 +15,8 @@ Page({
     if (this._id) {
       var f = store.getFurniture(this._id);
       if (!f) return;
+      // 回填房间 id：从三维页/家具列表以 ?id= 进入时 q.roomId 为空，新增节点需用家具所属房间
+      this._roomId = f.roomId;
       var lib = C.FURNITURE_LIB[f.category] || {};
       // 该家具为根节点的节点树（平铺，带路径）
       var all = store.listNodes(f.roomId);
