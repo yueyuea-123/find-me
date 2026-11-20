@@ -23,11 +23,11 @@
     "pages/privacy/privacy"
   ],
   "window": {
-    "backgroundColor": "#F5F6F8",
-    "backgroundTextStyle": "dark",
-    "navigationBarBackgroundColor": "#2B5F75",
+    "backgroundColor": "#FAF6EE",
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#FAF6EE",
     "navigationBarTitleText": "居所收纳",
-    "navigationBarTextStyle": "white",
+    "navigationBarTextStyle": "black",
     "enablePullDownRefresh": false
   },
   "tabBar": {

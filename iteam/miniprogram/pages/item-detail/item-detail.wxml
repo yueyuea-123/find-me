@@ -28,7 +28,7 @@
     <view class="card-t">库存</view>
     <view class="row between">
       <view>
-        <view class="strong" style="font-size:44rpx;color:{{inv.low?'#c0392b':'#2b7a9b'}}">{{inv.balance}} {{inv.unit}}</view>
+        <view class="strong" style="font-size:44rpx;color:{{inv.low?'#BE5F44':'#9C6B3F'}}">{{inv.balance}} {{inv.unit}}</view>
         <view class="small muted">最低阈值 {{inv.threshold}} {{inv.unit}}</view>
       </view>
       <text class="tag {{inv.low?'red':'green'}}" wx:if="{{inv.threshold>0}}">{{inv.low?'低库存':'正常'}}</text>
@@ -54,5 +54,14 @@
       <button class="btn sm" wx:if="{{item.mgmt==='ended'}}" bindtap="restore">恢复日常管理</button>
     </view>
     <view class="small muted" wx:if="{{item.mgmt==='ended'}}" style="margin-top:12rpx">已结束管理物品默认只读：可查看档案与历史，不可移动或进行库存交易。</view>
+  </view>
+</view>
+
+<view class="page" wx:else>
+  <view class="state">
+    <text class="state-icon">📦</text>
+    <text class="state-title">未找到该物品</text>
+    <text class="state-desc">档案可能已被清空或链接已失效，请返回物品列表查看。</text>
+    <button class="btn primary" style="margin-top:32rpx" bindtap="goBackList">返回物品列表</button>
   </view>
 </view>

@@ -1,2 +1,2 @@
 /* pages/privacy/privacy.wxss */
-.foot-note { text-align: center; color: #b0b8c0; font-size: 22rpx; margin-top: 40rpx; }
+.foot-note { text-align: center; color: #A29481; font-size: 22rpx; margin-top: 40rpx; }

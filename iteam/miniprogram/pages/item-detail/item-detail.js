@@ -42,6 +42,7 @@ Page({
   moveItem: function () { wx.navigateTo({ url: '/pages/move/move?id=' + this._id }); },
   goHistory: function () { wx.navigateTo({ url: '/pages/history/history?id=' + this._id }); },
   goInventory: function () { wx.navigateTo({ url: '/pages/inventory-detail/inventory-detail?id=' + this._id }); },
+  goBackList: function () { wx.redirectTo({ url: '/pages/item-list/item-list' }); },
   goTx: function () { wx.navigateTo({ url: '/pages/inventory-detail/inventory-detail?id=' + this._id + '&tab=tx' }); },
   previewPhoto: function () {
     var p = this.data.item && this.data.item.photo;

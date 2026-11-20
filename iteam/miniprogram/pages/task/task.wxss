@@ -1,4 +1,4 @@
 /* pages/task/task.wxss */
-.status-icon { font-size: 100rpx; color: #2b7a9b; line-height: 1.2; }
+.status-icon { font-size: 100rpx; color: #9C6B3F; line-height: 1.2; }
 .status-title { font-size: 34rpx; font-weight: 600; margin-top: 16rpx; }
-.hint-box { background: #f0f7fa; border-left: 6rpx solid #2b7a9b; color: #4a6572; font-size: 24rpx; padding: 18rpx 20rpx; border-radius: 8rpx; margin-top: 20rpx; line-height: 1.7; }
+.hint-box { background: #F6EDDC; border-left: 6rpx solid #9C6B3F; color: #6B5D4D; font-size: 24rpx; padding: 18rpx 20rpx; border-radius: 8rpx; margin-top: 20rpx; line-height: 1.7; }

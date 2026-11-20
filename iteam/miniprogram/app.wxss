@@ -78,6 +78,21 @@ button::after { border: none; }
 .state-title { font-size: 32rpx; font-weight: 600; display: block; margin-bottom: 12rpx; }
 .state-desc { font-size: 26rpx; color: #A29481; display: block; line-height: 1.6; }
 
+/* 选中态 / 提示条 / 内联说明（与 demo 的 chip.on / note-inline 一致） */
+.chip.on, .chip.sel, .seg-i.on, .mode.on { background: #9C6B3F; color: #fff; }
+.note-inline { font-size: 24rpx; color: #6B5D4D; background: #F6EDDC; border-radius: 16rpx; padding: 16rpx 20rpx; margin-top: 16rpx; line-height: 1.7; }
+.timeline-dot { width: 16rpx; height: 16rpx; border-radius: 50%; background: #9C6B3F; }
+
+/* 加载骨架屏（弱网/云拉取时的占位反馈，避免空白闪屏） */
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+.skeleton {
+  background: linear-gradient(90deg, #F3EDE2 25%, #EDE4D5 50%, #F3EDE2 75%);
+  background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 16rpx;
+}
+.skeleton-line { height: 28rpx; margin-bottom: 16rpx; }
+.skeleton-card { height: 180rpx; margin-bottom: 20rpx; }
+
 /* 列表项 */
 .list-item { background: #fff; border-radius: 40rpx; padding: 24rpx 28rpx; margin-bottom: 16rpx; }
 .item-title { font-size: 30rpx; font-weight: 600; color: #3B3229; }
