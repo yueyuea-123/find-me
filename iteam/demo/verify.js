@@ -200,6 +200,83 @@ function check(name, cond, detail) { results.push({ name, ok: !!cond, detail });
       return document.querySelectorAll('#screen .fp-room').length===4 && document.querySelector('#screen .floorplan').textContent.includes('测试书房');
     }catch(err){return false}})()`));
 
+    // 5c. 物品建档/详情/移动的交互优化
+    check('建档引导：详情页显示下一步引导条', await cdp.eval(`(function(){try{
+      document.querySelector('[data-act="reset-demo"]').click();
+      document.querySelector('.quick [data-p="itemEdit"]').click();
+      document.querySelector('#fName').value='引导测试';
+      document.querySelector('[data-act="save-item"]:not([data-continue])').click();
+      var txt=document.querySelector('#screen').textContent;
+      return txt.includes('档案已建立') && txt.includes('下一步') && !!document.querySelector('.guide-card [data-act="goto"]');
+    }catch(e){return false}})()`));
+
+    check('详情页：纯位置物品只有一个移动入口', await cdp.eval(`(function(){
+      var txt=document.querySelector('#screen').textContent;
+      return (txt.match(/移动物品/g)||[]).length===1;
+    })()`));
+
+    check('库存建档：切换模式展开初始字段并保存数量/单位/阈值', await cdp.eval(`(function(){try{
+      document.querySelector('[data-act="reset-demo"]').click();
+      document.querySelector('.quick [data-p="itemEdit"]').click();
+      var sel=document.querySelector('#fTrack'); sel.value='inventory'; sel.dispatchEvent(new Event('change',{bubbles:true}));
+      if (document.querySelector('#invInit').style.display==='none') return false;
+      document.querySelector('#fName').value='库存建档测试';
+      document.querySelector('#fQty').value='5';
+      document.querySelector('#fUnit').value='瓶';
+      document.querySelector('#fThreshold').value='2';
+      document.querySelector('[data-act="save-item"]:not([data-continue])').click();
+      var txt=document.querySelector('#screen').textContent;
+      return txt.includes('库存建档测试') && txt.includes('5 瓶') && txt.includes('阈值：2 瓶');
+    }catch(e){return false}})()`));
+
+    check('库存建档：初始数量不生成交易流水', await cdp.eval(`(function(){
+      document.querySelector('#screen [data-act="goto"][data-p="inventoryDetail"]').click();
+      var txt=document.querySelector('#screen').textContent;
+      return txt.includes('交易流水（0）') && txt.includes('暂无交易');
+    })()`));
+
+    check('库存建档：库存总览显示新物品及余额', await cdp.eval(`(function(){try{
+      for (var i=0;i<6 && !document.querySelector('.tabbar');i++) {
+        var bk=document.querySelector('#screen [data-act="back"]'); if(!bk) break; bk.click();
+      }
+      document.querySelector('.tabbar [data-p="inventory"]').click();
+      var txt=document.querySelector('#screen').textContent.replace(/\\s+/g,'');
+      return txt.includes('库存建档测试') && txt.includes('5瓶');
+    }catch(e){return false}})()`));
+
+    check('详情页：有库存物品主行动为「记一笔库存」且移动入口唯一', await cdp.eval(`(function(){try{
+      document.querySelector('[data-act="reset-demo"]').click();
+      document.querySelector('.quick [data-p="itemEdit"]').click();
+      var sel=document.querySelector('#fTrack'); sel.value='inventory'; sel.dispatchEvent(new Event('change',{bubbles:true}));
+      document.querySelector('#fName').value='去重测试';
+      document.querySelector('[data-act="save-item"]:not([data-continue])').click();
+      var txt=document.querySelector('#screen').textContent;
+      return (txt.match(/移动物品/g)||[]).length===1 && txt.includes('记一笔库存');
+    }catch(e){return false}})()`));
+
+    check('移动页：选中下层节点高亮并回显目标路径', await cdp.eval(`(function(){try{
+      document.querySelector('[data-act="reset-demo"]').click();
+      document.querySelector('.tabbar [data-p="itemList"]').click();
+      document.querySelector('#screen [data-act="goto"][data-p="itemDetail"]').click();
+      document.querySelector('#screen [data-act="goto"][data-p="move"]').click();
+      var chip=document.querySelector('#screen .chip[data-act="pick-node"]');
+      if (!chip) return false;
+      var id=chip.dataset.id, name=chip.textContent;
+      chip.click();
+      var after=document.querySelector('#screen .chip[data-act="pick-node"][data-id="'+id+'"]');
+      var txt=document.querySelector('#screen').textContent;
+      return !!after && after.classList.contains('sel') && txt.includes('目标位置：') && txt.includes(name);
+    }catch(e){return false}})()`));
+
+    check('移动页：选中上层节点高亮（与下层互斥）', await cdp.eval(`(function(){try{
+      var node=document.querySelector('#screen .tree-node.child[data-act="pick-node"]');
+      if (!node) return false;
+      var id=node.dataset.id;
+      node.click();
+      var after=document.querySelector('#screen .tree-node.child[data-act="pick-node"][data-id="'+id+'"]');
+      return !!after && after.classList.contains('sel') && !document.querySelector('#screen .chip.sel');
+    }catch(e){return false}})()`));
+
     // 6. 重置
     check('重置演示数据恢复初始', await cdp.eval(`(function(){document.querySelector('[data-act="reset-demo"]').click();return document.querySelectorAll('.stat .n')[0].textContent==='3' && document.querySelector('#dataLog').textContent.includes('等待操作')})()`));
 

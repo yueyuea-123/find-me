@@ -179,6 +179,8 @@ body{background:var(--stage-bg);color:var(--ink);font-family:var(--font-sans);li
 .bind .bi{color:var(--good)}.bind .bt{flex:1}.bind .bt b{font-size:11.5px}.bind .bt span{display:block;font-size:10px;color:var(--ink-2);margin-top:2px}
 .tree-node{padding:8px 10px;background:var(--surface-2);border-radius:var(--r-ctl);margin-top:6px;font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:8px}
 .tree-node .tn{flex:1}.tree-node.child{margin-left:18px;background:transparent;border:1px dashed var(--line)}
+.tree-node.child.sel{border:1px solid var(--accent);background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.chip.neutral.sel{background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent);font-weight:700}
 .timeline{position:relative;padding-left:16px}
 .timeline:before{content:"";position:absolute;left:4px;top:6px;bottom:6px;width:1px;background:var(--line)}
 .tl-item{position:relative;padding:0 0 14px 4px}
@@ -241,6 +243,11 @@ body{background:var(--stage-bg);color:var(--ink);font-family:var(--font-sans);li
 .sheet h3{font-size:15px;margin-bottom:4px}
 .sheet .sh-desc{font-size:11px;color:var(--ink-3);margin-bottom:10px}
 .sheet .sh-actions{display:flex;gap:8px;margin-top:14px}
+
+/* 建档后下一步引导 */
+.guide-card{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border-radius:var(--r-card);border:1px solid var(--accent);background:var(--accent-soft);margin-bottom:10px}
+.guide-card .gc-t{font-size:11.5px;font-weight:700;color:var(--accent);white-space:nowrap}
+.guide-card .gc-d{font-size:10.5px;color:var(--ink-2);flex:1;min-width:120px;line-height:1.4}
 
 @media(max-width:980px){
   .stage{grid-template-columns:1fr;gap:24px}

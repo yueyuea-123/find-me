@@ -416,14 +416,23 @@
   function pItemEdit() {
     const it = S.ui.ctx.id ? itemById(S.ui.ctx.id) : null;
     const presetNode = S.ui.ctx.node || '';
+    const mode = it ? it.trackingMode : 'location';
+    const hasInv = !!(it && invOf(it.id));
+    const showInv = (mode === 'inventory' || mode === 'hybrid') && !hasInv;
     return `<div class="scroll">
       <div class="card"><div class="card-t">${it ? '完善档案' : '新建物品档案'}</div><div class="muted">${it ? '仅名称即可建档，其余信息随时补充' : '只需名称即可保存；分类、照片、位置可后续补充（渐进式建档）'}</div>
         <div class="field"><label class="fl">名称 <span style="color:var(--alert)">*必填</span></label><input id="fName" value="${e(it ? it.name : '')}" placeholder="例如：蓝牙耳机"></div>
         <div class="field two"><div class="field"><label class="fl">分类</label><select id="fCat"><option value="">未分类</option>${CATS.map(c => `<option ${it && it.category === c ? 'selected' : ''}>${c}</option>`).join('')}</select></div>
-          <div class="field"><label class="fl">跟踪模式</label><select id="fTrack">${Object.keys(TRACKS).map(k => `<option value="${k}" ${it && it.trackingMode === k ? 'selected' : ''}>${TRACKS[k]}</option>`).join('')}</select></div></div>
+          <div class="field"><label class="fl">跟踪模式</label><select id="fTrack">${Object.keys(TRACKS).map(k => `<option value="${k}" ${mode === k ? 'selected' : ''}>${TRACKS[k]}</option>`).join('')}</select></div></div>
         <div class="field"><label class="fl">当前位置</label><select id="fNode"><option value="">位置未知 / 暂不指定</option>${S.nodes.map(n => `<option value="${n.id}" ${presetNode === n.id || (it && it.currentNodeId === n.id) ? 'selected' : ''}>${e(pathOf(n.id).join(' / '))}</option>`).join('')}</select></div>
         <div class="field"><label class="fl">备注（可选）</label><input id="fNote" value="${e(it ? it.note : '')}" placeholder="备注信息"></div>
         <div class="note-inline">创建时填写的位置属于初始存放信息，不会记为一次「移动」。</div>
+      </div>
+      <div class="card" id="invInit" style="display:${showInv ? '' : 'none'}"><div class="card-t">初始库存</div>
+        <div class="muted">${hasInv ? '初始数量已在建档时设定；后续变更请走库存交易的入库 / 消耗 / 调整。' : '属于建档时的初始状态，不生成交易流水；后续变更请走库存交易。'}</div>
+        <div class="field two"><div class="field"><label class="fl">初始数量</label><input id="fQty" type="number" min="0" value="0"></div>
+          <div class="field"><label class="fl">单位</label><input id="fUnit" value="个"></div></div>
+        <div class="field"><label class="fl">最低库存阈值</label><input id="fThreshold" type="number" min="0" value="0"></div>
       </div>
     </div>` + cta(`<div class="btn-row"><div class="btn" data-act="save-item" data-continue="1">保存并继续</div><div class="btn primary" data-act="save-item">${it ? '保存' : '建档'}</div></div>`);
   }
@@ -431,7 +440,15 @@
     const it = itemById(S.ui.ctx.id);
     if (!it) return `<div class="scroll"><div class="empty">未找到物品</div></div>`;
     const v = invOf(it.id), low = v && v.threshold > 0 && v.balance <= v.threshold;
+    // 建档后的下一步引导：有位置缺口先定位，有库存记录但余额为零则引导入库
+    const needPos = !it.currentNodeId || it.locationStatus === 'unknown';
+    const needStock = !!v && v.balance === 0;
+    const next = needPos ? { hint: '补充位置，初始存放信息不记为一次移动', page: 'move', btn: '去定位' }
+      : needStock ? { hint: '记录初始库存，后续变更走库存交易', page: 'inventoryDetail', btn: '去入库' }
+      : { hint: '继续完善分类、备注等信息', page: 'itemEdit', btn: '去完善' };
+    const primary = v ? { p: 'inventoryDetail', label: '记一笔库存' } : { p: 'move', label: '移动物品' };
     return `<div class="scroll">
+      ${S.ui.ctx.justCreated ? `<div class="guide-card"><div class="gc-t">档案已建立</div><div class="gc-d">下一步：${e(next.hint)}</div><div class="btn tiny" data-act="goto" data-p="${next.page}" data-id="${it.id}">${next.btn}</div></div>` : ''}
       <div class="card"><div style="display:flex;align-items:center;gap:12px"><div style="width:52px;height:52px;border-radius:13px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center">${I('box', 26)}</div>
         <div style="flex:1"><div style="font-family:var(--font-serif);font-size:19px;font-weight:600">${e(it.name)}</div><div class="muted">${e(it.category || '未分类')} · ${e(TRACKS[it.trackingMode])}</div></div>
         <span class="chip neutral">档案 ${it.completed}%</span></div><div class="progress"><i style="width:${it.completed}%"></i></div>
@@ -447,18 +464,21 @@
       </div>` : ''}
       <div class="card"><div class="card-t" style="margin-bottom:4px">操作</div><div class="ops">
         <div class="op" data-act="goto" data-p="itemEdit" data-id="${it.id}">${I('edit', 16)} 编辑档案 ${I('chev', 13, 'chev')}</div>
-        <div class="op" data-act="goto" data-p="move" data-id="${it.id}">${I('move', 16)} 移动物品 ${I('chev', 13, 'chev')}</div>
+        ${v ? `<div class="op" data-act="goto" data-p="move" data-id="${it.id}">${I('move', 16)} 移动物品 ${I('chev', 13, 'chev')}</div>` : ''}
         <div class="op" data-act="goto" data-p="history" data-id="${it.id}">${I('clock', 16)} 位置历史 ${I('chev', 13, 'chev')}</div>
         <div class="op danger" data-act="end-item" data-id="${it.id}">${I('warn', 16)} 结束管理 ${I('chev', 13, 'chev')}</div>
       </div></div>
-    </div>` + cta(`<div class="btn primary" data-act="goto" data-p="move" data-id="${it.id}">移动物品</div>`);
+    </div>` + cta(`<div class="btn primary" data-act="goto" data-p="${primary.p}" data-id="${it.id}">${primary.label}</div>`);
   }
   function pMove() {
     const it = itemById(S.ui.ctx.id);
     if (!it) return `<div class="scroll"><div class="empty">未找到物品</div></div>`;
-    const spaces = S.spaces.map(sp => `<div class="muted" style="margin-top:10px">${e(sp.name)}</div>${roomsOf(sp.id).map(r => `<div class="tree-node" style="cursor:default;background:transparent;border:1px solid var(--line)">${e(r.name)}</div>${nodesOf(r.id).filter(n => !n.parentId).map(n => `<div class="tree-node child" data-act="pick-node" data-id="${n.id}" style="${it.currentNodeId === n.id ? 'border-color:var(--accent)' : ''}"><span class="tn">${e(n.name)}</span>${S.nodes.filter(x => x.parentId === n.id).map(x => `<span class="chip neutral" data-act="pick-node" data-id="${x.id}">${e(x.name)}</span>`).join('')}</div>`).join('')}`).join('')}`).join('');
+    // 高亮以本次选择的节点为准；未选时回退到物品原位置，选中后父/子节点样式一致
+    const selNode = S.ui.ctx.nodeId || it.currentNodeId || '';
+    const selPath = selNode ? pathOf(selNode).join(' / ') : '未选择';
+    const spaces = S.spaces.map(sp => `<div class="muted" style="margin-top:10px">${e(sp.name)}</div>${roomsOf(sp.id).map(r => `<div class="tree-node" style="cursor:default;background:transparent;border:1px solid var(--line)">${e(r.name)}</div>${nodesOf(r.id).filter(n => !n.parentId).map(n => `<div class="tree-node child ${selNode === n.id ? 'sel' : ''}" data-act="pick-node" data-id="${n.id}"><span class="tn">${e(n.name)}</span>${S.nodes.filter(x => x.parentId === n.id).map(x => `<span class="chip neutral ${selNode === x.id ? 'sel' : ''}" data-act="pick-node" data-id="${x.id}">${e(x.name)}</span>`).join('')}</div>`).join('')}`).join('')}`).join('');
     return `<div class="scroll">
-      <div class="card"><div class="card-t">${e(it.name)}</div><div class="muted">当前位置：${e(locationText(it))}</div></div>
+      <div class="card"><div class="card-t">${e(it.name)}</div><div class="muted">当前位置：${e(locationText(it))}</div><div class="muted" style="margin-top:3px">目标位置：<b style="color:${selNode ? 'var(--accent)' : 'var(--ink-3)'}">${e(selPath)}</b></div></div>
       <div class="card"><div class="card-t" style="margin-bottom:2px">目标状态</div><div class="chips">${Object.keys(STATUS).map(k => `<span class="chip ${S.ui.ctx.status === k || (!S.ui.ctx.status && it.locationStatus === k) ? 'accent' : 'neutral'}" data-act="pick-status" data-v="${k}" style="cursor:pointer">${STATUS[k]}</span>`).join('')}</div></div>
       <div class="card"><div class="card-t">目标位置（收纳节点）</div>${spaces}<div class="note-inline">选择「在家」需同时选定具体位置；未知首次确认到具体位置记为独立事件。</div></div>
       <div class="field"><label class="fl">备注（可选）</label><input id="mvNote" placeholder="例如：从客厅移回主卧"></div>
@@ -567,22 +587,30 @@
       name, category: $('#fCat') ? $('#fCat').value : '', trackingMode: $('#fTrack') ? $('#fTrack').value : 'location',
       currentNodeId: $('#fNode') ? $('#fNode').value : '', note: $('#fNote') ? $('#fNote').value : ''
     };
+    // 建档初始库存属于初始状态，不生成交易流水；后续变更一律走库存交易
+    const invMode = patch.trackingMode === 'inventory' || patch.trackingMode === 'hybrid';
+    const initInv = {
+      balance: Math.max(0, Math.round(Number($('#fQty') && $('#fQty').value) || 0)),
+      unit: ($('#fUnit') && $('#fUnit').value.trim()) || '个',
+      threshold: Math.max(0, Math.round(Number($('#fThreshold') && $('#fThreshold').value) || 0))
+    };
     let targetId = id;
     if (id) {
       const it = itemById(id);
       Object.assign(it, patch); it.completed = completion(it); it.updatedAt = now();
-      if ((patch.trackingMode === 'inventory' || patch.trackingMode === 'hybrid') && !invOf(id)) S.inventory.push({ itemId: id, balance: 0, unit: '个', threshold: 0 });
+      if (invMode && !invOf(id)) S.inventory.push({ itemId: id, balance: initInv.balance, unit: initInv.unit, threshold: initInv.threshold });
       writeLog(`完善档案「${name}」`); ok('档案已更新');
     } else {
       const it = { id: uid('it'), name, category: patch.category, trackingMode: patch.trackingMode, currentNodeId: patch.currentNodeId, locationStatus: patch.currentNodeId ? 'at_home' : 'unknown', managementStatus: 'active', completed: 0, note: patch.note, updatedAt: now() };
       it.completed = completion(it);
       S.items.push(it);
       targetId = it.id;
-      if (patch.trackingMode !== 'location') S.inventory.push({ itemId: it.id, balance: 0, unit: '个', threshold: 0 });
+      if (invMode) S.inventory.push({ itemId: it.id, balance: initInv.balance, unit: initInv.unit, threshold: initInv.threshold });
       writeLog(`新建物品「${name}」${patch.currentNodeId ? '（初始位置已填）' : '（仅名称）'}`); ok('档案已建立');
     }
+    if (invMode && !id && initInv.threshold > 0 && initInv.balance <= initInv.threshold) refreshAlerts(targetId);
     if (cont) { S.ui.ctx = {}; nav('itemEdit', {}, false); $('#fName') && ($('#fName').value = ''); }
-    else nav('itemDetail', { id: targetId });
+    else nav('itemDetail', { id: targetId, justCreated: true });
   }
 
   function doTx(type) {
@@ -814,6 +842,14 @@
 
   document.addEventListener('input', ev => {
     if (ev.target.id === 'searchInput') { S.ui.search = ev.target.value; render(); const inp = $('#searchInput'); if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); } }
+  });
+  document.addEventListener('change', ev => {
+    if (ev.target.id !== 'fTrack') return;
+    const box = $('#invInit'); if (!box) return;
+    const it = S.ui.ctx.id ? itemById(S.ui.ctx.id) : null;
+    const hasInv = !!(it && invOf(it.id));
+    const m = ev.target.value;
+    box.style.display = (m === 'inventory' || m === 'hybrid') && !hasInv ? '' : 'none';
   });
   $('#sheetMask').addEventListener('click', closeSheet);
   document.addEventListener('keydown', ev => { if (ev.key === 'Escape') closeSheet(); });
