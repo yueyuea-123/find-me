@@ -210,10 +210,10 @@ function check(name, cond, detail) { results.push({ name, ok: !!cond, detail });
       return txt.includes('档案已建立') && txt.includes('下一步') && !!document.querySelector('.guide-card [data-act="goto"]');
     }catch(e){return false}})()`));
 
-    check('详情页：纯位置物品只有一个移动入口，底部为保存并返回', await cdp.eval(`(function(){
+    check('详情页：纯位置物品只有一个移动入口，底部为返回物品列表', await cdp.eval(`(function(){
       var txt=document.querySelector('#screen').textContent;
       var ops=document.querySelector('#screen .ops').textContent;
-      return (txt.match(/移动物品/g)||[]).length===1 && !ops.includes('记一笔库存') && !!document.querySelector('.bottom-cta [data-act="back"]');
+      return (txt.match(/移动物品/g)||[]).length===1 && !ops.includes('记一笔库存') && !!document.querySelector('.bottom-cta [data-act="goto"][data-p="itemList"]');
     })()`));
 
     check('库存建档：切换模式展开初始字段并保存数量/单位/阈值', await cdp.eval(`(function(){try{
@@ -255,11 +255,11 @@ function check(name, cond, detail) { results.push({ name, ok: !!cond, detail });
       return ops.includes('移动物品') && ops.includes('记一笔库存') && (ops.match(/移动物品/g)||[]).length===1;
     }catch(e){return false}})()`));
 
-    check('详情页：底部「保存并返回」可回到来源页', await cdp.eval(`(function(){
-      var btn=document.querySelector('#screen .bottom-cta [data-act="back"]');
-      if (!btn || !btn.textContent.includes('保存并返回')) return false;
+    check('详情页：底部「返回物品列表」直接进入物品列表', await cdp.eval(`(function(){
+      var btn=document.querySelector('#screen .bottom-cta [data-act="goto"][data-p="itemList"]');
+      if (!btn || !btn.textContent.includes('返回物品列表')) return false;
       btn.click();
-      return document.querySelector('#screen').textContent.includes('物品建档');
+      return !!document.querySelector('#screen .tabbar .tb.on[data-p="itemList"]');
     })()`));
 
     check('移动页：选中下层节点高亮并回显目标路径', await cdp.eval(`(function(){try{

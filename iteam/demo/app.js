@@ -468,7 +468,7 @@
         <div class="op" data-act="goto" data-p="history" data-id="${it.id}">${I('clock', 16)} 位置历史 ${I('chev', 13, 'chev')}</div>
         <div class="op danger" data-act="end-item" data-id="${it.id}">${I('warn', 16)} 结束管理 ${I('chev', 13, 'chev')}</div>
       </div></div>
-    </div>` + cta(`<div class="btn primary" data-act="back">保存并返回</div>`);
+    </div>` + cta(`<div class="btn primary" data-act="goto" data-p="itemList">返回物品列表</div>`);
   }
   function pMove() {
     const it = itemById(S.ui.ctx.id);
