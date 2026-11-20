@@ -80,6 +80,14 @@ function check(name, cond, detail) { results.push({ name, ok: !!cond, detail });
     check('初始渲染：数据快照 9 项', await cdp.eval(`document.querySelectorAll('.dp-cell').length`) === 9);
     check('初始渲染：首页统计房间=3', (await cdp.eval(`document.querySelectorAll('.stat .n')[0].textContent`)) === '3');
 
+    // 1b. 首页整体户型视图
+    check('首页户型视图存在', await cdp.eval(`!!document.querySelector('#screen .floorplan') && !!document.querySelector('#screen .fp-card')`));
+    check('户型视图展示 3 个房间', (await cdp.eval(`document.querySelectorAll('#screen .fp-room').length`)) === 3);
+    check('户型视图含主卧/客厅/卫生间', await cdp.eval(`(function(){const t=document.querySelector('#screen .floorplan').textContent;return t.includes('主卧')&&t.includes('客厅')&&t.includes('卫生间')})()`));
+    check('户型视图含家具微缩块', (await cdp.eval(`document.querySelectorAll('#screen .fp-furn').length`)) >= 5);
+    check('户型视图面积标注', await cdp.eval(`document.querySelector('#screen .fp-meta').textContent.includes('㎡')`));
+    check('点击户型房间进入三维', await cdp.eval(`(function(){document.querySelector('#screen .fp-room').click();return !!document.querySelector('#screen .canvas3d') && document.querySelector('#crumb').textContent.includes('三维房间')})()`));
+
     // 2. 逐条流程跑完，检查无异常、步骤计数推进
     const errors = [];
     for (let f = 0; f < 6; f++) {
@@ -105,6 +113,18 @@ function check(name, cond, detail) { results.push({ name, ok: !!cond, detail });
 
     // 5. 手动交互：三维降级切列表
     check('三维降级：可切到列表视图', await cdp.eval(`(function(){document.querySelector('[data-act="goto"][data-p="room3d"]');document.querySelectorAll('.flow-tab')[5].click();document.querySelector('[data-act="flow-next"]').click();document.querySelector('[data-act="flow-next"]').click();return document.querySelector('#screen').textContent.includes('家具列表（三维降级）')})()`));
+
+    // 5b. 新建房间后户型视图同步
+    check('新建房间后户型视图同步', await cdp.eval(`(function(){try{
+      document.querySelector('[data-act="reset-demo"]').click();
+      document.querySelector('.quick [data-p="room"]').click();
+      document.querySelector('[data-act="new-room"]').click();
+      document.querySelector('#sheetName').value='测试书房';
+      document.querySelector('[data-act="sheet-act"][data-i="1"]').click();
+      document.querySelector('#screen [data-act="back"]').click();
+      document.querySelector('#screen .tabbar [data-p="home"]').click();
+      return document.querySelectorAll('#screen .fp-room').length===4 && document.querySelector('#screen .floorplan').textContent.includes('测试书房');
+    }catch(err){return false}})()`));
 
     // 6. 重置
     check('重置演示数据恢复初始', await cdp.eval(`(function(){document.querySelector('[data-act="reset-demo"]').click();return document.querySelectorAll('.stat .n')[0].textContent==='3' && document.querySelector('#dataLog').textContent.includes('等待操作')})()`));

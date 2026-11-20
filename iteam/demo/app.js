@@ -45,6 +45,14 @@
   const MV = { initial: '初始存放信息', first_confirm: '首次位置确认', move: '移动', out: '外出/借出', return: '带回/归还', end: '结束管理' };
   const CATS = ['证件卡片', '家居布艺', '电子数码', '卫浴清洁', '书籍文具', '其他'];
   const UNITS = ['个', '件', '瓶', '包', '盒', '卷'];
+  // 整体户型示意：按房间创建顺序映射到 6 列网格的槽位（仅示意，不代表真实户型结构）
+  const FLOOR_SLOTS = [
+    { c: 1, r: 1, cw: 3, rh: 3 }, { c: 4, r: 1, cw: 3, rh: 4 },
+    { c: 1, r: 4, cw: 3, rh: 2 }, { c: 4, r: 5, cw: 3, rh: 2 },
+    { c: 1, r: 6, cw: 3, rh: 2 }, { c: 4, r: 7, cw: 3, rh: 2 },
+    { c: 1, r: 8, cw: 3, rh: 2 }, { c: 4, r: 9, cw: 3, rh: 2 }
+  ];
+  const floorSlot = i => FLOOR_SLOTS[i] || { c: 1, r: 10 + (i - 8) * 2, cw: 6, rh: 2 };
 
   let S;
   function seed() {
@@ -197,6 +205,43 @@
   }
   function cta(html) { return html ? `<div class="bottom-cta">${html}</div>` : ''; }
 
+  // 首页整体户型视图：按空间下所有房间渲染平面示意，点击房间进入三维
+  function floorplanCard() {
+    const sp = activeSpace();
+    const rooms = roomsOf(sp.id);
+    if (!rooms.length) return '';
+    const slots = rooms.map((_, i) => floorSlot(i));
+    const rows = Math.max(5, ...slots.map(s => s.r + s.rh - 1));
+    const tone = r => r.templateKey === 'bedroom' ? 't-bedroom'
+      : r.templateKey === 'living' ? 't-living' : r.templateKey === 'bath' ? 't-bath' : 't-blank';
+    const area = rooms.reduce((n, r) => n + r.width * r.depth, 0);
+    const blocks = rooms.map((r, i) => {
+      const s = slots[i];
+      const fs = furnitureOf(r.id);
+      const itemCount = fs.reduce((n, f) => n + itemsOfFurniture(f.id).length, 0);
+      const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+      const furn = fs.map(f => {
+        const left = clamp((f.position.x + r.width / 2) / r.width * 100, 4, 96);
+        const top = clamp((f.position.z + r.depth / 2) / r.depth * 100, 4, 96);
+        const w = clamp(f.size.w / r.width * 100, 6, 48);
+        const h = clamp(f.size.d / r.depth * 100, 6, 48);
+        return `<div class="fp-furn" title="${e(f.name)}" style="left:${left}%;top:${top}%;width:${w}%;height:${h}%">${LIB[f.category] ? LIB[f.category].icon : '▪'}</div>`;
+      }).join('');
+      return `<div class="fp-room ${tone(r)}" data-act="goto" data-p="room3d" data-id="${r.id}"
+        style="grid-column:${s.c} / ${s.c + s.cw};grid-row:${s.r} / ${s.r + s.rh}">
+        <div class="fp-hd"><span>${e(r.name)}</span><em>${r.width}×${r.depth}m</em></div>
+        <div class="fp-body">${furn}</div>
+        ${itemCount ? `<div class="fp-badge" title="房间内物品数">${itemCount}</div>` : ''}
+      </div>`;
+    }).join('');
+    return `<div class="card fp-card" style="margin-top:10px">
+      <div class="card-t">户型总览 <span class="fp-meta">${rooms.length} 间 · 约 ${area.toFixed(1)} ㎡</span></div>
+      <div class="fp-hint">按房间创建顺序自动排布（示意），点击房间查看三维</div>
+      <div class="floorplan" style="grid-template-rows:repeat(${rows},42px)">${blocks}</div>
+      <div class="fp-legend"><span><i class="lg-f"></i>家具</span><span><i class="lg-i"></i>物品数</span><span class="fp-tip">墙线为示意，不承诺测量精度</span></div>
+    </div>`;
+  }
+
   function pHome() {
     const sp = activeSpace();
     const rooms = roomsOf(sp.id).length;
@@ -213,6 +258,7 @@
         <div class="stat alert-n"><div class="n">${alerts.length}</div><div class="l">提醒</div></div>
       </div></div>
       ${alerts.length ? `<div class="remind" style="margin-top:10px" data-act="goto" data-p="alerts"><div class="ri">${I('bell', 18)}</div><div class="rt"><b>${alerts.length} 项库存提醒</b><span>${e(lowNames.join(' · '))}</span></div><div class="go">查看</div></div>` : ''}
+      ${floorplanCard()}
       <div class="card" style="margin-top:10px"><div class="quick">
         <div class="q" data-act="goto" data-p="room"><div class="qi">${I('grid', 22)}</div><span>房间</span></div>
         <div class="q" data-act="goto" data-p="itemEdit"><div class="qi">${I('plus', 22)}</div><span>加物品</span></div>
