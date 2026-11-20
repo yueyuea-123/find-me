@@ -446,7 +446,6 @@
     const next = needPos ? { hint: '补充位置，初始存放信息不记为一次移动', page: 'move', btn: '去定位' }
       : needStock ? { hint: '记录初始库存，后续变更走库存交易', page: 'inventoryDetail', btn: '去入库' }
       : { hint: '继续完善分类、备注等信息', page: 'itemEdit', btn: '去完善' };
-    const primary = v ? { p: 'inventoryDetail', label: '记一笔库存' } : { p: 'move', label: '移动物品' };
     return `<div class="scroll">
       ${S.ui.ctx.justCreated ? `<div class="guide-card"><div class="gc-t">档案已建立</div><div class="gc-d">下一步：${e(next.hint)}</div><div class="btn tiny" data-act="goto" data-p="${next.page}" data-id="${it.id}">${next.btn}</div></div>` : ''}
       <div class="card"><div style="display:flex;align-items:center;gap:12px"><div style="width:52px;height:52px;border-radius:13px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center">${I('box', 26)}</div>
@@ -464,11 +463,12 @@
       </div>` : ''}
       <div class="card"><div class="card-t" style="margin-bottom:4px">操作</div><div class="ops">
         <div class="op" data-act="goto" data-p="itemEdit" data-id="${it.id}">${I('edit', 16)} 编辑档案 ${I('chev', 13, 'chev')}</div>
-        ${v ? `<div class="op" data-act="goto" data-p="move" data-id="${it.id}">${I('move', 16)} 移动物品 ${I('chev', 13, 'chev')}</div>` : ''}
+        <div class="op" data-act="goto" data-p="move" data-id="${it.id}">${I('move', 16)} 移动物品 ${I('chev', 13, 'chev')}</div>
+        ${v ? `<div class="op" data-act="goto" data-p="inventoryDetail" data-id="${it.id}">${I('box', 16)} 记一笔库存 ${I('chev', 13, 'chev')}</div>` : ''}
         <div class="op" data-act="goto" data-p="history" data-id="${it.id}">${I('clock', 16)} 位置历史 ${I('chev', 13, 'chev')}</div>
         <div class="op danger" data-act="end-item" data-id="${it.id}">${I('warn', 16)} 结束管理 ${I('chev', 13, 'chev')}</div>
       </div></div>
-    </div>` + cta(`<div class="btn primary" data-act="goto" data-p="${primary.p}" data-id="${it.id}">${primary.label}</div>`);
+    </div>` + cta(`<div class="btn primary" data-act="back">保存并返回</div>`);
   }
   function pMove() {
     const it = itemById(S.ui.ctx.id);

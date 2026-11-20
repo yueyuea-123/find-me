@@ -210,9 +210,10 @@ function check(name, cond, detail) { results.push({ name, ok: !!cond, detail });
       return txt.includes('档案已建立') && txt.includes('下一步') && !!document.querySelector('.guide-card [data-act="goto"]');
     }catch(e){return false}})()`));
 
-    check('详情页：纯位置物品只有一个移动入口', await cdp.eval(`(function(){
+    check('详情页：纯位置物品只有一个移动入口，底部为保存并返回', await cdp.eval(`(function(){
       var txt=document.querySelector('#screen').textContent;
-      return (txt.match(/移动物品/g)||[]).length===1;
+      var ops=document.querySelector('#screen .ops').textContent;
+      return (txt.match(/移动物品/g)||[]).length===1 && !ops.includes('记一笔库存') && !!document.querySelector('.bottom-cta [data-act="back"]');
     })()`));
 
     check('库存建档：切换模式展开初始字段并保存数量/单位/阈值', await cdp.eval(`(function(){try{
@@ -244,15 +245,22 @@ function check(name, cond, detail) { results.push({ name, ok: !!cond, detail });
       return txt.includes('库存建档测试') && txt.includes('5瓶');
     }catch(e){return false}})()`));
 
-    check('详情页：有库存物品主行动为「记一笔库存」且移动入口唯一', await cdp.eval(`(function(){try{
+    check('详情页：操作区同时含「移动物品」「记一笔库存」', await cdp.eval(`(function(){try{
       document.querySelector('[data-act="reset-demo"]').click();
       document.querySelector('.quick [data-p="itemEdit"]').click();
       var sel=document.querySelector('#fTrack'); sel.value='inventory'; sel.dispatchEvent(new Event('change',{bubbles:true}));
       document.querySelector('#fName').value='去重测试';
       document.querySelector('[data-act="save-item"]:not([data-continue])').click();
-      var txt=document.querySelector('#screen').textContent;
-      return (txt.match(/移动物品/g)||[]).length===1 && txt.includes('记一笔库存');
+      var ops=document.querySelector('#screen .ops').textContent;
+      return ops.includes('移动物品') && ops.includes('记一笔库存') && (ops.match(/移动物品/g)||[]).length===1;
     }catch(e){return false}})()`));
+
+    check('详情页：底部「保存并返回」可回到来源页', await cdp.eval(`(function(){
+      var btn=document.querySelector('#screen .bottom-cta [data-act="back"]');
+      if (!btn || !btn.textContent.includes('保存并返回')) return false;
+      btn.click();
+      return document.querySelector('#screen').textContent.includes('物品建档');
+    })()`));
 
     check('移动页：选中下层节点高亮并回显目标路径', await cdp.eval(`(function(){try{
       document.querySelector('[data-act="reset-demo"]').click();
