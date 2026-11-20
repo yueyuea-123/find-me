@@ -82,6 +82,7 @@ function check(name, cond, detail) { results.push({ name, ok: !!cond, detail });
 
     // 1b. 首页整体户型视图
     check('首页户型视图存在', await cdp.eval(`!!document.querySelector('#screen .floorplan') && !!document.querySelector('#screen .fp-card')`));
+    check('首页户型总览位于提醒栏之前', await cdp.eval(`(function(){const s=document.querySelector('#screen'),fp=s.querySelector('.fp-card'),rm=s.querySelector('.remind');return !!fp&&!!rm&&!!(fp.compareDocumentPosition(rm)&Node.DOCUMENT_POSITION_FOLLOWING)})()`));
     check('户型视图展示 3 个房间', (await cdp.eval(`document.querySelectorAll('#screen .fp-room').length`)) === 3);
     check('户型视图含主卧/客厅/卫生间', await cdp.eval(`(function(){const t=document.querySelector('#screen .floorplan').textContent;return t.includes('主卧')&&t.includes('客厅')&&t.includes('卫生间')})()`));
     check('户型视图含家具微缩块', (await cdp.eval(`document.querySelectorAll('#screen .fp-furn').length`)) >= 5);

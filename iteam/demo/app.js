@@ -257,8 +257,8 @@
         <div class="stat"><div class="n">${S.inventory.length}</div><div class="l">库存</div></div>
         <div class="stat alert-n"><div class="n">${alerts.length}</div><div class="l">提醒</div></div>
       </div></div>
-      ${alerts.length ? `<div class="remind" style="margin-top:10px" data-act="goto" data-p="alerts"><div class="ri">${I('bell', 18)}</div><div class="rt"><b>${alerts.length} 项库存提醒</b><span>${e(lowNames.join(' · '))}</span></div><div class="go">查看</div></div>` : ''}
       ${floorplanCard()}
+      ${alerts.length ? `<div class="remind" style="margin-top:10px" data-act="goto" data-p="alerts"><div class="ri">${I('bell', 18)}</div><div class="rt"><b>${alerts.length} 项库存提醒</b><span>${e(lowNames.join(' · '))}</span></div><div class="go">查看</div></div>` : ''}
       <div class="card" style="margin-top:10px"><div class="quick">
         <div class="q" data-act="goto" data-p="room"><div class="qi">${I('grid', 22)}</div><span>房间</span></div>
         <div class="q" data-act="goto" data-p="itemEdit"><div class="qi">${I('plus', 22)}</div><span>加物品</span></div>
