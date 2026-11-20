@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>居所收纳 · 温暖家居感视觉方案对比</title>
+<style>
+/* ============================================================
+   居所收纳 · 温暖家居感双方案视觉对比
+   A 原木日常 / B 暖陶雅居 —— 关键页并列对比
+   自包含单文件：字体走系统栈，图标内联 SVG，无外部依赖
+   ============================================================ */
+
+/* ---------- 设计令牌 ---------- */
+:root{
+  --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-serif: "Songti SC", "STSong", "Source Han Serif SC", Georgia, serif;
+  --canvas:#26221E;          /* 暖炭画布，衬托暖色手机屏 */
+  --canvas-2:#1E1B18;
+  --canvas-line:#3A342E;
+  --paper-text:#F3EDE4;
+  --paper-muted:#A99E90;
+}
+
+/* 方案 A：原木日常 */
+.theme-a{
+  --bg:#FAF6EE; --surface:#FFFFFF; --surface-2:#F3EDE2;
+  --ink:#3B3229; --ink-2:#6B5D4D; --ink-3:#A29481; --line:#E9E0D2;
+  --accent:#9C6B3F; --accent-2:#7E5330; --accent-soft:#EFE2D1; --accent-ink:#FFFFFF;
+  --good:#6E7F59; --good-soft:#E9EEE0;
+  --alert:#BE5F44; --alert-soft:#F6E2D9;
+  --r-card:20px; --r-ctl:12px; --r-pill:999px;
+  --shadow:0 6px 22px rgba(92,68,40,.10);
+  --font-head:var(--font-sans); --head-w:700; --head-sp:-.01em;
+  --divider:none;
+}
+/* 方案 B：暖陶雅居 */
+.theme-b{
+  --bg:#F4EDE4; --surface:#FDFAF6; --surface-2:#EBE0D4;
+  --ink:#342821; --ink-2:#6A5346; --ink-3:#A18A7B; --line:#E1D4C6;
+  --accent:#B0563A; --accent-2:#8E4029; --accent-soft:#F1DCD1; --accent-ink:#FFFFFF;
+  --good:#6C6A46; --good-soft:#ECEBDD;
+  --alert:#A5402D; --alert-soft:#F2DAD0;
+  --r-card:12px; --r-ctl:8px; --r-pill:999px;
+  --shadow:0 8px 28px rgba(62,40,28,.12);
+  --font-head:var(--font-serif); --head-w:600; --head-sp:.01em;
+  --divider:1px solid var(--line);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--canvas);color:var(--paper-text);
+  font-family:var(--font-sans);line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---------- 页面外壳 ---------- */
+.wrap{max-width:1360px;margin:0 auto;padding:0 28px 96px}
+
+/* 顶栏 */
+.masthead{padding:44px 0 30px;border-bottom:1px solid var(--canvas-line)}
+.mh-kicker{font-size:12px;letter-spacing:.22em;color:var(--paper-muted);text-transform:uppercase}
+.mh-title{font-family:var(--font-serif);font-size:38px;line-height:1.3;margin-top:10px;letter-spacing:.01em}
+.mh-sub{color:var(--paper-muted);font-size:14px;margin-top:10px;max-width:660px;line-height:1.8}
+
+/* 方案图例 */
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:26px}
+.lg-card{
+  display:flex;gap:14px;align-items:flex-start;
+  background:var(--canvas-2);border:1px solid var(--canvas-line);
+  border-radius:14px;padding:14px 18px;min-width:260px;
+}
+.lg-dot{width:12px;height:12px;border-radius:50%;margin-top:5px;flex:none}
+.lg-a .lg-dot{background:#9C6B3F}
+.lg-b .lg-dot{background:#B0563A}
+.lg-name{font-size:15px;font-weight:600;color:var(--paper-text)}
+.lg-name small{font-weight:400;color:var(--paper-muted);font-size:12px;margin-left:6px}
+.lg-kw{font-size:12px;color:var(--paper-muted);margin-top:3px}
+
+/* 控制条 */
+.controls{
+  position:sticky;top:0;z-index:50;
+  display:flex;gap:22px;align-items:center;flex-wrap:wrap;
+  background:rgba(38,34,30,.92);backdrop-filter:blur(10px);
+  padding:14px 0;border-bottom:1px solid var(--canvas-line);
+}
+.nav-links{display:flex;gap:6px;flex-wrap:wrap}
+.nav-links a{
+  color:var(--paper-muted);text-decoration:none;font-size:13px;
+  padding:7px 13px;border-radius:var(--r-pill);transition:.15s;
+}
+.nav-links a:hover{color:var(--paper-text);background:var(--canvas-2)}
+.seg{display:flex;gap:0;margin-left:auto;border:1px solid var(--canvas-line);border-radius:10px;overflow:hidden}
+.seg button{
+  background:transparent;color:var(--paper-muted);border:0;
+  font-family:inherit;font-size:12px;padding:8px 15px;cursor:pointer;transition:.15s;
+}
+.seg button+button{border-left:1px solid var(--canvas-line)}
+.seg button.is-active{background:var(--paper-text);color:var(--canvas);font-weight:600}
+.view-a .phone-b,.view-b .phone-a{display:none}
+.view-a .compare,.view-b .compare{grid-template-columns:1fr;max-width:430px;margin-left:auto;margin-right:auto}
+
+/* 区块 */
+.section{padding-top:52px}
+.sec-head{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:6px}
+.sec-id{font-family:var(--font-serif);font-size:13px;color:#C89B72;letter-spacing:.1em}
+.sec-title{font-family:var(--font-serif);font-size:26px;letter-spacing:.01em}
+.sec-note{color:var(--paper-muted);font-size:13px;width:100%;max-width:760px;line-height:1.8}
+
+.compare{
+  display:grid;grid-template-columns:1fr 1fr;gap:40px;
+  margin-top:26px;align-items:start;
+}
+.slot{min-width:0}
+.slot-label{
+  display:flex;align-items:center;gap:10px;margin-bottom:14px;
+  font-size:13px;color:var(--paper-muted);
+}
+.slot-label b{color:var(--paper-text);font-weight:600;font-size:14px}
+.slot-label .tag{
+  font-size:11px;padding:3px 9px;border-radius:var(--r-pill);
+  border:1px solid var(--canvas-line);color:var(--paper-muted);
+}
+
+/* ---------- 手机外壳 ---------- */
+.phone{
+  position:relative;width:100%;max-width:372px;margin:0 auto;
+  background:#0C0A09;border-radius:46px;padding:9px;
+  box-shadow:0 30px 60px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.06);
+}
+.screen{
+  position:relative;border-radius:38px;overflow:hidden;
+  background:var(--bg);color:var(--ink);
+  min-height:660px;display:flex;flex-direction:column;
+  font-size:13px;
+}
+.notch{
+  position:absolute;top:9px;left:50%;transform:translateX(-50%);
+  width:104px;height:26px;background:#0C0A09;border-radius:var(--r-pill);z-index:20;
+}
+.statusbar{
+  height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;
+  padding:0 22px;font-size:12px;font-weight:600;color:var(--ink);
+  position:relative;z-index:10;
+}
+.statusbar .sb-r{display:flex;align-items:center;gap:6px}
+.statusbar svg{display:block}
+
+.appbar{
+  display:flex;align-items:center;gap:12px;padding:6px 18px 12px;flex:none;
+}
+.appbar .ab-title{font-family:var(--font-head);font-weight:var(--head-w);letter-spacing:var(--head-sp);font-size:19px;line-height:1.3}
+.appbar .grow{flex:1}
+.icon-btn{
+  width:34px;height:34px;border-radius:50%;border:1px solid var(--line);
+  background:var(--surface);display:flex;align-items:center;justify-content:center;
+  color:var(--ink-2);flex:none;
+}
+.icon-btn.plain{border:0;background:transparent}
+
+.scroll{flex:1;overflow:hidden;padding:0 16px 14px}
+.card{
+  background:var(--surface);border-radius:var(--r-card);
+  padding:16px;box-shadow:var(--shadow);border:var(--divider);
+}
+.card+.card{margin-top:12px}
+.card-t{font-family:var(--font-head);font-weight:var(--head-w);letter-spacing:var(--head-sp);font-size:15px}
+
+/* 统计 */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.stat{text-align:center;padding:2px 0}
+.stat .n{font-family:var(--font-head);font-weight:var(--head-w);font-size:22px;line-height:1.2;color:var(--ink);font-variant-numeric:tabular-nums}
+.stat .l{font-size:11px;color:var(--ink-3);margin-top:5px}
+.stat.alert-n .n{color:var(--alert)}
+
+/* 提醒条 */
+.remind{
+  display:flex;align-items:center;gap:11px;padding:13px 14px;
+  background:var(--alert-soft);border-radius:var(--r-card);border:var(--divider);
+}
+.remind .ri{
+  width:34px;height:34px;border-radius:11px;background:var(--surface);
+  color:var(--alert);display:flex;align-items:center;justify-content:center;flex:none;
+}
+.remind .rt{flex:1;min-width:0}
+.remind .rt b{font-size:13px;color:var(--ink)}
+.remind .rt span{display:block;font-size:11px;color:var(--ink-2);margin-top:2px}
+.remind .go{font-size:12px;color:var(--alert);font-weight:600;white-space:nowrap}
+
+/* 快捷 */
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center}
+.quick .q .qi{
+  width:46px;height:46px;margin:0 auto 7px;border-radius:var(--r-ctl);
+  background:var(--surface-2);color:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+}
+.quick .q span{font-size:11px;color:var(--ink-2)}
+
+/* 列表行 */
+.row{display:flex;align-items:center;gap:11px;padding:11px 0}
+.row+.row{border-top:1px solid var(--line)}
+.row .dot{width:30px;height:30px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;background:var(--surface-2);color:var(--ink-2)}
+.row .rt{flex:1;min-width:0}
+.row .rt b{font-size:12.5px;color:var(--ink);font-weight:600;display:block}
+.row .rt span{font-size:11px;color:var(--ink-3)}
+.row .tm{font-size:10.5px;color:var(--ink-3);white-space:nowrap}
+
+/* 标签 chip */
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;border-radius:var(--r-pill);font-weight:600}
+.chip.good{background:var(--good-soft);color:var(--good)}
+.chip.alert{background:var(--alert-soft);color:var(--alert)}
+.chip.neutral{background:var(--surface-2);color:var(--ink-2)}
+.chip .cdot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+/* tabbar */
+.tabbar{
+  height:62px;flex:none;display:grid;grid-template-columns:repeat(5,1fr);
+  border-top:1px solid var(--line);background:var(--surface);
+  padding-bottom:6px;
+}
+.tabbar .tb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--ink-3);font-size:10px}
+.tabbar .tb.on{color:var(--accent)}
+.tabbar .tb.on b{font-weight:700}
+
+/* ---------- 三维房间画布 ---------- */
+.segbar{display:inline-flex;background:var(--surface-2);border-radius:var(--r-pill);padding:3px}
+.segbar .s{font-size:11px;padding:6px 15px;border-radius:var(--r-pill);color:var(--ink-2)}
+.segbar .s.on{background:var(--accent);color:var(--accent-ink);font-weight:600}
+
+.canvas3d{
+  position:relative;height:248px;border-radius:var(--r-card);overflow:hidden;
+  background:var(--surface-2);border:var(--divider);
+}
+.floor{
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(to right, var(--line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+  background-size:34px 34px;
+  transform:perspective(420px) rotateX(56deg) scale(1.5);
+  transform-origin:center 78%;opacity:.9;
+}
+.furn{
+  position:absolute;border-radius:9px;background:var(--surface);
+  border:1.5px solid var(--line);box-shadow:0 6px 14px rgba(60,42,26,.16);
+}
+.furn.sofa{left:20%;top:30%;width:31%;height:20%;border-color:var(--accent);border-width:2px;box-shadow:0 0 0 4px var(--accent-soft),0 8px 18px rgba(60,42,26,.2)}
+.furn.table{left:58%;top:46%;width:20%;height:14%}
+.furn.tv{left:24%;top:62%;width:38%;height:7%}
+.furn .cap{position:absolute;bottom:-17px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--accent);white-space:nowrap;font-weight:600}
+.handle{position:absolute;width:7px;height:7px;background:var(--accent);border:1.5px solid #fff;border-radius:50%}
+.handle.h1{left:20%;top:30%}.handle.h2{left:51%;top:30%}.handle.h3{left:20%;top:50%}.handle.h4{left:51%;top:50%}
+.canvas-hint{
+  position:absolute;left:12px;bottom:12px;background:var(--surface);
+  border-radius:var(--r-pill);padding:5px 11px;font-size:10.5px;color:var(--ink-2);
+  box-shadow:var(--shadow);
+}
+
+.field-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.field .fl{font-size:10.5px;color:var(--ink-3);margin-bottom:4px}
+.field .fv{font-size:12px;color:var(--ink);background:var(--surface-2);border-radius:var(--r-ctl);padding:7px 8px;font-variant-numeric:tabular-nums}
+
+.bind{
+  display:flex;align-items:center;gap:9px;margin-top:12px;padding:11px 12px;
+  background:var(--good-soft);border-radius:var(--r-ctl);
+}
+.bind .bi{color:var(--good)}
+.bind .bt{flex:1}
+.bind .bt b{font-size:12px;color:var(--ink)}
+.bind .bt span{display:block;font-size:10.5px;color:var(--ink-2);margin-top:2px}
+
+.btn-row{display:flex;gap:10px;margin-top:14px}
+.btn{
+  flex:1;text-align:center;font-size:12.5px;font-weight:600;padding:11px 0;
+  border-radius:var(--r-ctl);border:1px solid var(--line);color:var(--ink-2);background:var(--surface);
+}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.danger{color:var(--alert);border-color:var(--alert)}
+
+/* ---------- 物品详情 ---------- */
+.hero{display:flex;align-items:center;gap:14px}
+.hero .thumb{width:56px;height:56px;border-radius:var(--r-ctl);background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;flex:none}
+.hero .hi{flex:1}
+.hero .hi .nm{font-family:var(--font-head);font-weight:var(--head-w);letter-spacing:var(--head-sp);font-size:20px;color:var(--ink)}
+.hero .hi .meta{font-size:11px;color:var(--ink-3);margin-top:4px}
+.progress{height:6px;border-radius:var(--r-pill);background:var(--surface-2);margin-top:12px;overflow:hidden}
+.progress i{display:block;height:100%;width:75%;background:var(--accent);border-radius:var(--r-pill)}
+
+.status-line{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.path{font-size:14px;color:var(--ink);font-weight:600;line-height:1.6}
+.path .sep{color:var(--ink-3);font-weight:400;margin:0 3px}
+.muted{font-size:11px;color:var(--ink-3);margin-top:5px}
+
+.chips4{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:12px}
+.chips4 .chip{justify-content:center;padding:6px 0;font-size:10px}
+
+.ops{display:flex;flex-direction:column}
+.op{display:flex;align-items:center;gap:11px;padding:10px 0;font-size:12.5px;color:var(--ink)}
+.op+.op{border-top:1px solid var(--line)}
+.op .oi{color:var(--ink-2)}
+.op.danger{color:var(--alert)}
+.op.danger .oi{color:var(--alert)}
+.op .chev{margin-left:auto;color:var(--ink-3)}
+
+.bottom-cta{padding:10px 16px 16px;flex:none}
+.bottom-cta .btn{padding:13px 0}
+
+/* ---------- 设计基因对照 ---------- */
+.genes{margin-top:56px;padding-top:36px;border-top:1px solid var(--canvas-line)}
+.genes h3{font-family:var(--font-serif);font-size:22px;margin-bottom:20px}
+.gene-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.gene{background:var(--canvas-2);border:1px solid var(--canvas-line);border-radius:16px;padding:20px}
+.gene h4{font-size:15px;margin-bottom:14px;color:var(--paper-text)}
+.swatches{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.sw{width:38px;height:38px;border-radius:9px;border:1px solid rgba(255,255,255,.12);position:relative}
+.gene p{font-size:12px;color:var(--paper-muted);line-height:1.9}
+.gene p b{color:var(--paper-text);font-weight:600}
+
+.footnote{margin-top:44px;color:var(--paper-muted);font-size:12px;line-height:1.9;border-top:1px solid var(--canvas-line);padding-top:22px}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:900px){
+  .compare{grid-template-columns:1fr;gap:32px}
+  .gene-grid{grid-template-columns:1fr}
+  .seg{margin-left:0}
+  .mh-title{font-size:30px}
+}
+@media (max-width:420px){
+  .wrap{padding:0 16px 64px}
+  .phone{max-width:100%}
+}
+</style>
+</head>
+<body>
+
+<!-- 线性图标 sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+  <g id="i-home" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5 8 3l5 4.5V13H3z"/><path d="M6.3 13V9.6h3.4V13"/></g>
+  <g id="i-grid" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1"/><rect x="9" y="2.5" width="4.5" height="4.5" rx="1"/><rect x="2.5" y="9" width="4.5" height="4.5" rx="1"/><rect x="9" y="9" width="4.5" height="4.5" rx="1"/></g>
+  <g id="i-box" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 5.3 8 2.6l5.4 2.7v5.4L8 13.4 2.6 10.7z"/><path d="M2.6 5.3 8 8l5.4-2.7M8 8v5.4"/></g>
+  <g id="i-list" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5.5 4h8M5.5 8h8M5.5 12h8"/><circle cx="3" cy="4" r=".6" fill="currentColor" stroke="none"/><circle cx="3" cy="8" r=".6" fill="currentColor" stroke="none"/><circle cx="3" cy="12" r=".6" fill="currentColor" stroke="none"/></g>
+  <g id="i-user" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="5.4" r="2.5"/><path d="M3.5 13.5c0-2.5 2-4.3 4.5-4.3s4.5 1.8 4.5 4.3"/></g>
+  <g id="i-bell" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.2 7a3.8 3.8 0 0 1 7.6 0v3l1.2 2H3l1.2-2z"/><path d="M6.6 12.5a1.4 1.4 0 0 0 2.8 0"/></g>
+  <g id="i-plus" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></g>
+  <g id="i-chev" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l4 4-4 4"/></g>
+  <g id="i-chev-d" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></g>
+  <g id="i-back" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4l-4 4 4 4"/></g>
+  <g id="i-edit" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3l2 2-7 7-2.6.6.6-2.6z"/></g>
+  <g id="i-clock" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M8 4.8V8l2.2 1.6"/></g>
+  <g id="i-move" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.6v10.8M2.6 8h10.8M8 2.6 6.4 4.2M8 2.6 9.6 4.2M8 13.4l-1.6-1.6M8 13.4l1.6-1.6M2.6 8 4.2 6.4M2.6 8 4.2 9.6M13.4 8 11.8 6.4M13.4 8 11.8 9.6"/></g>
+  <g id="i-layers" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.6 2.8 5.5 8 8.4l5.2-2.9z"/><path d="M2.8 8.4 8 11.3l5.2-2.9M2.8 11 8 14l5.2-3"/></g>
+  <g id="i-eye" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1.8 8S4.3 4.4 8 4.4 14.2 8 14.2 8 11.7 11.6 8 11.6 1.8 8 1.8 8z"/><circle cx="8" cy="8" r="1.7"/></g>
+  <g id="i-warn" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.6v4M8 11v.6"/></g>
+  <g id="i-link" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 9.4 9.4 6.6"/><path d="M7.4 4.8 8.6 3.6a2.6 2.6 0 0 1 3.7 3.7l-1.2 1.2M8.6 11.2l-1.2 1.2a2.6 2.6 0 0 1-3.7-3.7l1.2-1.2"/></g>
+</defs>
+</svg>
+
+<div class="wrap">
+
+  <!-- 顶部 -->
+  <header class="masthead">
+    <div class="mh-kicker">视觉方案对比 · Visual Direction Study</div>
+    <h1 class="mh-title">居所收纳 · 温暖家居感</h1>
+    <p class="mh-sub">同一套产品，两种温暖的表达。基于已确认的 21 页功能原型，选取「首页概览 / 三维房间核心功能 / 物品详情操作」三个代表页，用真实信息结构并排呈现，便于逐组件对比取舍。两方案均属温暖家居气质，差异在圆角、字体气质、主色与质感处理。</p>
+    <div class="legend">
+      <div class="lg-card lg-a">
+        <span class="lg-dot"></span>
+        <div><div class="lg-name">方案 A · 原木日常 <small>Oak &amp; Linen</small></div><div class="lg-kw">温润 · 亲和 · 自然 — 大圆角、柔和无衬线、原木棕</div></div>
+      </div>
+      <div class="lg-card lg-b">
+        <span class="lg-dot"></span>
+        <div><div class="lg-name">方案 B · 暖陶雅居 <small>Terracotta Atelier</small></div><div class="lg-kw">雅致 · 克制 · 质感 — 衬线标题、赤陶、细分割线</div></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 控制条 -->
+  <div class="controls">
+    <nav class="nav-links">
+      <a href="#home">首页 UI-001</a>
+      <a href="#room">三维房间 UI-006</a>
+      <a href="#item">物品详情 UI-012</a>
+      <a href="#genes">设计基因</a>
+    </nav>
+    <div class="seg" id="viewSeg">
+      <button data-v="both" class="is-active">并排对比</button>
+      <button data-v="a">只看 A</button>
+      <button data-v="b">只看 B</button>
+    </div>
+  </div>
+
+  <!-- ============ 页面 1：首页 ============ -->
+  <section class="section" id="home">
+    <div class="sec-head">
+      <span class="sec-id">01 / 03</span>
+      <span class="sec-title">首页 · 概览与入口</span>
+    </div>
+    <p class="sec-note">一屏内承载空间切换、四项统计、库存提醒、快捷操作与最近变动。对比看两方案如何在相同信息密度下建立不同的视觉节奏：A 用独立圆角卡片与柔和留白，B 用衬线数字与细分割线。</p>
+
+    <div class="compare">
+      <!-- 方案 A 首页 -->
+      <div class="slot phone-a">
+        <div class="slot-label"><b>A · 原木日常</b><span class="tag">温润亲和</span></div>
+        <div class="phone theme-a">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="statusbar">
+              <span>9:41</span>
+              <span class="sb-r">
+                <svg width="17" height="12" viewBox="0 0 17 12"><g fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx=".6"/><rect x="4" y="6" width="2.5" height="6" rx=".6"/><rect x="8" y="3" width="2.5" height="9" rx=".6"/><rect x="12" y="0" width="2.5" height="12" rx=".6"/></g></svg>
+                <svg width="15" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 4a10 10 0 0 1 14 0M3.5 6.7a6.5 6.5 0 0 1 9 0M6 9.4a3 3 0 0 1 4 0"/><circle cx="8" cy="11.4" r=".7" fill="currentColor" stroke="none"/></svg>
+                <svg width="22" height="12" viewBox="0 0 24 12"><rect x="1" y="1" width="19" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="3" y="3" width="13" height="6" rx="1" fill="currentColor"/><path d="M21.5 4v4a2 2 0 0 0 0-4z" fill="currentColor"/></svg>
+              </span>
+            </div>
+            <div class="appbar">
+              <div>
+                <div style="font-size:11px;color:var(--ink-3)">上午好，康女士</div>
+                <div class="ab-title" style="display:flex;align-items:center;gap:6px">我的家 <svg width="13" height="13" style="color:var(--ink-3)"><use href="#i-chev-d"/></svg></div>
+              </div>
+              <div class="grow"></div>
+              <div class="icon-btn" style="background:var(--accent-soft);border-color:transparent;color:var(--accent)">康</div>
+            </div>
+            <div class="scroll">
+              <div class="card">
+                <div class="stat-grid">
+                  <div class="stat"><div class="n">3</div><div class="l">房间</div></div>
+                  <div class="stat"><div class="n">28</div><div class="l">物品</div></div>
+                  <div class="stat"><div class="n">6</div><div class="l">库存</div></div>
+                  <div class="stat alert-n"><div class="n">2</div><div class="l">提醒</div></div>
+                </div>
+              </div>
+              <div class="remind" style="margin-top:12px">
+                <div class="ri"><svg width="18" height="18"><use href="#i-bell"/></svg></div>
+                <div class="rt"><b>2 项库存提醒</b><span>洗衣液仅剩 1 瓶 · 垃圾袋 3 卷</span></div>
+                <div class="go">查看</div>
+              </div>
+              <div class="card" style="margin-top:12px">
+                <div class="quick">
+                  <div class="q"><div class="qi"><svg width="22" height="22"><use href="#i-grid"/></svg></div><span>房间</span></div>
+                  <div class="q"><div class="qi"><svg width="22" height="22"><use href="#i-plus"/></svg></div><span>加物品</span></div>
+                  <div class="q"><div class="qi"><svg width="22" height="22"><use href="#i-eye"/></svg></div><span>三维</span></div>
+                  <div class="q"><div class="qi"><svg width="22" height="22"><use href="#i-list"/></svg></div><span>库存</span></div>
+                </div>
+              </div>
+              <div class="card" style="margin-top:12px">
+                <div class="card-t" style="margin-bottom:2px">最近变动</div>
+                <div class="row">
+                  <div class="dot"><svg width="15" height="15"><use href="#i-move"/></svg></div>
+                  <div class="rt"><b>身份证 移动到 床头柜</b><span>客厅·电视柜 → 卧室·床头柜</span></div>
+                  <div class="tm">09:12</div>
+                </div>
+                <div class="row">
+                  <div class="dot"><svg width="15" height="15"><use href="#i-plus"/></svg></div>
+                  <div class="rt"><b>洗衣液 入库 +2</b><span>库存余额更新为 3 瓶</span></div>
+                  <div class="tm">昨天</div>
+                </div>
+              </div>
+            </div>
+            <div class="tabbar">
+              <div class="tb on"><svg width="20" height="20"><use href="#i-home"/></svg><b>首页</b></div>
+              <div class="tb"><svg width="20" height="20"><use href="#i-grid"/></svg>空间</div>
+              <div class="tb"><svg width="20" height="20"><use href="#i-box"/></svg>物品</div>
+              <div class="tb"><svg width="20" height="20"><use href="#i-list"/></svg>库存</div>
+              <div class="tb"><svg width="20" height="20"><use href="#i-user"/></svg>我的</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 方案 B 首页 -->
+      <div class="slot phone-b">
+        <div class="slot-label"><b>B · 暖陶雅居</b><span class="tag">雅致克制</span></div>
+        <div class="phone theme-b">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="statusbar">
+              <span>9:41</span>
+              <span class="sb-r">
+                <svg width="17" height="12" viewBox="0 0 17 12"><g fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx=".6"/><rect x="4" y="6" width="2.5" height="6" rx=".6"/><rect x="8" y="3" width="2.5" height="9" rx=".6"/><rect x="12" y="0" width="2.5" height="12" rx=".6"/></g></svg>
+                <svg width="15" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 4a10 10 0 0 1 14 0M3.5 6.7a6.5 6.5 0 0 1 9 0M6 9.4a3 3 0 0 1 4 0"/><circle cx="8" cy="11.4" r=".7" fill="currentColor" stroke="none"/></svg>
+                <svg width="22" height="12" viewBox="0 0 24 12"><rect x="1" y="1" width="19" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="3" y="3" width="13" height="6" rx="1" fill="currentColor"/><path d="M21.5 4v4a2 2 0 0 0 0-4z" fill="currentColor"/></svg>
+              </span>
+            </div>
+            <div class="appbar">
+              <div>
+                <div style="font-size:11px;color:var(--ink-3);letter-spacing:.04em">上午好 · 康女士</div>
+                <div class="ab-title" style="display:flex;align-items:center;gap:6px">我的家 <svg width="13" height="13" style="color:var(--ink-3)"><use href="#i-chev-d"/></svg></div>
+              </div>
+              <div class="grow"></div>
+              <div class="icon-btn" style="background:var(--accent-soft);border-color:transparent;color:var(--accent)">康</div>
+            </div>
+            <div class="scroll">
+              <div class="card">
+                <div class="stat-grid">
+                  <div class="stat"><div class="n">3</div><div class="l">房间</div></div>
+                  <div class="stat"><div class="n">28</div><div class="l">物品</div></div>
+                  <div class="stat"><div class="n">6</div><div class="l">库存</div></div>
+                  <div class="stat alert-n"><div class="n">2</div><div class="l">提醒</div></div>
+                </div>
+              </div>
+              <div class="remind" style="margin-top:12px;border-left:3px solid var(--alert);border-radius:var(--r-ctl)">
+                <div class="ri" style="border-radius:var(--r-ctl)"><svg width="18" height="18"><use href="#i-bell"/></svg></div>
+                <div class="rt"><b>2 项库存提醒</b><span>洗衣液仅剩 1 瓶 · 垃圾袋 3 卷</span></div>
+                <div class="go">查看</div>
+              </div>
+              <div class="card" style="margin-top:12px">
+                <div class="quick">
+                  <div class="q"><div class="qi"><svg width="22" height="22"><use href="#i-grid"/></svg></div><span>房间</span></div>
+                  <div class="q"><div class="qi"><svg width="22" height="22"><use href="#i-plus"/></svg></div><span>加物品</span></div>
+                  <div class="q"><div class="qi"><svg width="22" height="22"><use href="#i-eye"/></svg></div><span>三维</span></div>
+                  <div class="q"><div class="qi"><svg width="22" height="22"><use href="#i-list"/></svg></div><span>库存</span></div>
+                </div>
+              </div>
+              <div class="card" style="margin-top:12px">
+                <div class="card-t" style="margin-bottom:2px">最近变动</div>
+                <div class="row">
+                  <div class="dot" style="border-radius:8px"><svg width="15" height="15"><use href="#i-move"/></svg></div>
+                  <div class="rt"><b>身份证 移动到 床头柜</b><span>客厅·电视柜 → 卧室·床头柜</span></div>
+                  <div class="tm">09:12</div>
+                </div>
+                <div class="row">
+                  <div class="dot" style="border-radius:8px"><svg width="15" height="15"><use href="#i-plus"/></svg></div>
+                  <div class="rt"><b>洗衣液 入库 +2</b><span>库存余额更新为 3 瓶</span></div>
+                  <div class="tm">昨天</div>
+                </div>
+              </div>
+            </div>
+            <div class="tabbar">
+              <div class="tb on"><svg width="20" height="20"><use href="#i-home"/></svg><b>首页</b></div>
+              <div class="tb"><svg width="20" height="20"><use href="#i-grid"/></svg>空间</div>
+              <div class="tb"><svg width="20" height="20"><use href="#i-box"/></svg>物品</div>
+              <div class="tb"><svg width="20" height="20"><use href="#i-list"/></svg>库存</div>
+              <div class="tb"><svg width="20" height="20"><use href="#i-user"/></svg>我的</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 页面 2：三维房间 ============ -->
+  <section class="section" id="room">
+    <div class="sec-head">
+      <span class="sec-id">02 / 03</span>
+      <span class="sec-title">三维房间 · 手动编辑核心</span>
+    </div>
+    <p class="sec-note">V1.2 主路径：用户手动添加、拖动、旋转、缩放模型并绑定收纳节点。画面聚焦三维画布、选中模型卡与绑定关系。两方案在画布网格、选中高亮、模型参数卡的处理上体现材质感差异。</p>
+
+    <div class="compare">
+      <!-- A 三维 -->
+      <div class="slot phone-a">
+        <div class="slot-label"><b>A · 原木日常</b><span class="tag">温润亲和</span></div>
+        <div class="phone theme-a">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="statusbar">
+              <span>9:41</span>
+              <span class="sb-r">
+                <svg width="17" height="12" viewBox="0 0 17 12"><g fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx=".6"/><rect x="4" y="6" width="2.5" height="6" rx=".6"/><rect x="8" y="3" width="2.5" height="9" rx=".6"/><rect x="12" y="0" width="2.5" height="12" rx=".6"/></g></svg>
+                <svg width="15" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 4a10 10 0 0 1 14 0M3.5 6.7a6.5 6.5 0 0 1 9 0M6 9.4a3 3 0 0 1 4 0"/><circle cx="8" cy="11.4" r=".7" fill="currentColor" stroke="none"/></svg>
+                <svg width="22" height="12" viewBox="0 0 24 12"><rect x="1" y="1" width="19" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="3" y="3" width="13" height="6" rx="1" fill="currentColor"/><path d="M21.5 4v4a2 2 0 0 0 0-4z" fill="currentColor"/></svg>
+              </span>
+            </div>
+            <div class="appbar">
+              <div class="icon-btn plain"><svg width="18" height="18"><use href="#i-back"/></svg></div>
+              <div class="ab-title">客厅 · 三维</div>
+              <div class="grow"></div>
+              <div class="icon-btn plain"><svg width="18" height="18"><use href="#i-edit"/></svg></div>
+            </div>
+            <div class="scroll">
+              <div class="segbar"><span class="s on">浏览</span><span class="s">编辑</span><span class="s">收纳</span></div>
+              <div class="canvas3d" style="margin-top:12px">
+                <div class="floor"></div>
+                <div class="furn sofa"><span class="cap">三人沙发</span></div>
+                <div class="furn table"></div>
+                <div class="furn tv"></div>
+                <span class="handle h1"></span><span class="handle h2"></span><span class="handle h3"></span><span class="handle h4"></span>
+                <div class="canvas-hint">点选模型可查看与编辑</div>
+              </div>
+              <div class="card" style="margin-top:12px">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div class="card-t">三人沙发</div>
+                  <span class="chip good" style="margin-left:auto"><span class="cdot"></span>已保存</span>
+                </div>
+                <div class="field-row">
+                  <div class="field"><div class="fl">位置 X / Z</div><div class="fv">1.2 / 0.8</div></div>
+                  <div class="field"><div class="fl">旋转</div><div class="fv">90°</div></div>
+                  <div class="field"><div class="fl">宽×深×高</div><div class="fv">2.1×0.9×0.8</div></div>
+                </div>
+                <div class="bind">
+                  <div class="bi"><svg width="17" height="17"><use href="#i-link"/></svg></div>
+                  <div class="bt"><b>已绑定收纳节点</b><span>客厅 / 沙发 / 坐垫下储物格 · 2 件物品</span></div>
+                  <svg width="14" height="14" style="color:var(--good)"><use href="#i-chev"/></svg>
+                </div>
+                <div class="btn-row">
+                  <div class="btn primary">保存变换</div>
+                  <div class="btn danger" style="flex:0 0 34%">删除模型</div>
+                </div>
+              </div>
+            </div>
+            <div class="tabbar">
+              <div class="tb"><svg width="20" height="20"><use href="#i-home"/></svg>首页</div>
+              <div class="tb on"><svg width="20" height="20"><use href="#i-grid"/></svg><b>空间</b></div>
+              <div class="tb"><svg width="20" height="20"><use href="#i-box"/></svg>物品</div>
+              <div class="tb"><svg width="20" height="20"><use href="#i-list"/></svg>库存</div>
+              <div class="tb"><svg width="20" height="20"><use href="#i-user"/></svg>我的</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- B 三维 -->
+      <div class="slot phone-b">
+        <div class="slot-label"><b>B · 暖陶雅居</b><span class="tag">雅致克制</span></div>
+        <div class="phone theme-b">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="statusbar">
+              <span>9:41</span>
+              <span class="sb-r">
+                <svg width="17" height="12" viewBox="0 0 17 12"><g fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx=".6"/><rect x="4" y="6" width="2.5" height="6" rx=".6"/><rect x="8" y="3" width="2.5" height="9" rx=".6"/><rect x="12" y="0" width="2.5" height="12" rx=".6"/></g></svg>
+                <svg width="15" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 4a10 10 0 0 1 14 0M3.5 6.7a6.5 6.5 0 0 1 9 0M6 9.4a3 3 0 0 1 4 0"/><circle cx="8" cy="11.4" r=".7" fill="currentColor" stroke="none"/></svg>
+                <svg width="22" height="12" viewBox="0 0 24 12"><rect x="1" y="1" width="19" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="3" y="3" width="13" height="6" rx="1" fill="currentColor"/><path d="M21.5 4v4a2 2 0 0 0 0-4z" fill="currentColor"/></svg>
+              </span>
+            </div>
+            <div class="appbar">
+              <div class="icon-btn plain"><svg width="18" height="18"><use href="#i-back"/></svg></div>
+              <div class="ab-title">客厅 · 三维</div>
+              <div class="grow"></div>
+              <div class="icon-btn plain"><svg width="18" height="18"><use href="#i-edit"/></svg></div>
+            </div>
+            <div class="scroll">
+              <div class="segbar"><span class="s on">浏览</span><span class="s">编辑</span><span class="s">收纳</span></div>
+              <div class="canvas3d" style="margin-top:12px;border-radius:var(--r-ctl)">
+                <div class="floor"></div>
+                <div class="furn sofa" style="border-radius:6px"><span class="cap">三人沙发</span></div>
+                <div class="furn table" style="border-radius:6px"></div>
+                <div class="furn tv" style="border-radius:4px"></div>
+                <span class="handle h1" style="border-radius:1px"></span><span class="handle h2" style="border-radius:1px"></span><span class="handle h3" style="border-radius:1px"></span><span class="handle h4" style="border-radius:1px"></span>
+                <div class="canvas-hint" style="border-radius:var(--r-ctl)">点选模型可查看与编辑</div>
+              </div>
+              <div class="card" style="margin-top:12px">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div class="card-t">三人沙发</div>
+                  <span class="chip good" style="margin-left:auto;border-radius:var(--r-ctl)"><span class="cdot"></span>已保存</span>
+                </div>
+                <div class="field-row">
+                  <div class="field"><div class="fl">位置 X / Z</div><div class="fv">1.2 / 0.8</div></div>
+                  <div class="field"><div class="fl">旋转</div><div class="fv">90°</div></div>
+                  <div class="field"><div class="fl">宽×深×高</div><div class="fv">2.1×0.9×0.8</div></div>
+                </div>
+                <div class="bind" style="border-radius:var(--r-ctl)">
+                  <div class="bi"><svg width="17" height="17"><use href="#i-link"/></svg></div>
+                  <div class="bt"><b>已绑定收纳节点</b><span>客厅 / 沙发 / 坐垫下储物格 · 2 件物品</span></div>
+                  <svg width="14" height="14" style="color:var(--good)"><use href="#i-chev"/></svg>
+                </div>
+                <div class="btn-row">
+                  <div class="btn primary">保存变换</div>
+                  <div class="btn danger" style="flex:0 0 34%">删除模型</div>
+                </div>
+              </div>
+            </div>
+            <div class="tabbar">
+              <div class="tb"><svg width="20" height="20"><use href="#i-home"/></svg>首页</div>
+              <div class="tb on"><svg width="20" height="20"><use href="#i-grid"/></svg><b>空间</b></div>
+              <div class="tb"><svg width="20" height="20"><use href="#i-box"/></svg>物品</div>
+              <div class="tb"><svg width="20" height="20"><use href="#i-list"/></svg>库存</div>
+              <div class="tb"><svg width="20" height="20"><use href="#i-user"/></svg>我的</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 页面 3：物品详情 ============ -->
+  <section class="section" id="item">
+    <div class="sec-head">
+      <span class="sec-id">03 / 03</span>
+      <span class="sec-title">物品详情 · 状态与操作</span>
+    </div>
+    <p class="sec-note">单件物品档案枢纽：概览与完善度、当前位置状态、四种位置状态切换与操作入口。对比看两方案如何表达「已确认事实」与「操作层级」——A 用柔和色块与圆润标签，B 用衬线标题与细线分区。</p>
+
+    <div class="compare">
+      <!-- A 详情 -->
+      <div class="slot phone-a">
+        <div class="slot-label"><b>A · 原木日常</b><span class="tag">温润亲和</span></div>
+        <div class="phone theme-a">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="statusbar">
+              <span>9:41</span>
+              <span class="sb-r">
+                <svg width="17" height="12" viewBox="0 0 17 12"><g fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx=".6"/><rect x="4" y="6" width="2.5" height="6" rx=".6"/><rect x="8" y="3" width="2.5" height="9" rx=".6"/><rect x="12" y="0" width="2.5" height="12" rx=".6"/></g></svg>
+                <svg width="15" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 4a10 10 0 0 1 14 0M3.5 6.7a6.5 6.5 0 0 1 9 0M6 9.4a3 3 0 0 1 4 0"/><circle cx="8" cy="11.4" r=".7" fill="currentColor" stroke="none"/></svg>
+                <svg width="22" height="12" viewBox="0 0 24 12"><rect x="1" y="1" width="19" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="3" y="3" width="13" height="6" rx="1" fill="currentColor"/><path d="M21.5 4v4a2 2 0 0 0 0-4z" fill="currentColor"/></svg>
+              </span>
+            </div>
+            <div class="appbar">
+              <div class="icon-btn plain"><svg width="18" height="18"><use href="#i-back"/></svg></div>
+              <div class="ab-title">物品详情</div>
+              <div class="grow"></div>
+              <div class="icon-btn plain">•••</div>
+            </div>
+            <div class="scroll">
+              <div class="card">
+                <div class="hero">
+                  <div class="thumb"><svg width="26" height="26"><use href="#i-box"/></svg></div>
+                  <div class="hi"><div class="nm">身份证</div><div class="meta">证件 · 正常在管</div></div>
+                  <span class="chip neutral">档案 75%</span>
+                </div>
+                <div class="progress"><i></i></div>
+              </div>
+              <div class="card">
+                <div class="status-line"><span class="chip good"><span class="cdot"></span>已定位</span></div>
+                <div class="path">客厅<span class="sep">/</span>电视柜<span class="sep">/</span>抽屉</div>
+                <div class="muted">最近确认：今天 09:12</div>
+                <div class="chips4">
+                  <span class="chip good">已定位</span>
+                  <span class="chip neutral">未知</span>
+                  <span class="chip neutral">外出</span>
+                  <span class="chip neutral">借出</span>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-t" style="margin-bottom:4px">操作</div>
+                <div class="ops">
+                  <div class="op"><svg class="oi" width="16" height="16"><use href="#i-edit"/></svg>编辑档案<svg class="chev" width="13" height="13"><use href="#i-chev"/></svg></div>
+                  <div class="op"><svg class="oi" width="16" height="16"><use href="#i-move"/></svg>移动物品<svg class="chev" width="13" height="13"><use href="#i-chev"/></svg></div>
+                  <div class="op"><svg class="oi" width="16" height="16"><use href="#i-clock"/></svg>位置历史<svg class="chev" width="13" height="13"><use href="#i-chev"/></svg></div>
+                  <div class="op"><svg class="oi" width="16" height="16"><use href="#i-list"/></svg>库存<svg class="chev" width="13" height="13"><use href="#i-chev"/></svg></div>
+                  <div class="op danger"><svg class="oi" width="16" height="16"><use href="#i-warn"/></svg>结束管理<svg class="chev" width="13" height="13"><use href="#i-chev"/></svg></div>
+                </div>
+              </div>
+            </div>
+            <div class="bottom-cta"><div class="btn primary">移动物品</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- B 详情 -->
+      <div class="slot phone-b">
+        <div class="slot-label"><b>B · 暖陶雅居</b><span class="tag">雅致克制</span></div>
+        <div class="phone theme-b">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="statusbar">
+              <span>9:41</span>
+              <span class="sb-r">
+                <svg width="17" height="12" viewBox="0 0 17 12"><g fill="currentColor"><rect x="0" y="8" width="2.5" height="4" rx=".6"/><rect x="4" y="6" width="2.5" height="6" rx=".6"/><rect x="8" y="3" width="2.5" height="9" rx=".6"/><rect x="12" y="0" width="2.5" height="12" rx=".6"/></g></svg>
+                <svg width="15" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 4a10 10 0 0 1 14 0M3.5 6.7a6.5 6.5 0 0 1 9 0M6 9.4a3 3 0 0 1 4 0"/><circle cx="8" cy="11.4" r=".7" fill="currentColor" stroke="none"/></svg>
+                <svg width="22" height="12" viewBox="0 0 24 12"><rect x="1" y="1" width="19" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="3" y="3" width="13" height="6" rx="1" fill="currentColor"/><path d="M21.5 4v4a2 2 0 0 0 0-4z" fill="currentColor"/></svg>
+              </span>
+            </div>
+            <div class="appbar">
+              <div class="icon-btn plain"><svg width="18" height="18"><use href="#i-back"/></svg></div>
+              <div class="ab-title">物品详情</div>
+              <div class="grow"></div>
+              <div class="icon-btn plain">•••</div>
+            </div>
+            <div class="scroll">
+              <div class="card">
+                <div class="hero">
+                  <div class="thumb" style="border-radius:var(--r-ctl)"><svg width="26" height="26"><use href="#i-box"/></svg></div>
+                  <div class="hi"><div class="nm">身份证</div><div class="meta">证件 · 正常在管</div></div>
+                  <span class="chip neutral" style="border-radius:var(--r-ctl)">档案 75%</span>
+                </div>
+                <div class="progress" style="border-radius:2px"><i style="border-radius:2px"></i></div>
+              </div>
+              <div class="card">
+                <div class="status-line"><span class="chip good" style="border-radius:var(--r-ctl)"><span class="cdot"></span>已定位</span></div>
+                <div class="path">客厅<span class="sep">/</span>电视柜<span class="sep">/</span>抽屉</div>
+                <div class="muted">最近确认：今天 09:12</div>
+                <div class="chips4">
+                  <span class="chip good" style="border-radius:var(--r-ctl)">已定位</span>
+                  <span class="chip neutral" style="border-radius:var(--r-ctl)">未知</span>
+                  <span class="chip neutral" style="border-radius:var(--r-ctl)">外出</span>
+                  <span class="chip neutral" style="border-radius:var(--r-ctl)">借出</span>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-t" style="margin-bottom:4px">操作</div>
+                <div class="ops">
+                  <div class="op"><svg class="oi" width="16" height="16"><use href="#i-edit"/></svg>编辑档案<svg class="chev" width="13" height="13"><use href="#i-chev"/></svg></div>
+                  <div class="op"><svg class="oi" width="16" height="16"><use href="#i-move"/></svg>移动物品<svg class="chev" width="13" height="13"><use href="#i-chev"/></svg></div>
+                  <div class="op"><svg class="oi" width="16" height="16"><use href="#i-clock"/></svg>位置历史<svg class="chev" width="13" height="13"><use href="#i-chev"/></svg></div>
+                  <div class="op"><svg class="oi" width="16" height="16"><use href="#i-list"/></svg>库存<svg class="chev" width="13" height="13"><use href="#i-chev"/></svg></div>
+                  <div class="op danger"><svg class="oi" width="16" height="16"><use href="#i-warn"/></svg>结束管理<svg class="chev" width="13" height="13"><use href="#i-chev"/></svg></div>
+                </div>
+              </div>
+            </div>
+            <div class="bottom-cta"><div class="btn primary">移动物品</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 设计基因对照 ============ -->
+  <section class="genes" id="genes">
+    <h3>设计基因对照</h3>
+    <div class="gene-grid">
+      <div class="gene">
+        <h4>方案 A · 原木日常</h4>
+        <div class="swatches">
+          <div class="sw" style="background:#FAF6EE" title="暖米白 背景"></div>
+          <div class="sw" style="background:#FFFFFF" title="纯白 卡片"></div>
+          <div class="sw" style="background:#9C6B3F" title="原木棕 主色"></div>
+          <div class="sw" style="background:#6E7F59" title="苔绿 正常"></div>
+          <div class="sw" style="background:#BE5F44" title="陶红 提醒"></div>
+          <div class="sw" style="background:#3B3229" title="暖褐墨 文字"></div>
+        </div>
+        <p><b>形态</b>　圆角 20 / 12；独立白卡 + 柔和轻阴影，卡片之间留白宽松，亲和圆润。<br>
+           <b>字体</b>　无衬线圆润，数字粗实、字距收紧，信息层级靠字重与色阶。<br>
+           <b>色彩</b>　原木棕主操作、苔绿表正常、陶红表提醒，暖米白铺底，整体温润自然。<br>
+           <b>气质</b>　像一个整理妥当、阳光照进的木质家居空间——轻快、好接近。</p>
+      </div>
+      <div class="gene">
+        <h4>方案 B · 暖陶雅居</h4>
+        <div class="swatches">
+          <div class="sw" style="background:#F4EDE4" title="奶油白 背景"></div>
+          <div class="sw" style="background:#FDFAF6" title="暖白 卡片"></div>
+          <div class="sw" style="background:#B0563A" title="赤陶 主色"></div>
+          <div class="sw" style="background:#6C6A46" title="橄榄 正常"></div>
+          <div class="sw" style="background:#A5402D" title="深陶红 提醒"></div>
+          <div class="sw" style="background:#342821" title="深咖墨 文字"></div>
+        </div>
+        <p><b>形态</b>　圆角 12 / 8；细分割线分区、卡片收拢克制，字重对比强、版面更紧致。<br>
+           <b>字体</b>　标题衬线雅致（宋体系），正文无衬线，衬线数字带出精致感。<br>
+           <b>色彩</b>　赤陶主操作、橄榄表正常、深陶红表提醒，奶油白铺底，质感沉稳。<br>
+           <b>气质</b>　像一间陈设讲究的暖调居所——克制、耐看、有手感。</p>
+      </div>
+    </div>
+
+    <div class="footnote">
+      说明：两方案基于已冻结的 21 页功能原型，页面结构、信息项与交互路径完全一致，仅视觉语言不同；此页用于二选一或融合决策。色值与字体令牌见同目录 <b>design-tokens.css</b>，方案清单见 <b>_ds_manifest.json</b>。原型为演示用途，未写入真实家庭数据。
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  var seg=document.getElementById('viewSeg');
+  seg.addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    [].forEach.call(seg.children,function(x){x.classList.remove('is-active')});
+    b.classList.add('is-active');
+    var v=b.dataset.v, body=document.body;
+    body.classList.remove('view-a','view-b');
+    if(v==='a')body.classList.add('view-a');
+    if(v==='b')body.classList.add('view-b');
+  });
+})();
+</script>
+</body>
+</html>

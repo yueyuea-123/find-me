@@ -1,0 +1,1968 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>居所收纳 · 高保真原型 · 方案A 原木日常</title>
+<link rel="stylesheet" href="hifi.css">
+</head>
+<body>
+
+<!-- ============ 舞台切换条：桌面 1440 / 平板 768 / 手机 375 ============ -->
+<div class="stage-bar">
+  <span class="sb-title">居所收纳 · 高保真原型</span>
+  <span class="sb-note">方案A 原木日常 · Oak &amp; Linen · 21 页 · V1.2</span>
+  <div class="seg">
+    <button data-w="1440">桌面 1440</button>
+    <button data-w="768">平板 768</button>
+    <button data-w="375">手机 375</button>
+    <button data-w="full" class="is-active">自适应</button>
+  </div>
+</div>
+
+<div class="stage">
+<div class="app" id="app">
+
+  <!-- =========== P0 · 页面流程总览 =========== -->
+  <section class="page is-active" id="p0" data-pid="P0" data-title="页面流程总览">
+    <div class="browser-bar">
+      <button class="bb-btn" data-back title="返回上一页"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4l-4 4 4 4"/></svg></button>
+      <span class="bb-id">P0</span><span class="bb-url"></span>
+    </div>
+    <div class="content stack">
+      <div>
+        <h1 class="h1">居所收纳 · 页面流程总览</h1>
+        <p class="xs" style="margin-top:4px">三维室内空间与家庭物品管理微信小程序 · 低保真线稿 · 点击任意节点跳转，箭头标签为触发条件。</p>
+        <div class="legend" style="margin-top:12px">
+          <span class="lg"><span class="sw" style="background:var(--ink-900)"></span>确认事实 / 主路径</span>
+          <span class="lg"><span class="sw" style="background:var(--paper);border:1px dashed var(--ink-500)"></span>候选 / 可选分支</span>
+          <span class="lg"><span class="sw" style="background:var(--danger)"></span>待确认 / 异常</span>
+        </div>
+      </div>
+      <div class="anno"><b>版本口径：</b>V1.2（CR-001 已批准）——三维主路径为「用户手动自由编辑三维场景」；照片 / 尺寸参照 / 建模任务（UI-004/005/007 中的可选部分）降级为可选，不进 P0 主流程。共 21 页（含本总览）。</div>
+
+      <div class="card">
+        <div class="card-hd"><span class="card-title">UF-001 首次建立空间（V1.2）</span></div>
+        <div class="card-bd"><div class="flow">
+        <div class="flow-col">
+          <div class="flow-node" data-goto="p2"><span class="fn-id">UI-002</span><span class="fn-name">空间列表</span><div class="fn-desc">新建空间命名</div></div>
+          <div class="flow-arrow"><span class="fa-line"></span><span class="fa-tip">创建空间</span></div>
+        </div>
+        <div class="flow-col">
+          <div class="flow-node" data-goto="p3"><span class="fn-id">UI-003</span><span class="fn-name">房间列表</span><div class="fn-desc">建房间·填宽深高·选起点</div></div>
+          <div class="flow-arrow"><span class="fa-line"></span><span class="fa-tip">进入房间</span></div>
+        </div>
+        <div class="flow-col">
+          <div class="flow-node" data-goto="p4"><span class="fn-id">UI-006</span><span class="fn-name">三维房间</span><div class="fn-desc">模型库添加家具·编辑模板</div></div>
+          <div class="flow-arrow"><span class="fa-line"></span><span class="fa-tip">手动编辑</span></div>
+        </div>
+        <div class="flow-col">
+          <div class="flow-node" data-goto="p5"><span class="fn-id">UI-007</span><span class="fn-name">家具编辑</span><div class="fn-desc">拖动/旋转/缩放后保存</div></div>
+        </div>
+        </div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><span class="card-title">UF-002 建立家具与收纳（V1.2）</span></div>
+        <div class="card-bd"><div class="flow">
+        <div class="flow-col">
+          <div class="flow-node" data-goto="p4"><span class="fn-id">UI-006</span><span class="fn-name">三维房间</span><div class="fn-desc">点选模型·变换</div></div>
+          <div class="flow-arrow"><span class="fa-line"></span><span class="fa-tip">进入编辑</span></div>
+        </div>
+        <div class="flow-col">
+          <div class="flow-node" data-goto="p6"><span class="fn-id">UI-008</span><span class="fn-name">家具详情</span><div class="fn-desc">模型与节点分区·建节点</div></div>
+          <div class="flow-arrow"><span class="fa-line"></span><span class="fa-tip">添加节点</span></div>
+        </div>
+        <div class="flow-col">
+          <div class="flow-node" data-goto="p7"><span class="fn-id">UI-009</span><span class="fn-name">收纳节点</span><div class="fn-desc">设置绑定节点</div></div>
+          <div class="flow-arrow"><span class="fa-line"></span><span class="fa-tip">查看节点</span></div>
+        </div>
+        <div class="flow-col">
+          <div class="flow-node" data-goto="p9"><span class="fn-id">UI-011</span><span class="fn-name">添加物品</span><div class="fn-desc">物品绑定到节点</div></div>
+        </div>
+        </div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><span class="card-title">UF-003 添加物品并完善</span></div>
+        <div class="card-bd"><div class="flow">
+        <div class="flow-col">
+          <div class="flow-node" data-goto="p8"><span class="fn-id">UI-010</span><span class="fn-name">物品列表</span><div class="fn-desc">搜索筛选·FAB 新建</div></div>
+          <div class="flow-arrow"><span class="fa-line"></span><span class="fa-tip">点击 +</span></div>
+        </div>
+        <div class="flow-col">
+          <div class="flow-node" data-goto="p9"><span class="fn-id">UI-011</span><span class="fn-name">添加编辑</span><div class="fn-desc">仅名称即可·选跟踪模式</div></div>
+          <div class="flow-arrow"><span class="fa-line"></span><span class="fa-tip">保存</span></div>
+        </div>
+        <div class="flow-col">
+          <div class="flow-node" data-goto="p10"><span class="fn-id">UI-012</span><span class="fn-name">物品详情</span><div class="fn-desc">逐步补分类/照片/位置</div></div>
+        </div>
+        </div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><span class="card-title">UF-004 移动物品</span></div>
+        <div class="card-bd"><div class="flow">
+        <div class="flow-col">
+          <div class="flow-node" data-goto="p10"><span class="fn-id">UI-012</span><span class="fn-name">物品详情</span><div class="fn-desc">点「移动」</div></div>
+          <div class="flow-arrow"><span class="fa-line"></span><span class="fa-tip">选择移动</span></div>
+        </div>
+        <div class="flow-col">
+          <div class="flow-node" data-goto="p11"><span class="fn-id">UI-013</span><span class="fn-name">移动物品</span><div class="fn-desc">选目标或状态·确认</div></div>
+          <div class="flow-arrow"><span class="fa-line"></span><span class="fa-tip">确认</span></div>
+        </div>
+        <div class="flow-col">
+          <div class="flow-node" data-goto="p12"><span class="fn-id">UI-014</span><span class="fn-name">移动历史</span><div class="fn-desc">同事务写历史·首次独立</div></div>
+        </div>
+        </div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><span class="card-title">UF-005 库存管理</span></div>
+        <div class="card-bd"><div class="flow">
+        <div class="flow-col">
+          <div class="flow-node" data-goto="p13"><span class="fn-id">UI-015</span><span class="fn-name">库存总览</span><div class="fn-desc">易耗品清单·低库存</div></div>
+          <div class="flow-arrow"><span class="fa-line"></span><span class="fa-tip">点击条目</span></div>
+        </div>
+        <div class="flow-col">
+          <div class="flow-node" data-goto="p14"><span class="fn-id">UI-016</span><span class="fn-name">库存详情</span><div class="fn-desc">入库/消耗/调整·校验</div></div>
+          <div class="flow-arrow"><span class="fa-line"></span><span class="fa-tip">达阈值</span></div>
+        </div>
+        <div class="flow-col">
+          <div class="flow-node" data-goto="p15"><span class="fn-id">UI-017</span><span class="fn-name">提醒中心</span><div class="fn-desc">同周期一条·达标结束</div></div>
+        </div>
+        </div></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><span class="card-title">辅助页与系统页</span></div>
+        <div class="card-bd"><div class="auto-4">
+          <button class="btn" data-goto="p1">UI-001 首页</button>
+          <button class="btn" data-goto="p16">UI-018 我的</button>
+          <button class="btn" data-goto="p19">备份恢复</button>
+          <button class="btn" data-goto="p17">UI-004 房间照片（可选）</button>
+          <button class="btn" data-goto="p18">UI-005 建模任务（可选）</button>
+          <button class="btn" data-goto="p20">管理后台（管理员态）</button>
+        </div></div>
+      </div>
+      <div class="anno anno-red"><b>待确认 Q-01：</b>页面编号以 app.json 注册的 21 页为准；UI-017/018 及系统页编号为评审编号，非历史文档既有编号，落地前请产品确认。</div>
+      <div class="anno anno-red"><b>待确认 Q-10：</b>本次交付为可点击线稿原型（index.html），配套文字说明见《原型设计需求梳理与评审说明 V1.0》；两者配套使用，评审后据结论修订。</div>
+      <div class="anno"><b>评审建议：</b>按 UF-001→005 顺序点通主流程；重点核对三维手动编辑、绑定、降级三条 V1.2 关键路径，并对 Q-01～Q-10 逐项拍板。</div>
+    </div>
+  </section>
+
+  <!-- =========== UI-001 · 首页 =========== -->
+  <section class="page" id="p1" data-pid="UI-001" data-title="首页">
+    <div class="browser-bar">
+      <button class="bb-btn" data-back title="返回上一页"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4l-4 4 4 4"/></svg></button>
+      <span class="bb-id">UI-001</span>
+      <span class="bb-url"></span>
+    </div>
+    <div class="shell">
+    <aside class="sidebar" id="sb-p1">
+      <div class="sb-brand"><span data-icon="grid"></span> 居所收纳</div>
+      <div class="sb-body">
+        <div class="nav">
+          <div class="nav-label">主导航</div>
+<a class="nav-item is-active" data-goto="p1"><span data-icon="home"></span> 首页</a>
+<a class="nav-item" data-goto="p2"><span data-icon="grid"></span> 空间</a>
+<a class="nav-item" data-goto="p8"><span data-icon="inbox"></span> 物品</a>
+<a class="nav-item" data-goto="p13"><span data-icon="list"></span> 库存</a>
+<a class="nav-item" data-goto="p16"><span data-icon="user"></span> 我的</a>
+          <div class="nav-label">评审</div>
+          <a class="nav-item" data-goto="p0"><span data-icon="arrowRight"></span> 流程总览</a>
+        </div>
+      </div>
+      <div class="sb-foot">
+        <div class="row"><span class="avatar avatar-sm">我</span><span class="sm strong">演示账户</span></div>
+      </div>
+    </aside>
+    <div class="scrim" data-close></div>
+      <div class="main">
+        <header class="topbar">
+          <button class="btn btn-ghost btn-icon hamburger" data-sidebar-open="#sb-p1" aria-label="菜单"><span data-icon="menu"></span></button>
+          <span class="tb-title">首页</span>
+          <div class="tb-right">
+          <button class="btn btn-ghost btn-icon" data-icon="more" data-toast="更多操作" aria-label="更多"></button>
+          </div>
+        </header>
+        <div class="content stack">
+
+      <div class="anno"><b>页面目标：</b>进入小程序的默认落点。当前空间概览、四项统计、低库存提醒、快捷操作与最近变动，一屏掌握「家在哪里、缺什么、最近动了什么」。</div>
+      <div class="card">
+        <div class="card-hd">
+          <span class="card-title">当前空间</span>
+          <div class="spacer"></div>
+          <button class="btn btn-sm btn-secondary" data-goto="p2"><span data-icon="grid" data-icon-size="14"></span> 切换空间</button>
+        </div>
+        <div class="card-bd stack-sm">
+          <div class="row-md"><span class="h2" style="margin:0">我的家</span><span class="tag tag-strong">默认空间</span></div>
+          <div class="xs-sm">共 3 个房间 · 数据仅本账户可见</div>
+        </div>
+      </div>
+      <div class="auto-4">
+        <div class="stat"><div class="stat-label">房间</div><div class="stat-value">3</div><div class="stat-delta">已建档</div></div>
+        <div class="stat"><div class="stat-label">物品</div><div class="stat-value">28</div><div class="stat-delta">其中 4 件位置未知</div></div>
+        <div class="stat"><div class="stat-label">库存</div><div class="stat-value">6</div><div class="stat-delta">2 项低于阈值</div></div>
+        <div class="stat"><div class="stat-label">提醒</div><div class="stat-value" style="color:var(--danger)">2</div><div class="stat-delta">待处理</div></div>
+      </div>
+      <div class="card" style="border-color:var(--danger-line)">
+        <div class="card-hd"><span class="card-title"><span data-icon="bell" data-icon-size="14"></span> 库存提醒</span><div class="spacer"></div><button class="btn btn-sm btn-ghost" data-goto="p15">查看全部</button></div>
+        <div class="card-bd stack-sm">
+          <div class="row-md"><span class="tag tag-danger">低于阈值</span><span class="body grow">洗衣液 · 剩余 1 瓶（阈值 2）</span><button class="btn btn-sm btn-secondary" data-goto="p14">去补货</button></div>
+          <div class="row-md"><span class="tag tag-danger">低于阈值</span><span class="body grow">垃圾袋 · 剩余 3 卷（阈值 5）</span><button class="btn btn-sm btn-secondary" data-goto="p14">去补货</button></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><span class="card-title">快捷操作</span></div>
+        <div class="card-bd">
+          <div class="auto-4">
+            <button class="btn btn-secondary btn-block" data-goto="p3"><span data-icon="grid" data-icon-size="14"></span> 房间</button>
+            <button class="btn btn-secondary btn-block" data-goto="p9"><span data-icon="plus" data-icon-size="14"></span> 加物品</button>
+            <button class="btn btn-secondary btn-block" data-goto="p4"><span data-icon="eye" data-icon-size="14"></span> 三维</button>
+            <button class="btn btn-secondary btn-block" data-goto="p13"><span data-icon="list" data-icon-size="14"></span> 库存</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><span class="card-title">最近变动</span><div class="spacer"></div><span class="xs-sm">历史 + 交易倒序 5 条</span></div>
+        <div class="card-bd" style="padding:0">
+          <div class="list">
+            <div class="list-item" data-goto="p12"><span class="tag">移动</span><span class="body grow">身份证 从 客厅·电视柜抽屉 → 卧室·床头柜</span><span class="xs-sm">今天 09:12</span><span data-icon="chevronRight" data-icon-size="12"></span></div>
+            <div class="list-item" data-goto="p14"><span class="tag">入库</span><span class="body grow">洗衣液 +2 瓶</span><span class="xs-sm">昨天 20:30</span><span data-icon="chevronRight" data-icon-size="12"></span></div>
+            <div class="list-item" data-goto="p12"><span class="tag">首次定位</span><span class="body grow">护照 确认到 书房·书桌第一层</span><span class="xs-sm">11-17 14:05</span><span data-icon="chevronRight" data-icon-size="12"></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="anno anno-red"><b>待确认 Q-08：</b>四项统计口径与「最近变动取倒序 5 条」沿用现有实现；若评审需调整统计维度或条数，请在此拍板（原型不写死为规格）。</div>
+      <div class="anno"><b>交互说明：</b>空间名点击进入 UI-002；提醒卡进入 UI-017；快捷操作直达对应主路径；变动列表按类型分别进入历史页或库存详情。无变动时显示空态引导。</div>
+
+        </div><!-- /content -->
+      <nav class="tabbar">
+<a class="tb is-active" data-goto="p1"><span data-icon="home"></span>首页</a>
+<a class="tb" data-goto="p2"><span data-icon="grid"></span>空间</a>
+<a class="tb" data-goto="p8"><span data-icon="inbox"></span>物品</a>
+<a class="tb" data-goto="p13"><span data-icon="list"></span>库存</a>
+<a class="tb" data-goto="p16"><span data-icon="user"></span>我的</a>
+      </nav>
+      </div><!-- /main -->
+    </div><!-- /shell -->
+  </section>
+
+  <!-- =========== UI-002 · 空间列表 =========== -->
+  <section class="page" id="p2" data-pid="UI-002" data-title="空间列表">
+    <div class="browser-bar">
+      <button class="bb-btn" data-back title="返回上一页"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4l-4 4 4 4"/></svg></button>
+      <span class="bb-id">UI-002</span>
+      <span class="bb-url"></span>
+    </div>
+    <div class="shell">
+    <aside class="sidebar" id="sb-p2">
+      <div class="sb-brand"><span data-icon="grid"></span> 居所收纳</div>
+      <div class="sb-body">
+        <div class="nav">
+          <div class="nav-label">主导航</div>
+<a class="nav-item" data-goto="p1"><span data-icon="home"></span> 首页</a>
+<a class="nav-item is-active" data-goto="p2"><span data-icon="grid"></span> 空间</a>
+<a class="nav-item" data-goto="p8"><span data-icon="inbox"></span> 物品</a>
+<a class="nav-item" data-goto="p13"><span data-icon="list"></span> 库存</a>
+<a class="nav-item" data-goto="p16"><span data-icon="user"></span> 我的</a>
+          <div class="nav-label">评审</div>
+          <a class="nav-item" data-goto="p0"><span data-icon="arrowRight"></span> 流程总览</a>
+        </div>
+      </div>
+      <div class="sb-foot">
+        <div class="row"><span class="avatar avatar-sm">我</span><span class="sm strong">演示账户</span></div>
+      </div>
+    </aside>
+    <div class="scrim" data-close></div>
+      <div class="main">
+        <header class="topbar">
+          <button class="btn btn-ghost btn-icon hamburger" data-sidebar-open="#sb-p2" aria-label="菜单"><span data-icon="menu"></span></button>
+          <span class="tb-title">空间列表</span>
+          <div class="tb-right">
+          <button class="btn btn-primary" data-modal-open="#m-new-space"><span data-icon="plus" data-icon-size="14"></span> 新建空间</button>
+          </div>
+        </header>
+        <div class="content stack">
+
+      <div class="anno"><b>页面目标：</b>管理多套空间（如自住、父母家）。当前空间高亮，可新建、切换、改名或归档。</div>
+      <div class="tabs" data-tab-group>
+        <button class="tab is-active" data-tab="list">全部空间（2）</button>
+        <button class="tab" data-tab="empty">空列表态</button>
+      </div>
+      <div data-tab-pane="list" class="tab-pane is-active">
+        <div class="auto-3">
+          <div class="card">
+            <div class="card-hd"><span class="card-title">我的家</span><span class="tag tag-strong">当前</span></div>
+            <div class="card-bd stack-sm"><div class="xs-sm">3 个房间 · 28 件物品</div><div class="row" style="gap:6px"><button class="btn btn-sm" data-goto="p3">进入</button><button class="btn btn-sm btn-ghost" data-modal-open="#m-rename-space">改名</button><button class="btn btn-sm btn-ghost" data-modal-open="#m-archive-space">归档</button></div></div>
+          </div>
+          <div class="card">
+            <div class="card-hd"><span class="card-title">父母家</span></div>
+            <div class="card-bd stack-sm"><div class="xs-sm">2 个房间 · 11 件物品</div><div class="row" style="gap:6px"><button class="btn btn-sm" data-goto="p3">切换</button><button class="btn btn-sm btn-ghost" data-modal-open="#m-rename-space">改名</button><button class="btn btn-sm btn-ghost" data-modal-open="#m-archive-space">归档</button></div></div>
+          </div>
+          <div class="card" style="border-style:dashed">
+            <div class="card-bd" style="display:flex;align-items:center;justify-content:center;min-height:96px">
+              <button class="btn btn-primary" data-modal-open="#m-new-space"><span data-icon="plus" data-icon-size="14"></span> 新建空间</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-tab-pane="empty" class="tab-pane">
+        <div class="empty">
+          <span class="e-ico" data-icon="home" data-icon-size="40"></span>
+          <div class="e-title">还没有空间</div>
+          <div class="e-desc">创建一个空间作为起点，名称即可建档，房间与物品可稍后补充。</div>
+          <button class="btn btn-primary" style="margin-top:8px" data-modal-open="#m-new-space">创建第一个空间</button>
+        </div>
+      </div>
+      <div class="anno"><b>交互说明：</b>切换空间后全站数据上下文随之切换，返回首页可见新空间统计。归档当前空间时自动切换到其他空间或提示新建；归档为不可逆操作，需二次确认。</div>
+
+        </div><!-- /content -->
+      <nav class="tabbar">
+<a class="tb" data-goto="p1"><span data-icon="home"></span>首页</a>
+<a class="tb is-active" data-goto="p2"><span data-icon="grid"></span>空间</a>
+<a class="tb" data-goto="p8"><span data-icon="inbox"></span>物品</a>
+<a class="tb" data-goto="p13"><span data-icon="list"></span>库存</a>
+<a class="tb" data-goto="p16"><span data-icon="user"></span>我的</a>
+      </nav>
+      </div><!-- /main -->
+    </div><!-- /shell -->
+  </section>
+
+  <!-- =========== UI-003 · 房间列表 =========== -->
+  <section class="page" id="p3" data-pid="UI-003" data-title="房间列表">
+    <div class="browser-bar">
+      <button class="bb-btn" data-back title="返回上一页"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4l-4 4 4 4"/></svg></button>
+      <span class="bb-id">UI-003</span>
+      <span class="bb-url"></span>
+    </div>
+    <div class="shell">
+    <aside class="sidebar" id="sb-p3">
+      <div class="sb-brand"><span data-icon="grid"></span> 居所收纳</div>
+      <div class="sb-body">
+        <div class="nav">
+          <div class="nav-label">主导航</div>
+<a class="nav-item" data-goto="p1"><span data-icon="home"></span> 首页</a>
+<a class="nav-item is-active" data-goto="p2"><span data-icon="grid"></span> 空间</a>
+<a class="nav-item" data-goto="p8"><span data-icon="inbox"></span> 物品</a>
+<a class="nav-item" data-goto="p13"><span data-icon="list"></span> 库存</a>
+<a class="nav-item" data-goto="p16"><span data-icon="user"></span> 我的</a>
+          <div class="nav-label">评审</div>
+          <a class="nav-item" data-goto="p0"><span data-icon="arrowRight"></span> 流程总览</a>
+        </div>
+      </div>
+      <div class="sb-foot">
+        <div class="row"><span class="avatar avatar-sm">我</span><span class="sm strong">演示账户</span></div>
+      </div>
+    </aside>
+    <div class="scrim" data-close></div>
+      <div class="main">
+        <header class="topbar">
+          <button class="btn btn-ghost btn-icon hamburger" data-sidebar-open="#sb-p3" aria-label="菜单"><span data-icon="menu"></span></button>
+          <span class="tb-title">房间列表</span>
+          <div class="tb-right">
+          <button class="btn btn-primary" data-modal-open="#m-new-room"><span data-icon="plus" data-icon-size="14"></span> 新建房间</button>
+          </div>
+        </header>
+        <div class="content stack">
+
+      <div class="anno"><b>页面目标：</b>在空间内建立房间；房间是三维场景与家具收纳的容器。可从空白房间或典型场景模板起步。</div>
+      <div class="breadcrumb"><a data-goto="p2">空间</a> / 我的家 / 房间列表</div>
+      <div class="row-md wrap"><span class="h2" style="margin:0">房间（3）</span><div class="spacer"></div><button class="btn btn-primary" data-modal-open="#m-new-room"><span data-icon="plus" data-icon-size="14"></span> 新建房间</button></div>
+      <div class="auto-3">
+        <div class="card">
+          <div class="card-hd"><span class="card-title">客厅</span><span class="tag">尺寸已定标</span></div>
+          <div class="card-bd stack-sm">
+            <div class="xs-sm">宽 4.5m × 深 3.6m × 高 2.8m</div>
+            <div class="xs-sm">家具 6 件 · 物品 14 件</div>
+            <div class="row wrap" style="gap:6px">
+              <button class="btn btn-sm btn-secondary" data-goto="p4"><span data-icon="eye" data-icon-size="14"></span> 三维查看</button>
+              <button class="btn btn-sm" data-goto="p17"><span data-icon="image" data-icon-size="14"></span> 房间照片</button>
+              <button class="btn btn-sm btn-ghost" data-modal-open="#m-rename-room">改名</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><span class="card-title">卧室</span><span class="tag tag-danger">建模失败 · 可手动</span></div>
+          <div class="card-bd stack-sm">
+            <div class="xs-sm">宽 3.2m × 深 3.0m × 高 2.7m</div>
+            <div class="alert alert-error"><span class="a-ico" data-icon="warn"></span><div>候选建模未成功，不影响手动编辑。</div></div>
+            <div class="row wrap" style="gap:6px">
+              <button class="btn btn-sm btn-secondary" data-goto="p4">手动编辑</button>
+              <button class="btn btn-sm btn-ghost" data-goto="p18">建模任务</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><span class="card-title">书房</span><span class="tag">尺寸未定标</span></div>
+          <div class="card-bd stack-sm">
+            <div class="xs-sm">尺寸未定标（按相对估算布置）</div>
+            <div class="xs-sm">家具 3 件 · 物品 6 件</div>
+            <div class="row wrap" style="gap:6px">
+              <button class="btn btn-sm btn-secondary" data-goto="p4">三维查看</button>
+              <button class="btn btn-sm btn-ghost" data-modal-open="#m-rename-room">改名</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="anno anno-red"><b>待确认 Q-03：</b>代码已定义卧室 / 客厅 / 卫生间三类典型场景模板（显示「预置 N 件」）；模板的具体家具构成与件数未在产品文档冻结。原型仅展示入口与「预置一组可编辑家具」结果态，具体清单以常量定义为准。</div>
+      <div class="anno"><b>交互说明：</b>照片入口与建模任务在 V1.2 为可选分支，不进主路径；建模失败提供「手动编辑」与「建模任务」两个出口；尺寸留空时房间页标注「尺寸未定标（相对估算）」。</div>
+
+        </div><!-- /content -->
+      <nav class="tabbar">
+<a class="tb" data-goto="p1"><span data-icon="home"></span>首页</a>
+<a class="tb is-active" data-goto="p2"><span data-icon="grid"></span>空间</a>
+<a class="tb" data-goto="p8"><span data-icon="inbox"></span>物品</a>
+<a class="tb" data-goto="p13"><span data-icon="list"></span>库存</a>
+<a class="tb" data-goto="p16"><span data-icon="user"></span>我的</a>
+      </nav>
+      </div><!-- /main -->
+    </div><!-- /shell -->
+  </section>
+
+  <!-- =========== UI-006 · 三维房间 =========== -->
+  <section class="page" id="p4" data-pid="UI-006" data-title="三维房间">
+    <div class="browser-bar">
+      <button class="bb-btn" data-back title="返回上一页"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4l-4 4 4 4"/></svg></button>
+      <span class="bb-id">UI-006</span>
+      <span class="bb-url"></span>
+    </div>
+    <div class="shell">
+    <aside class="sidebar" id="sb-p4">
+      <div class="sb-brand"><span data-icon="grid"></span> 居所收纳</div>
+      <div class="sb-body">
+        <div class="nav">
+          <div class="nav-label">主导航</div>
+<a class="nav-item" data-goto="p1"><span data-icon="home"></span> 首页</a>
+<a class="nav-item is-active" data-goto="p2"><span data-icon="grid"></span> 空间</a>
+<a class="nav-item" data-goto="p8"><span data-icon="inbox"></span> 物品</a>
+<a class="nav-item" data-goto="p13"><span data-icon="list"></span> 库存</a>
+<a class="nav-item" data-goto="p16"><span data-icon="user"></span> 我的</a>
+          <div class="nav-label">评审</div>
+          <a class="nav-item" data-goto="p0"><span data-icon="arrowRight"></span> 流程总览</a>
+        </div>
+      </div>
+      <div class="sb-foot">
+        <div class="row"><span class="avatar avatar-sm">我</span><span class="sm strong">演示账户</span></div>
+      </div>
+    </aside>
+    <div class="scrim" data-close></div>
+      <div class="main">
+        <header class="topbar">
+          <button class="btn btn-ghost btn-icon hamburger" data-sidebar-open="#sb-p4" aria-label="菜单"><span data-icon="menu"></span></button>
+          <span class="tb-title">三维房间</span>
+          <div class="tb-right">
+          <button class="btn btn-secondary btn-icon" data-icon="refresh" data-skeleton="#p4" data-skeleton-ms="1200" aria-label="重载"></button>
+          <button class="btn btn-primary" data-modal-open="#m-model-lib"><span data-icon="plus" data-icon-size="14"></span> 添加模型</button>
+          </div>
+        </header>
+        <div class="content stack">
+
+      <div class="anno"><b>页面目标（V1.2 主路径）：</b>用户手动自由编辑三维场景——添加模型、拖动/旋转/缩放、与收纳节点绑定；可点选模型查看关联物品。三维不可用时自动降级为列表。</div>
+      <div class="breadcrumb"><a data-goto="p2">空间</a> / <a data-goto="p3">我的家</a> / 客厅</div>
+      <div class="tabs" data-tab-group>
+        <button class="tab is-active" data-tab="canvas">编辑画布</button>
+        <button class="tab" data-tab="list">列表降级</button>
+        <button class="tab" data-tab="loading">加载态</button>
+      </div>
+      <div data-tab-pane="canvas" class="tab-pane is-active">
+        <div class="row-md wrap">
+          <div class="btn-group">
+            <button class="btn btn-sm is-active">浏览</button>
+            <button class="btn btn-sm">编辑</button>
+            <button class="btn btn-sm">收纳</button>
+          </div>
+          <div class="spacer"></div>
+          <button class="btn btn-sm" data-modal-open="#m-model-lib"><span data-icon="plus" data-icon-size="14"></span> 添加模型</button>
+          <button class="btn btn-sm btn-secondary" data-toast="已切换到列表视图" data-goto="p4">列表视图</button>
+        </div>
+        <div class="ph-img" style="height:240px;position:relative">
+          <span>三维编辑画布（示意）：地面网格 + 房间边界 + 已摆放家具</span>
+          <div class="hotspot" style="position:absolute;left:26%;top:30%;width:110px;height:70px"></div>
+          <div class="hotspot" style="position:absolute;left:62%;top:48%;width:90px;height:90px"></div>
+        </div>
+        <div class="row" style="gap:6px;margin-top:6px"><span class="xs-sm">红框为可点选模型热区：点选后下方出现选中卡</span></div>
+        <div class="card" style="margin-top:12px">
+          <div class="card-hd"><span class="card-title">选中模型 · 三人沙发</span><div class="spacer"></div><button class="btn btn-sm btn-ghost" data-goto="p5">编辑家具</button></div>
+          <div class="card-bd stack-sm">
+            <div class="auto-3">
+              <div class="field"><label class="field-label">位置 X / Z</label><input class="input input-sm" value="1.2 / 0.8"></div>
+              <div class="field"><label class="field-label">旋转角度</label><input class="input input-sm" value="90°"></div>
+              <div class="field"><label class="field-label">尺寸 宽×深×高</label><input class="input input-sm" value="2.1 × 0.9 × 0.8 m"></div>
+            </div>
+            <div class="well">
+              <div class="row-md"><span class="sm strong">绑定关系</span><span class="tag tag-strong">已绑定</span></div>
+              <div class="xs-sm">已绑定到收纳节点：客厅 / 沙发 / 坐垫下储物格 · 关联物品 2 件</div>
+              <div class="row" style="gap:6px;margin-top:6px"><button class="btn btn-sm" data-modal-open="#m-bind-confirm">更换绑定</button><button class="btn btn-sm btn-ghost" data-goto="p7">查看节点</button><button class="btn btn-sm btn-ghost" data-goto="p6">家具详情</button></div>
+            </div>
+            <div class="row wrap" style="gap:6px">
+              <button class="btn btn-sm" data-toast="拖动 / 旋转 / 缩放已保存">保存变换</button>
+              <button class="btn btn-sm btn-danger" data-modal-open="#m-del-model">删除模型</button>
+            </div>
+          </div>
+        </div>
+        <div class="alert alert-error"><span class="a-ico" data-icon="warn"></span><div>越界钳制示例：模型被拖出房间边界或缩放超范围时，自动钳制到边界并提示，不产生非法布局数据。</div></div>
+      </div>
+      <div data-tab-pane="list" class="tab-pane">
+        <div class="alert"><span class="a-ico" data-icon="info"></span><div>三维渲染不可用或加载失败时自动切到本列表视图，房间 / 家具 / 收纳 / 物品管理仍可完成。</div></div>
+        <div class="card" style="padding:0">
+          <div class="list">
+            <div class="list-item" data-goto="p6"><span data-icon="grid" data-icon-size="14"></span><span class="body grow">三人沙发</span><span class="xs-sm">绑定 1 个节点</span><span data-icon="chevronRight" data-icon-size="12"></span></div>
+            <div class="list-item" data-goto="p6"><span data-icon="grid" data-icon-size="14"></span><span class="body grow">电视柜</span><span class="xs-sm">绑定 2 个节点</span><span data-icon="chevronRight" data-icon-size="12"></span></div>
+            <div class="list-item" data-goto="p6"><span data-icon="grid" data-icon-size="14"></span><span class="body grow">茶几</span><span class="xs-sm">未绑定</span><span data-icon="chevronRight" data-icon-size="12"></span></div>
+          </div>
+        </div>
+      </div>
+      <div data-tab-pane="loading" class="tab-pane">
+        <div class="stack" style="padding:16px">
+          <div class="skeleton" style="height:200px"></div>
+          <div class="row-md"><div class="skeleton sk-line" style="width:30%"></div><div class="skeleton sk-line" style="width:50%"></div></div>
+        </div>
+      </div>
+      <div class="anno anno-red"><b>待确认 Q-02：</b>模型级变换与越界钳制代码层已完成；真机手感（触控灵敏度、单指/双指区分、浏览/编辑模式切换）待验证。原型按「点选 → 拖动/旋转/缩放 → 保存」表达主流程，手势参数不写死。</div>
+      <div class="anno anno-red"><b>待确认 Q-05：</b>帧率、加载时长、最大模型数等数值门槛未设定；原型不标注任何量化数值，仅表达状态与流程，指标待真机验证后另定。</div>
+      <div class="anno"><b>交互说明：</b>浏览/编辑/收纳三模式切换；点选模型显示选中卡；绑定写入需二次确认；删除含绑定模型先阻断并提示解绑；越界钳制即时提示。</div>
+
+        </div><!-- /content -->
+      <nav class="tabbar">
+<a class="tb" data-goto="p1"><span data-icon="home"></span>首页</a>
+<a class="tb is-active" data-goto="p2"><span data-icon="grid"></span>空间</a>
+<a class="tb" data-goto="p8"><span data-icon="inbox"></span>物品</a>
+<a class="tb" data-goto="p13"><span data-icon="list"></span>库存</a>
+<a class="tb" data-goto="p16"><span data-icon="user"></span>我的</a>
+      </nav>
+      </div><!-- /main -->
+    </div><!-- /shell -->
+  </section>
+
+  <!-- =========== UI-007 · 家具编辑 =========== -->
+  <section class="page" id="p5" data-pid="UI-007" data-title="家具编辑">
+    <div class="browser-bar">
+      <button class="bb-btn" data-back title="返回上一页"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4l-4 4 4 4"/></svg></button>
+      <span class="bb-id">UI-007</span>
+      <span class="bb-url"></span>
+    </div>
+    <div class="shell">
+    <aside class="sidebar" id="sb-p5">
+      <div class="sb-brand"><span data-icon="grid"></span> 居所收纳</div>
+      <div class="sb-body">
+        <div class="nav">
+          <div class="nav-label">主导航</div>
+<a class="nav-item" data-goto="p1"><span data-icon="home"></span> 首页</a>
+<a class="nav-item is-active" data-goto="p2"><span data-icon="grid"></span> 空间</a>
+<a class="nav-item" data-goto="p8"><span data-icon="inbox"></span> 物品</a>
+<a class="nav-item" data-goto="p13"><span data-icon="list"></span> 库存</a>
+<a class="nav-item" data-goto="p16"><span data-icon="user"></span> 我的</a>
+          <div class="nav-label">评审</div>
+          <a class="nav-item" data-goto="p0"><span data-icon="arrowRight"></span> 流程总览</a>
+        </div>
+      </div>
+      <div class="sb-foot">
+        <div class="row"><span class="avatar avatar-sm">我</span><span class="sm strong">演示账户</span></div>
+      </div>
+    </aside>
+    <div class="scrim" data-close></div>
+      <div class="main">
+        <header class="topbar">
+          <button class="btn btn-ghost btn-icon hamburger" data-sidebar-open="#sb-p5" aria-label="菜单"><span data-icon="menu"></span></button>
+          <span class="tb-title">家具编辑</span>
+          <div class="tb-right">
+          <button class="btn btn-ghost btn-icon" data-icon="more" data-toast="更多操作" aria-label="更多"></button>
+          </div>
+        </header>
+        <div class="content stack">
+
+      <div class="anno"><b>页面目标：</b>新增或编辑家具——类别、名称、外观模型、尺寸与初始位置；无合适模型时选占位模型。</div>
+      <form data-validate data-success="家具已保存" data-success-goto="p4">
+        <div class="card">
+          <div class="card-hd"><span class="card-title">基本信息</span><span class="tag">编辑</span></div>
+          <div class="card-bd stack">
+            <div class="auto-2">
+              <div class="field"><label class="field-label">家具名称 <span class="req">*</span></label><input class="input" value="三人沙发" data-required><span class="field-error"></span></div>
+              <div class="field"><label class="field-label">类别 <span class="req">*</span></label>
+                <div class="select" data-required><button type="button" class="select-trigger"><span class="sel-val">座椅</span><span class="caret" data-icon="chevronDown" data-icon-size="12"></span></button>
+                  <div class="select-menu"><div class="opt is-selected" data-value="1" data-label="座椅">座椅</div><div class="opt" data-value="2" data-label="柜架">柜架</div><div class="opt" data-value="3" data-label="床具">床具</div><div class="opt" data-value="4" data-label="桌台">桌台</div></div>
+                </div><span class="field-error"></span>
+              </div>
+            </div>
+            <div class="field"><label class="field-label">外观模型</label>
+              <div class="row-md wrap"><button type="button" class="btn btn-sm is-active">沙发模型 A</button><button type="button" class="btn btn-sm">沙发模型 B</button><button type="button" class="btn btn-sm" data-toast="已选用占位模型">占位模型</button></div>
+              <div class="field-hint">无合适模型时可选占位模型，不影响家具与收纳建档。</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><span class="card-title">尺寸与初始位置</span></div>
+          <div class="card-bd stack">
+            <div class="auto-3">
+              <div class="field"><label class="field-label">宽 (m)</label><input class="input" value="2.1"></div>
+              <div class="field"><label class="field-label">深 (m)</label><input class="input" value="0.9"></div>
+              <div class="field"><label class="field-label">高 (m)</label><input class="input" value="0.8"></div>
+            </div>
+            <div class="auto-2">
+              <div class="field"><label class="field-label">初始位置 X</label><input class="input" value="1.2"></div>
+              <div class="field"><label class="field-label">初始位置 Z</label><input class="input" value="0.8"></div>
+            </div>
+            <div class="anno"><b>摆放辅助：</b>保存后可在三维房间中拖动、旋转、缩放；尺寸用于越界钳制与贴地吸附的边界判断。</div>
+          </div>
+        </div>
+        <div class="row-md wrap">
+          <button class="btn btn-primary" type="submit" data-loading="1000" data-loading-done="已保存">保存家具</button>
+          <button class="btn btn-danger" type="button" data-modal-open="#m-del-furniture">删除家具</button>
+          <div class="spacer"></div>
+          <button class="btn btn-ghost" type="button" data-goto="p4" data-back>取消</button>
+        </div>
+      </form>
+      <div class="anno anno-red"><b>待确认 Q-04：</b>标准模型库的具体类别清单、数量上限、缺失时占位模型样式未冻结。原型以有限类别选择器 + 占位模型表达，不写死数量门槛（性能门槛须真机验证）。</div>
+      <div class="anno"><b>交互说明：</b>名称与类别为必填，提交时逐项校验；删除含物品家具触发 HAS_LINKS 关联保护弹窗；保存失败显示具体原因，不暴露技术错误码。</div>
+
+        </div><!-- /content -->
+      <nav class="tabbar">
+<a class="tb" data-goto="p1"><span data-icon="home"></span>首页</a>
+<a class="tb is-active" data-goto="p2"><span data-icon="grid"></span>空间</a>
+<a class="tb" data-goto="p8"><span data-icon="inbox"></span>物品</a>
+<a class="tb" data-goto="p13"><span data-icon="list"></span>库存</a>
+<a class="tb" data-goto="p16"><span data-icon="user"></span>我的</a>
+      </nav>
+      </div><!-- /main -->
+    </div><!-- /shell -->
+  </section>
+
+  <!-- =========== UI-008 · 家具详情 =========== -->
+  <section class="page" id="p6" data-pid="UI-008" data-title="家具详情">
+    <div class="browser-bar">
+      <button class="bb-btn" data-back title="返回上一页"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4l-4 4 4 4"/></svg></button>
+      <span class="bb-id">UI-008</span>
+      <span class="bb-url"></span>
+    </div>
+    <div class="shell">
+    <aside class="sidebar" id="sb-p6">
+      <div class="sb-brand"><span data-icon="grid"></span> 居所收纳</div>
+      <div class="sb-body">
+        <div class="nav">
+          <div class="nav-label">主导航</div>
+<a class="nav-item" data-goto="p1"><span data-icon="home"></span> 首页</a>
+<a class="nav-item is-active" data-goto="p2"><span data-icon="grid"></span> 空间</a>
+<a class="nav-item" data-goto="p8"><span data-icon="inbox"></span> 物品</a>
+<a class="nav-item" data-goto="p13"><span data-icon="list"></span> 库存</a>
+<a class="nav-item" data-goto="p16"><span data-icon="user"></span> 我的</a>
+          <div class="nav-label">评审</div>
+          <a class="nav-item" data-goto="p0"><span data-icon="arrowRight"></span> 流程总览</a>
+        </div>
+      </div>
+      <div class="sb-foot">
+        <div class="row"><span class="avatar avatar-sm">我</span><span class="sm strong">演示账户</span></div>
+      </div>
+    </aside>
+    <div class="scrim" data-close></div>
+      <div class="main">
+        <header class="topbar">
+          <button class="btn btn-ghost btn-icon hamburger" data-sidebar-open="#sb-p6" aria-label="菜单"><span data-icon="menu"></span></button>
+          <span class="tb-title">家具详情</span>
+          <div class="tb-right">
+          <button class="btn btn-ghost btn-icon" data-icon="more" data-toast="更多操作" aria-label="更多"></button>
+          </div>
+        </header>
+        <div class="content stack">
+
+      <div class="anno"><b>页面目标：</b>查看单件家具的信息，并将「外观模型」与「逻辑收纳节点」分区呈现，体现解耦；在此创建多级收纳节点。</div>
+      <div class="breadcrumb"><a data-goto="p4">三维房间</a> / 客厅 / 三人沙发</div>
+      <div class="card">
+        <div class="card-hd"><span class="card-title">三人沙发</span><span class="tag tag-strong">座椅</span><div class="spacer"></div><button class="btn btn-sm" data-goto="p5"><span data-icon="edit" data-icon-size="14"></span> 编辑</button></div>
+        <div class="card-bd stack-sm"><div class="xs-sm">尺寸 2.1 × 0.9 × 0.8 m · 位置 X 1.2 / Z 0.8 · 旋转 90°</div></div>
+      </div>
+      <div class="auto-2">
+        <div class="card">
+          <div class="card-hd"><span class="card-title">外观模型</span><span class="tag">三维对象</span></div>
+          <div class="card-bd stack-sm">
+            <div class="ph-img" style="height:120px"><span>沙发三维模型（示意）</span></div>
+            <div class="xs-sm">模型仅表达外观与空间位置；不改变物品的逻辑归属。</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><span class="card-title">逻辑收纳节点</span><span class="tag tag-strong">归属结构</span></div>
+          <div class="card-bd stack-sm">
+            <div class="list">
+              <div class="list-item" data-goto="p7"><span data-icon="inbox" data-icon-size="14"></span><span class="body grow">坐垫下储物格</span><span class="xs-sm">2 件</span><span data-icon="chevronRight" data-icon-size="12"></span></div>
+              <div class="list-item" data-goto="p7"><span data-icon="inbox" data-icon-size="14"></span><span class="body grow">扶手侧袋</span><span class="xs-sm">1 件</span><span data-icon="chevronRight" data-icon-size="12"></span></div>
+            </div>
+            <button class="btn btn-sm btn-primary" data-modal-open="#m-new-node"><span data-icon="plus" data-icon-size="14"></span> 添加收纳节点</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><span class="card-title">空节点态示例</span></div>
+        <div class="card-bd"><div class="empty"><span class="e-ico" data-icon="inbox" data-icon-size="40"></span><div class="e-title">还没有收纳位置</div><div class="e-desc">添加第一个抽屉 / 隔层 / 收纳盒，才能把物品定位到具体位置。</div><button class="btn btn-primary" style="margin-top:8px" data-modal-open="#m-new-node">添加第一个收纳位置</button></div></div>
+      </div>
+      <div class="anno"><b>交互说明：</b>模型区与节点区分区展示（解耦可见）；删除家具若含物品或节点，先提示迁移或归档，处理完成后才允许删除。</div>
+
+        </div><!-- /content -->
+      <nav class="tabbar">
+<a class="tb" data-goto="p1"><span data-icon="home"></span>首页</a>
+<a class="tb is-active" data-goto="p2"><span data-icon="grid"></span>空间</a>
+<a class="tb" data-goto="p8"><span data-icon="inbox"></span>物品</a>
+<a class="tb" data-goto="p13"><span data-icon="list"></span>库存</a>
+<a class="tb" data-goto="p16"><span data-icon="user"></span>我的</a>
+      </nav>
+      </div><!-- /main -->
+    </div><!-- /shell -->
+  </section>
+
+  <!-- =========== UI-009 · 收纳节点 =========== -->
+  <section class="page" id="p7" data-pid="UI-009" data-title="收纳节点">
+    <div class="browser-bar">
+      <button class="bb-btn" data-back title="返回上一页"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4l-4 4 4 4"/></svg></button>
+      <span class="bb-id">UI-009</span>
+      <span class="bb-url"></span>
+    </div>
+    <div class="shell">
+    <aside class="sidebar" id="sb-p7">
+      <div class="sb-brand"><span data-icon="grid"></span> 居所收纳</div>
+      <div class="sb-body">
+        <div class="nav">
+          <div class="nav-label">主导航</div>
+<a class="nav-item" data-goto="p1"><span data-icon="home"></span> 首页</a>
+<a class="nav-item is-active" data-goto="p2"><span data-icon="grid"></span> 空间</a>
+<a class="nav-item" data-goto="p8"><span data-icon="inbox"></span> 物品</a>
+<a class="nav-item" data-goto="p13"><span data-icon="list"></span> 库存</a>
+<a class="nav-item" data-goto="p16"><span data-icon="user"></span> 我的</a>
+          <div class="nav-label">评审</div>
+          <a class="nav-item" data-goto="p0"><span data-icon="arrowRight"></span> 流程总览</a>
+        </div>
+      </div>
+      <div class="sb-foot">
+        <div class="row"><span class="avatar avatar-sm">我</span><span class="sm strong">演示账户</span></div>
+      </div>
+    </aside>
+    <div class="scrim" data-close></div>
+      <div class="main">
+        <header class="topbar">
+          <button class="btn btn-ghost btn-icon hamburger" data-sidebar-open="#sb-p7" aria-label="菜单"><span data-icon="menu"></span></button>
+          <span class="tb-title">收纳节点</span>
+          <div class="tb-right">
+          <button class="btn btn-ghost btn-icon" data-icon="more" data-toast="更多操作" aria-label="更多"></button>
+          </div>
+        </header>
+        <div class="content stack">
+
+      <div class="anno"><b>页面目标：</b>查看并维护一个收纳节点——层级路径、下级位置、节点内物品；支持添加物品/子节点、改名、排序。</div>
+      <div class="breadcrumb"><a data-goto="p3">客厅</a> / <a data-goto="p6">三人沙发</a> / 坐垫下储物格</div>
+      <div class="card">
+        <div class="card-hd"><span class="card-title">坐垫下储物格</span><span class="tag tag-strong">已确认事实</span><div class="spacer"></div><button class="btn btn-sm btn-ghost" data-modal-open="#m-rename-node">改名</button><button class="btn btn-sm btn-danger" data-modal-open="#m-del-node">删除</button></div>
+        <div class="card-bd stack-sm">
+          <div class="xs-sm">完整路径：我的家 / 客厅 / 三人沙发 / 坐垫下储物格</div>
+          <div class="row" style="gap:6px"><button class="btn btn-sm" data-modal-open="#m-new-node">添加子节点</button><button class="btn btn-sm btn-secondary" data-goto="p9">添加物品</button><button class="btn btn-sm btn-ghost" data-toast="已按名称排序">排序</button></div>
+        </div>
+      </div>
+      <div class="auto-2">
+        <div class="card">
+          <div class="card-hd"><span class="card-title">下级位置</span></div>
+          <div class="card-bd"><div class="empty"><span class="e-ico" data-icon="inbox" data-icon-size="40"></span><div class="e-title">暂无下级位置</div><div class="e-desc">需要更细的划分时可添加子节点。</div><button class="btn btn-secondary" style="margin-top:8px" data-modal-open="#m-new-node">添加子节点</button></div></div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><span class="card-title">节点内物品（2）</span></div>
+          <div class="card-bd" style="padding:0"><div class="list">
+            <div class="list-item" data-goto="p10"><span data-icon="inbox" data-icon-size="14"></span><span class="body grow">遥控器</span><span class="tag tag-good">已定位</span><span data-icon="chevronRight" data-icon-size="12"></span></div>
+            <div class="list-item" data-goto="p10"><span data-icon="inbox" data-icon-size="14"></span><span class="body grow">备用电池</span><span class="tag tag-good">已定位</span><span data-icon="chevronRight" data-icon-size="12"></span></div>
+          </div></div>
+        </div>
+      </div>
+      <div class="anno"><b>交互说明：</b>含物品或子节点时删除受限并说明影响；同名节点用完整路径区分；改名需二次确认；节点内物品点击进详情。</div>
+
+        </div><!-- /content -->
+      <nav class="tabbar">
+<a class="tb" data-goto="p1"><span data-icon="home"></span>首页</a>
+<a class="tb is-active" data-goto="p2"><span data-icon="grid"></span>空间</a>
+<a class="tb" data-goto="p8"><span data-icon="inbox"></span>物品</a>
+<a class="tb" data-goto="p13"><span data-icon="list"></span>库存</a>
+<a class="tb" data-goto="p16"><span data-icon="user"></span>我的</a>
+      </nav>
+      </div><!-- /main -->
+    </div><!-- /shell -->
+  </section>
+
+  <!-- =========== UI-010 · 物品列表 =========== -->
+  <section class="page" id="p8" data-pid="UI-010" data-title="物品列表">
+    <div class="browser-bar">
+      <button class="bb-btn" data-back title="返回上一页"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4l-4 4 4 4"/></svg></button>
+      <span class="bb-id">UI-010</span>
+      <span class="bb-url"></span>
+    </div>
+    <div class="shell">
+    <aside class="sidebar" id="sb-p8">
+      <div class="sb-brand"><span data-icon="grid"></span> 居所收纳</div>
+      <div class="sb-body">
+        <div class="nav">
+          <div class="nav-label">主导航</div>
+<a class="nav-item" data-goto="p1"><span data-icon="home"></span> 首页</a>
+<a class="nav-item" data-goto="p2"><span data-icon="grid"></span> 空间</a>
+<a class="nav-item is-active" data-goto="p8"><span data-icon="inbox"></span> 物品</a>
+<a class="nav-item" data-goto="p13"><span data-icon="list"></span> 库存</a>
+<a class="nav-item" data-goto="p16"><span data-icon="user"></span> 我的</a>
+          <div class="nav-label">评审</div>
+          <a class="nav-item" data-goto="p0"><span data-icon="arrowRight"></span> 流程总览</a>
+        </div>
+      </div>
+      <div class="sb-foot">
+        <div class="row"><span class="avatar avatar-sm">我</span><span class="sm strong">演示账户</span></div>
+      </div>
+    </aside>
+    <div class="scrim" data-close></div>
+      <div class="main">
+        <header class="topbar">
+          <button class="btn btn-ghost btn-icon hamburger" data-sidebar-open="#sb-p8" aria-label="菜单"><span data-icon="menu"></span></button>
+          <span class="tb-title">物品列表</span>
+          <div class="tb-right">
+          <button class="btn btn-primary" data-goto="p9"><span data-icon="plus" data-icon-size="14"></span> 加物品</button>
+          </div>
+        </header>
+        <div class="content stack">
+
+      <div class="anno"><b>页面目标：</b>按名称 / 分类 / 空间 / 房间 / 位置检索物品；仅名称即可建档，其余渐进补充。</div>
+      <div class="card">
+        <div class="card-bd stack">
+          <div class="input-affix"><span class="affix" data-icon="search" data-icon-size="14"></span><input class="input" placeholder="搜索物品名称"></div>
+          <div class="row-md wrap">
+            <div class="select" style="min-width:120px"><button type="button" class="select-trigger"><span class="sel-val is-placeholder">状态</span><span class="caret" data-icon="chevronDown" data-icon-size="12"></span></button><div class="select-menu"><div class="opt is-selected is-placeholder" data-value="" data-label="状态">全部状态</div><div class="opt" data-value="1" data-label="已定位">已定位</div><div class="opt" data-value="2" data-label="位置未知">位置未知</div><div class="opt" data-value="3" data-label="外出">外出</div><div class="opt" data-value="4" data-label="借出">借出</div></div></div>
+            <div class="select" style="min-width:120px"><button type="button" class="select-trigger"><span class="sel-val is-placeholder">分类</span><span class="caret" data-icon="chevronDown" data-icon-size="12"></span></button><div class="select-menu"><div class="opt is-selected is-placeholder" data-value="" data-label="分类">全部分类</div><div class="opt" data-value="1" data-label="证件">证件</div><div class="opt" data-value="2" data-label="电子产品">电子产品</div><div class="opt" data-value="3" data-label="日用品">日用品</div></div></div>
+            <div class="select" style="min-width:120px"><button type="button" class="select-trigger"><span class="sel-val is-placeholder">位置</span><span class="caret" data-icon="chevronDown" data-icon-size="12"></span></button><div class="select-menu"><div class="opt is-selected is-placeholder" data-value="" data-label="位置">全部位置</div><div class="opt" data-value="1" data-label="客厅">客厅</div><div class="opt" data-value="2" data-label="卧室">卧室</div><div class="opt" data-value="3" data-label="书房">书房</div></div></div>
+            <label class="check"><input type="checkbox"><span class="box"></span>含已结束</label>
+          </div>
+        </div>
+      </div>
+      <div class="tabs" data-tab-group>
+        <button class="tab is-active" data-tab="has">物品（28）</button>
+        <button class="tab" data-tab="none">无结果态</button>
+      </div>
+      <div data-tab-pane="has" class="tab-pane is-active">
+        <div class="card" style="padding:0"><div class="list">
+          <div class="list-item" data-goto="p10"><span class="avatar avatar-sm">证</span><span class="grow"><span class="body">身份证</span><br><span class="xs-sm">客厅 / 电视柜 / 抽屉</span></span><span class="tag tag-good">已定位</span><span data-icon="chevronRight" data-icon-size="12"></span></div>
+          <div class="list-item" data-goto="p10"><span class="avatar avatar-sm">钥</span><span class="grow"><span class="body">家门钥匙</span><br><span class="xs-sm">位置未知 · 待完善</span></span><span class="tag tag-danger">位置未知</span><span data-icon="chevronRight" data-icon-size="12"></span></div>
+          <div class="list-item" data-goto="p10"><span class="avatar avatar-sm">书</span><span class="grow"><span class="body">护照</span><br><span class="xs-sm">书房 / 书桌 / 第一层</span></span><span class="tag tag-good">已定位</span><span data-icon="chevronRight" data-icon-size="12"></span></div>
+        </div></div>
+      </div>
+      <div data-tab-pane="none" class="tab-pane">
+        <div class="empty"><span class="e-ico" data-icon="search" data-icon-size="40"></span><div class="e-title">没有匹配的物品</div><div class="e-desc">当前筛选条件下没有结果，换个关键词或清空筛选试试。</div><button class="btn btn-primary" style="margin-top:8px" data-toast="已清空筛选">清空筛选</button></div>
+      </div>
+      <button class="btn btn-primary btn-icon fab" data-goto="p9" aria-label="添加物品" style="position:fixed;right:24px;bottom:24px;width:48px;height:48px;border-radius:999px"><span data-icon="plus"></span></button>
+      <div class="anno"><b>交互说明：</b>有筛选无结果显示「没有匹配的物品」并给清空入口；无筛选空态显示「还没有物品档案」；已结束物品默认隐藏，勾选「含已结束」才显示；右下 FAB 新建物品。</div>
+
+        </div><!-- /content -->
+      <nav class="tabbar">
+<a class="tb" data-goto="p1"><span data-icon="home"></span>首页</a>
+<a class="tb" data-goto="p2"><span data-icon="grid"></span>空间</a>
+<a class="tb is-active" data-goto="p8"><span data-icon="inbox"></span>物品</a>
+<a class="tb" data-goto="p13"><span data-icon="list"></span>库存</a>
+<a class="tb" data-goto="p16"><span data-icon="user"></span>我的</a>
+      </nav>
+      </div><!-- /main -->
+    </div><!-- /shell -->
+  </section>
+
+  <!-- =========== UI-011 · 物品添加编辑 =========== -->
+  <section class="page" id="p9" data-pid="UI-011" data-title="物品添加编辑">
+    <div class="browser-bar">
+      <button class="bb-btn" data-back title="返回上一页"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4l-4 4 4 4"/></svg></button>
+      <span class="bb-id">UI-011</span>
+      <span class="bb-url"></span>
+    </div>
+    <div class="shell">
+    <aside class="sidebar" id="sb-p9">
+      <div class="sb-brand"><span data-icon="grid"></span> 居所收纳</div>
+      <div class="sb-body">
+        <div class="nav">
+          <div class="nav-label">主导航</div>
+<a class="nav-item" data-goto="p1"><span data-icon="home"></span> 首页</a>
+<a class="nav-item" data-goto="p2"><span data-icon="grid"></span> 空间</a>
+<a class="nav-item is-active" data-goto="p8"><span data-icon="inbox"></span> 物品</a>
+<a class="nav-item" data-goto="p13"><span data-icon="list"></span> 库存</a>
+<a class="nav-item" data-goto="p16"><span data-icon="user"></span> 我的</a>
+          <div class="nav-label">评审</div>
+          <a class="nav-item" data-goto="p0"><span data-icon="arrowRight"></span> 流程总览</a>
+        </div>
+      </div>
+      <div class="sb-foot">
+        <div class="row"><span class="avatar avatar-sm">我</span><span class="sm strong">演示账户</span></div>
+      </div>
+    </aside>
+    <div class="scrim" data-close></div>
+      <div class="main">
+        <header class="topbar">
+          <button class="btn btn-ghost btn-icon hamburger" data-sidebar-open="#sb-p9" aria-label="菜单"><span data-icon="menu"></span></button>
+          <span class="tb-title">物品添加编辑</span>
+          <div class="tb-right">
+          <button class="btn btn-primary" data-goto="p8"><span data-icon="plus" data-icon-size="14"></span> 返回</button>
+          </div>
+        </header>
+        <div class="content stack">
+
+      <div class="anno"><b>页面目标：</b>极简建档——仅名称即可保存；分类 / 照片 / 备注 / 位置可稍后补；支持「保存并继续」连续添加。</div>
+      <form data-validate data-success="物品已保存" data-success-goto="p10">
+        <div class="card">
+          <div class="card-bd stack">
+            <div class="field"><label class="field-label">名称 <span class="req">*</span></label><input class="input" data-required placeholder="例如：备用电池"><span class="field-error"></span><div class="field-hint">仅需名称即可建档，其余信息可稍后补充。</div></div>
+            <div class="auto-2">
+              <div class="field"><label class="field-label">分类</label><div class="select"><button type="button" class="select-trigger"><span class="sel-val is-placeholder">请选择（可跳过）</span><span class="caret" data-icon="chevronDown" data-icon-size="12"></span></button><div class="select-menu"><div class="opt is-selected is-placeholder" data-value="" data-label="请选择（可跳过）">请选择（可跳过）</div><div class="opt" data-value="1" data-label="证件">证件</div><div class="opt" data-value="2" data-label="电子产品">电子产品</div><div class="opt" data-value="3" data-label="日用品">日用品</div></div></div></div>
+              <div class="field"><label class="field-label">照片</label><div class="upload" data-toast="选择照片（可选）"><span data-icon="image" data-icon-size="16"></span> 点击上传（可选）</div></div>
+            </div>
+            <div class="field"><label class="field-label">备注</label><textarea class="textarea" placeholder="选填"></textarea></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><span class="card-title">跟踪模式</span></div>
+          <div class="card-bd stack">
+            <div class="check-group">
+              <label class="check radio"><input type="radio" name="tm" checked><span class="box"></span>位置跟踪</label>
+              <label class="check radio"><input type="radio" name="tm"><span class="box"></span>库存跟踪</label>
+              <label class="check radio"><input type="radio" name="tm"><span class="box"></span>两者都要</label>
+            </div>
+            <div class="well">
+              <div class="sm strong">当前位置</div>
+              <div class="check-group" style="margin-top:6px">
+                <label class="check radio"><input type="radio" name="pos"><span class="box"></span>具体位置</label>
+                <label class="check radio"><input type="radio" name="pos" checked><span class="box"></span>位置未知</label>
+                <label class="check radio"><input type="radio" name="pos"><span class="box"></span>外出</label>
+                <label class="check radio"><input type="radio" name="pos"><span class="box"></span>借出</label>
+              </div>
+              <div class="field-hint">选择「具体位置」时再选房间 / 家具 / 收纳节点；创建时填初始位置不计为一次移动。</div>
+            </div>
+            <div class="well is-hidden">
+              <div class="sm strong">库存字段（跟踪模式含库存时显示）</div>
+              <div class="auto-2" style="margin-top:6px"><div class="field"><label class="field-label">数量</label><input class="input" value="1"></div><div class="field"><label class="field-label">单位</label><input class="input" value="件"></div></div>
+              <div class="field"><label class="field-label">阈值</label><input class="input" value="2"></div>
+            </div>
+          </div>
+        </div>
+        <div class="row-md wrap">
+          <button class="btn btn-primary" type="submit" data-loading="900" data-loading-done="已保存">保存单件</button>
+          <button class="btn btn-secondary" type="button" data-toast="已保存，可继续添加下一件">保存并继续</button>
+          <div class="spacer"></div><button class="btn btn-ghost" type="button" data-goto="p8">取消</button>
+        </div>
+        <div class="alert alert-error" style="margin-top:12px"><span class="a-ico" data-icon="warn"></span><div>校验示例：名称为空就近提示；数量 &lt; 0 拦截；不阻断已建档记录。</div></div>
+      </form>
+      <div class="anno"><b>交互说明：</b>连续添加保留上下文、每件独立建档；位置状态 unknown 首次确认到具体位置时记为独立「首次位置确认」事件，不伪装为 A→B 移动。</div>
+
+        </div><!-- /content -->
+      <nav class="tabbar">
+<a class="tb" data-goto="p1"><span data-icon="home"></span>首页</a>
+<a class="tb" data-goto="p2"><span data-icon="grid"></span>空间</a>
+<a class="tb is-active" data-goto="p8"><span data-icon="inbox"></span>物品</a>
+<a class="tb" data-goto="p13"><span data-icon="list"></span>库存</a>
+<a class="tb" data-goto="p16"><span data-icon="user"></span>我的</a>
+      </nav>
+      </div><!-- /main -->
+    </div><!-- /shell -->
+  </section>
+
+  <!-- =========== UI-012 · 物品详情 =========== -->
+  <section class="page" id="p10" data-pid="UI-012" data-title="物品详情">
+    <div class="browser-bar">
+      <button class="bb-btn" data-back title="返回上一页"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4l-4 4 4 4"/></svg></button>
+      <span class="bb-id">UI-012</span>
+      <span class="bb-url"></span>
+    </div>
+    <div class="shell">
+    <aside class="sidebar" id="sb-p10">
+      <div class="sb-brand"><span data-icon="grid"></span> 居所收纳</div>
+      <div class="sb-body">
+        <div class="nav">
+          <div class="nav-label">主导航</div>
+<a class="nav-item" data-goto="p1"><span data-icon="home"></span> 首页</a>
+<a class="nav-item" data-goto="p2"><span data-icon="grid"></span> 空间</a>
+<a class="nav-item is-active" data-goto="p8"><span data-icon="inbox"></span> 物品</a>
+<a class="nav-item" data-goto="p13"><span data-icon="list"></span> 库存</a>
+<a class="nav-item" data-goto="p16"><span data-icon="user"></span> 我的</a>
+          <div class="nav-label">评审</div>
+          <a class="nav-item" data-goto="p0"><span data-icon="arrowRight"></span> 流程总览</a>
+        </div>
+      </div>
+      <div class="sb-foot">
+        <div class="row"><span class="avatar avatar-sm">我</span><span class="sm strong">演示账户</span></div>
+      </div>
+    </aside>
+    <div class="scrim" data-close></div>
+      <div class="main">
+        <header class="topbar">
+          <button class="btn btn-ghost btn-icon hamburger" data-sidebar-open="#sb-p10" aria-label="菜单"><span data-icon="menu"></span></button>
+          <span class="tb-title">物品详情</span>
+          <div class="tb-right">
+          <button class="btn btn-ghost btn-icon" data-icon="more" data-toast="更多操作" aria-label="更多"></button>
+          </div>
+        </header>
+        <div class="content stack">
+
+      <div class="anno"><b>页面目标：</b>单件物品的档案枢纽——概览、当前状态、库存（条件）与全部操作入口；以「结束管理 / 归档」代替硬删除。</div>
+      <div class="breadcrumb"><a data-goto="p8">物品列表</a> / 身份证</div>
+      <div class="card">
+        <div class="card-hd"><span class="card-title h2" style="margin:0">身份证</span><span class="tag">证件</span><div class="spacer"></div><button class="btn btn-sm btn-ghost" data-goto="p5">编辑</button></div>
+        <div class="card-bd stack-sm">
+          <div class="row-md"><span class="sm">档案完善度</span><div class="progress grow"><div class="bar" style="width:75%"></div></div><span class="xs-sm num">75%</span></div>
+          <div class="xs-sm">管理状态：正常在管 · 仅提示不强制完善</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><span class="card-title">当前状态</span><span class="tag tag-strong tag-good">已定位</span></div>
+        <div class="card-bd stack-sm">
+          <div class="body">客厅 / 电视柜 / 抽屉</div>
+          <div class="xs-sm">最近确认：今天 09:12</div>
+          <div class="row" style="gap:6px"><button class="btn btn-sm btn-primary" data-goto="p11">移动</button><button class="btn btn-sm" data-goto="p12">查看历史</button></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><span class="card-title">位置状态示例</span></div>
+        <div class="card-bd"><div class="row-md wrap"><span class="tag tag-strong tag-good">已定位</span><span class="tag tag-danger">位置未知</span><span class="tag tag-danger">外出</span><span class="tag tag-danger">借出</span></div><div class="field-hint">未知与外出不得显示为具体节点；状态以「颜色 + 文字 + 形状」三重表达。</div></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><span class="card-title">操作</span></div>
+        <div class="card-bd"><div class="auto-2">
+          <button class="btn" data-goto="p9"><span data-icon="edit" data-icon-size="14"></span> 编辑档案</button>
+          <button class="btn" data-goto="p11"><span data-icon="arrowRight" data-icon-size="14"></span> 移动物品</button>
+          <button class="btn" data-goto="p12"><span data-icon="clock" data-icon-size="14"></span> 位置历史</button>
+          <button class="btn" data-goto="p14"><span data-icon="list" data-icon-size="14"></span> 库存</button>
+          <button class="btn btn-danger" data-modal-open="#m-end-manage">结束管理</button>
+        </div></div>
+      </div>
+      <div class="anno"><b>交互说明：</b>结束管理需二次确认并说明影响范围；若仍有剩余库存需明确去向；结束后可在列表「含已结束」中恢复，不做硬删除。</div>
+
+        </div><!-- /content -->
+      <nav class="tabbar">
+<a class="tb" data-goto="p1"><span data-icon="home"></span>首页</a>
+<a class="tb" data-goto="p2"><span data-icon="grid"></span>空间</a>
+<a class="tb is-active" data-goto="p8"><span data-icon="inbox"></span>物品</a>
+<a class="tb" data-goto="p13"><span data-icon="list"></span>库存</a>
+<a class="tb" data-goto="p16"><span data-icon="user"></span>我的</a>
+      </nav>
+      </div><!-- /main -->
+    </div><!-- /shell -->
+  </section>
+
+  <!-- =========== UI-013 · 移动物品 =========== -->
+  <section class="page" id="p11" data-pid="UI-013" data-title="移动物品">
+    <div class="browser-bar">
+      <button class="bb-btn" data-back title="返回上一页"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4l-4 4 4 4"/></svg></button>
+      <span class="bb-id">UI-013</span>
+      <span class="bb-url"></span>
+    </div>
+    <div class="shell">
+    <aside class="sidebar" id="sb-p11">
+      <div class="sb-brand"><span data-icon="grid"></span> 居所收纳</div>
+      <div class="sb-body">
+        <div class="nav">
+          <div class="nav-label">主导航</div>
+<a class="nav-item" data-goto="p1"><span data-icon="home"></span> 首页</a>
+<a class="nav-item" data-goto="p2"><span data-icon="grid"></span> 空间</a>
+<a class="nav-item is-active" data-goto="p8"><span data-icon="inbox"></span> 物品</a>
+<a class="nav-item" data-goto="p13"><span data-icon="list"></span> 库存</a>
+<a class="nav-item" data-goto="p16"><span data-icon="user"></span> 我的</a>
+          <div class="nav-label">评审</div>
+          <a class="nav-item" data-goto="p0"><span data-icon="arrowRight"></span> 流程总览</a>
+        </div>
+      </div>
+      <div class="sb-foot">
+        <div class="row"><span class="avatar avatar-sm">我</span><span class="sm strong">演示账户</span></div>
+      </div>
+    </aside>
+    <div class="scrim" data-close></div>
+      <div class="main">
+        <header class="topbar">
+          <button class="btn btn-ghost btn-icon hamburger" data-sidebar-open="#sb-p11" aria-label="菜单"><span data-icon="menu"></span></button>
+          <span class="tb-title">移动物品</span>
+          <div class="tb-right">
+          <button class="btn btn-ghost btn-icon" data-icon="more" data-toast="更多操作" aria-label="更多"></button>
+          </div>
+        </header>
+        <div class="content stack">
+
+      <div class="anno"><b>页面目标：</b>执行一次位置变更——当前信息与历史同事务写入；未选状态不可确认；失败时两者均不变更。</div>
+      <div class="breadcrumb"><a data-goto="p8">物品列表</a> / <a data-goto="p10">身份证</a> / 移动</div>
+      <div class="card">
+        <div class="card-hd"><span class="card-title">当前信息</span></div>
+        <div class="card-bd stack-sm"><div class="row-md"><span class="body grow">身份证</span><span class="tag tag-strong">当前：客厅 / 电视柜 / 抽屉</span></div></div>
+      </div>
+      <form data-validate data-success="移动已保存" data-success-goto="p12">
+        <div class="card">
+          <div class="card-bd stack">
+            <div class="field"><label class="field-label">目标位置状态 <span class="req">*</span></label>
+              <div class="check-group">
+                <label class="check radio"><input type="radio" name="mv" checked data-required><span class="box"></span>在家（选具体位置）</label>
+                <label class="check radio"><input type="radio" name="mv"><span class="box"></span>位置未知</label>
+                <label class="check radio"><input type="radio" name="mv"><span class="box"></span>外出</label>
+                <label class="check radio"><input type="radio" name="mv"><span class="box"></span>借出</label>
+              </div>
+            </div>
+            <div class="field"><label class="field-label">目标位置（状态为「在家」时必选）</label>
+              <div class="select"><button type="button" class="select-trigger"><span class="sel-val is-placeholder">请选择房间 / 家具 / 收纳节点</span><span class="caret" data-icon="chevronDown" data-icon-size="12"></span></button><div class="select-menu"><div class="opt is-selected is-placeholder" data-value="" data-label="请选择位置">请选择位置</div><div class="opt" data-value="1" data-label="卧室 / 床头柜 / 第一层">卧室 / 床头柜 / 第一层</div><div class="opt" data-value="2" data-label="书房 / 书桌 / 第一层">书房 / 书桌 / 第一层</div></div></div>
+            </div>
+            <div class="field"><label class="field-label">备注</label><textarea class="textarea" placeholder="选填，例如：换季整理"></textarea></div>
+          </div>
+        </div>
+        <div class="row-md wrap">
+          <button class="btn btn-primary" type="submit" data-loading="1000" data-loading-done="已确认移动">确认移动</button>
+          <div class="spacer"></div><button class="btn btn-ghost" type="button" data-goto="p10">取消</button>
+        </div>
+        <div class="alert alert-error" style="margin-top:12px"><span class="a-ico" data-icon="warn"></span><div>异常示例：在家但目标位置为空 → Toast 拦截；未选状态 → 确认按钮不可用；失败时当前位置与历史均不变更。</div></div>
+      </form>
+      <div class="anno"><b>交互说明：</b>首次位置确认为独立事件类型，不伪装为 A→B 移动；外出 / 借出为状态变更，日常外出不强制记录；移动完成后详情显示最新位置，历史页新增一条记录。</div>
+
+        </div><!-- /content -->
+      <nav class="tabbar">
+<a class="tb" data-goto="p1"><span data-icon="home"></span>首页</a>
+<a class="tb" data-goto="p2"><span data-icon="grid"></span>空间</a>
+<a class="tb is-active" data-goto="p8"><span data-icon="inbox"></span>物品</a>
+<a class="tb" data-goto="p13"><span data-icon="list"></span>库存</a>
+<a class="tb" data-goto="p16"><span data-icon="user"></span>我的</a>
+      </nav>
+      </div><!-- /main -->
+    </div><!-- /shell -->
+  </section>
+
+  <!-- =========== UI-014 · 移动历史 =========== -->
+  <section class="page" id="p12" data-pid="UI-014" data-title="移动历史">
+    <div class="browser-bar">
+      <button class="bb-btn" data-back title="返回上一页"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4l-4 4 4 4"/></svg></button>
+      <span class="bb-id">UI-014</span>
+      <span class="bb-url"></span>
+    </div>
+    <div class="shell">
+    <aside class="sidebar" id="sb-p12">
+      <div class="sb-brand"><span data-icon="grid"></span> 居所收纳</div>
+      <div class="sb-body">
+        <div class="nav">
+          <div class="nav-label">主导航</div>
+<a class="nav-item" data-goto="p1"><span data-icon="home"></span> 首页</a>
+<a class="nav-item" data-goto="p2"><span data-icon="grid"></span> 空间</a>
+<a class="nav-item is-active" data-goto="p8"><span data-icon="inbox"></span> 物品</a>
+<a class="nav-item" data-goto="p13"><span data-icon="list"></span> 库存</a>
+<a class="nav-item" data-goto="p16"><span data-icon="user"></span> 我的</a>
+          <div class="nav-label">评审</div>
+          <a class="nav-item" data-goto="p0"><span data-icon="arrowRight"></span> 流程总览</a>
+        </div>
+      </div>
+      <div class="sb-foot">
+        <div class="row"><span class="avatar avatar-sm">我</span><span class="sm strong">演示账户</span></div>
+      </div>
+    </aside>
+    <div class="scrim" data-close></div>
+      <div class="main">
+        <header class="topbar">
+          <button class="btn btn-ghost btn-icon hamburger" data-sidebar-open="#sb-p12" aria-label="菜单"><span data-icon="menu"></span></button>
+          <span class="tb-title">移动历史</span>
+          <div class="tb-right">
+          <button class="btn btn-ghost btn-icon" data-icon="more" data-toast="更多操作" aria-label="更多"></button>
+          </div>
+        </header>
+        <div class="content stack">
+
+      <div class="anno"><b>页面目标：</b>只读回溯物品的全部位置变更；历史不可编辑，创建时的初始位置不计为移动。</div>
+      <div class="breadcrumb"><a data-goto="p10">身份证</a> / 移动历史</div>
+      <div class="tabs" data-tab-group>
+        <button class="tab is-active" data-tab="has">有历史（3）</button>
+        <button class="tab" data-tab="none">无历史态</button>
+      </div>
+      <div data-tab-pane="has" class="tab-pane is-active">
+        <div class="card">
+          <div class="card-bd">
+            <div class="steps" style="margin-bottom:12px"><span class="step is-done">建档</span><span class="step is-done">移动</span><span class="step is-active">当前</span></div>
+            <div class="list">
+              <div class="list-item"><div class="grow"><div class="row-md"><span class="tag">移动</span><span class="xs-sm">今天 09:12</span></div><div class="body">客厅 / 电视柜 / 抽屉 → 客厅 / 沙发 / 坐垫下储物格</div><div class="xs-sm">备注：换季整理</div></div></div>
+              <div class="list-item"><div class="grow"><div class="row-md"><span class="tag">首次位置确认</span><span class="xs-sm">11-17 14:05</span></div><div class="body">位置未知 → 客厅 / 电视柜 / 抽屉</div><div class="xs-sm">首次确认到家庭内具体位置，独立记录</div></div></div>
+              <div class="list-item"><div class="grow"><div class="row-md"><span class="tag">移动</span><span class="xs-sm">11-10 08:30</span></div><div class="body">卧室 / 床头柜 → 客厅 / 电视柜 / 抽屉</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-tab-pane="none" class="tab-pane">
+        <div class="empty"><span class="e-ico" data-icon="clock" data-icon-size="40"></span><div class="e-title">暂无移动记录</div><div class="e-desc">创建物品时填写的初始位置不计为一次移动；发生移动后会自动记录在这里。</div></div>
+      </div>
+      <div class="anno"><b>交互说明：</b>历史按时间倒序、只读不可编辑；类型分为移动与首次位置确认两类；每条含来源、目标、时间、备注。</div>
+
+        </div><!-- /content -->
+      <nav class="tabbar">
+<a class="tb" data-goto="p1"><span data-icon="home"></span>首页</a>
+<a class="tb" data-goto="p2"><span data-icon="grid"></span>空间</a>
+<a class="tb is-active" data-goto="p8"><span data-icon="inbox"></span>物品</a>
+<a class="tb" data-goto="p13"><span data-icon="list"></span>库存</a>
+<a class="tb" data-goto="p16"><span data-icon="user"></span>我的</a>
+      </nav>
+      </div><!-- /main -->
+    </div><!-- /shell -->
+  </section>
+
+  <!-- =========== UI-015 · 库存总览 =========== -->
+  <section class="page" id="p13" data-pid="UI-015" data-title="库存总览">
+    <div class="browser-bar">
+      <button class="bb-btn" data-back title="返回上一页"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4l-4 4 4 4"/></svg></button>
+      <span class="bb-id">UI-015</span>
+      <span class="bb-url"></span>
+    </div>
+    <div class="shell">
+    <aside class="sidebar" id="sb-p13">
+      <div class="sb-brand"><span data-icon="grid"></span> 居所收纳</div>
+      <div class="sb-body">
+        <div class="nav">
+          <div class="nav-label">主导航</div>
+<a class="nav-item" data-goto="p1"><span data-icon="home"></span> 首页</a>
+<a class="nav-item" data-goto="p2"><span data-icon="grid"></span> 空间</a>
+<a class="nav-item" data-goto="p8"><span data-icon="inbox"></span> 物品</a>
+<a class="nav-item is-active" data-goto="p13"><span data-icon="list"></span> 库存</a>
+<a class="nav-item" data-goto="p16"><span data-icon="user"></span> 我的</a>
+          <div class="nav-label">评审</div>
+          <a class="nav-item" data-goto="p0"><span data-icon="arrowRight"></span> 流程总览</a>
+        </div>
+      </div>
+      <div class="sb-foot">
+        <div class="row"><span class="avatar avatar-sm">我</span><span class="sm strong">演示账户</span></div>
+      </div>
+    </aside>
+    <div class="scrim" data-close></div>
+      <div class="main">
+        <header class="topbar">
+          <button class="btn btn-ghost btn-icon hamburger" data-sidebar-open="#sb-p13" aria-label="菜单"><span data-icon="menu"></span></button>
+          <span class="tb-title">库存总览</span>
+          <div class="tb-right">
+          <button class="btn btn-primary" data-goto="p9"><span data-icon="plus" data-icon-size="14"></span> 加库存</button>
+          </div>
+        </header>
+        <div class="content stack">
+
+      <div class="anno"><b>页面目标：</b>集中查看易耗品余额与低库存；库存记录来自「库存跟踪」模式物品，位置跟踪物品不出现在此页。</div>
+      <div class="tabs" data-tab-group>
+        <button class="tab is-active" data-tab="has">全部（6）</button>
+        <button class="tab" data-tab="low">低库存（2）</button>
+        <button class="tab" data-tab="none">空列表态</button>
+      </div>
+      <div data-tab-pane="has" class="tab-pane is-active">
+        <div class="card" style="padding:0"><div class="list">
+          <div class="list-item" data-goto="p14"><span class="tag tag-danger">低库存</span><span class="body grow">洗衣液</span><span class="xs-sm num">1 / 阈值 2 瓶</span><span data-icon="chevronRight" data-icon-size="12"></span></div>
+          <div class="list-item" data-goto="p14"><span class="tag tag-danger">低库存</span><span class="body grow">垃圾袋</span><span class="xs-sm num">3 / 阈值 5 卷</span><span data-icon="chevronRight" data-icon-size="12"></span></div>
+          <div class="list-item" data-goto="p14"><span class="tag">正常</span><span class="body grow">纸巾</span><span class="xs-sm num">12 / 阈值 3 包</span><span data-icon="chevronRight" data-icon-size="12"></span></div>
+          <div class="list-item" data-goto="p14"><span class="tag">正常</span><span class="body grow">牙膏</span><span class="xs-sm num">4 / 阈值 2 支</span><span data-icon="chevronRight" data-icon-size="12"></span></div>
+        </div></div>
+      </div>
+      <div data-tab-pane="low" class="tab-pane">
+        <div class="alert alert-error"><span class="a-ico" data-icon="warn"></span><div>2 项低于阈值，颜色 + 文字双重标识；补货后提醒自动结束。</div></div>
+        <div class="card" style="padding:0"><div class="list">
+          <div class="list-item" data-goto="p14"><span class="tag tag-danger">低库存</span><span class="body grow">洗衣液 · 剩余 1 瓶</span><button class="btn btn-sm btn-secondary" data-goto="p14">去补货</button></div>
+          <div class="list-item" data-goto="p14"><span class="tag tag-danger">低库存</span><span class="body grow">垃圾袋 · 剩余 3 卷</span><button class="btn btn-sm btn-secondary" data-goto="p14">去补货</button></div>
+        </div></div>
+      </div>
+      <div data-tab-pane="none" class="tab-pane">
+        <div class="empty"><span class="e-ico" data-icon="inbox" data-icon-size="40"></span><div class="e-title">还没有库存记录</div><div class="e-desc">添加物品时选择「库存跟踪」并填写数量，即可在此集中管理。</div><button class="btn btn-primary" style="margin-top:8px" data-goto="p9">添加库存物品</button></div>
+      </div>
+      <div class="row-md"><button class="btn btn-secondary" data-goto="p15"><span data-icon="bell" data-icon-size="14"></span> 提醒中心</button></div>
+      <div class="anno"><b>交互说明：</b>低库存置顶并颜色 + 文字双重标识；点击条目进入库存详情；位置跟踪模式物品不在此页出现。</div>
+
+        </div><!-- /content -->
+      <nav class="tabbar">
+<a class="tb" data-goto="p1"><span data-icon="home"></span>首页</a>
+<a class="tb" data-goto="p2"><span data-icon="grid"></span>空间</a>
+<a class="tb" data-goto="p8"><span data-icon="inbox"></span>物品</a>
+<a class="tb is-active" data-goto="p13"><span data-icon="list"></span>库存</a>
+<a class="tb" data-goto="p16"><span data-icon="user"></span>我的</a>
+      </nav>
+      </div><!-- /main -->
+    </div><!-- /shell -->
+  </section>
+
+  <!-- =========== UI-016 · 库存详情 =========== -->
+  <section class="page" id="p14" data-pid="UI-016" data-title="库存详情">
+    <div class="browser-bar">
+      <button class="bb-btn" data-back title="返回上一页"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4l-4 4 4 4"/></svg></button>
+      <span class="bb-id">UI-016</span>
+      <span class="bb-url"></span>
+    </div>
+    <div class="shell">
+    <aside class="sidebar" id="sb-p14">
+      <div class="sb-brand"><span data-icon="grid"></span> 居所收纳</div>
+      <div class="sb-body">
+        <div class="nav">
+          <div class="nav-label">主导航</div>
+<a class="nav-item" data-goto="p1"><span data-icon="home"></span> 首页</a>
+<a class="nav-item" data-goto="p2"><span data-icon="grid"></span> 空间</a>
+<a class="nav-item" data-goto="p8"><span data-icon="inbox"></span> 物品</a>
+<a class="nav-item is-active" data-goto="p13"><span data-icon="list"></span> 库存</a>
+<a class="nav-item" data-goto="p16"><span data-icon="user"></span> 我的</a>
+          <div class="nav-label">评审</div>
+          <a class="nav-item" data-goto="p0"><span data-icon="arrowRight"></span> 流程总览</a>
+        </div>
+      </div>
+      <div class="sb-foot">
+        <div class="row"><span class="avatar avatar-sm">我</span><span class="sm strong">演示账户</span></div>
+      </div>
+    </aside>
+    <div class="scrim" data-close></div>
+      <div class="main">
+        <header class="topbar">
+          <button class="btn btn-ghost btn-icon hamburger" data-sidebar-open="#sb-p14" aria-label="菜单"><span data-icon="menu"></span></button>
+          <span class="tb-title">库存详情</span>
+          <div class="tb-right">
+          <button class="btn btn-ghost btn-icon" data-icon="more" data-toast="更多操作" aria-label="更多"></button>
+          </div>
+        </header>
+        <div class="content stack">
+
+      <div class="anno"><b>页面目标：</b>单件易耗品的余额与交易——入库 / 消耗 / 调整三类交易；余额不得为负；纠错走「调整」不伪装为消耗。</div>
+      <div class="breadcrumb"><a data-goto="p13">库存总览</a> / 洗衣液</div>
+      <div class="auto-3">
+        <div class="stat"><div class="stat-label">当前余额</div><div class="stat-value" style="color:var(--danger)">1 瓶</div><div class="stat-delta">低于阈值</div></div>
+        <div class="stat"><div class="stat-label">阈值</div><div class="stat-value">2 瓶</div><div class="stat-delta">达标自动提醒</div></div>
+        <div class="stat"><div class="stat-label">累计入库 / 消耗</div><div class="stat-value">8 / 7</div><div class="stat-delta">瓶</div></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><span class="card-title">库存变更</span></div>
+        <div class="card-bd stack">
+          <div class="field"><label class="field-label">交易类型</label><div class="check-group">
+            <label class="check radio"><input type="radio" name="tx" checked><span class="box"></span>入库</label>
+            <label class="check radio"><input type="radio" name="tx"><span class="box"></span>消耗</label>
+            <label class="check radio"><input type="radio" name="tx"><span class="box"></span>调整</label>
+          </div></div>
+          <div class="auto-2">
+            <div class="field"><label class="field-label">数量</label><input class="input" value="2"></div>
+            <div class="field"><label class="field-label">备注</label><input class="input" placeholder="选填"></div>
+          </div>
+          <div class="row" style="gap:6px"><button class="btn btn-primary" data-loading="800" data-loading-done="已记录" data-toast="交易已记录，余额已更新">记一笔</button></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><span class="card-title">交易记录</span></div>
+        <div class="card-bd" style="padding:0"><div class="table-wrap"><table class="table table-mobile">
+          <thead><tr><th>时间</th><th>类型</th><th>数量</th><th>变更后余额</th><th>备注</th></tr></thead>
+          <tbody>
+            <tr><td data-label="时间">昨天 20:30</td><td data-label="类型"><span class="tag">入库</span></td><td data-label="数量" class="num">+2</td><td data-label="变更后余额" class="num">3</td><td data-label="备注">补货</td></tr>
+            <tr><td data-label="时间">11-16</td><td data-label="类型"><span class="tag">消耗</span></td><td data-label="数量" class="num">-2</td><td data-label="变更后余额" class="num">1</td><td data-label="备注">—</td></tr>
+            <tr class="is-disabled"><td data-label="时间">示例</td><td data-label="类型"><span class="tag tag-danger">消耗被拒</span></td><td data-label="数量" class="num">-5</td><td data-label="变更后余额" class="num">—</td><td data-label="备注">超过余额，拦截</td></tr>
+          </tbody>
+        </table></div></div>
+      </div>
+      <div class="alert alert-error"><span class="a-ico" data-icon="warn"></span><div>消耗超过余额时拒绝并保留原值，就近提示当前余额与可用范围；纠错请用「调整」交易。</div></div>
+      <div class="anno"><b>交互说明：</b>三类交易分别记录；余额不为负；阈值提醒同一周期一条、达标自动结束；忽略提醒不改变库存事实。</div>
+
+        </div><!-- /content -->
+      <nav class="tabbar">
+<a class="tb" data-goto="p1"><span data-icon="home"></span>首页</a>
+<a class="tb" data-goto="p2"><span data-icon="grid"></span>空间</a>
+<a class="tb" data-goto="p8"><span data-icon="inbox"></span>物品</a>
+<a class="tb is-active" data-goto="p13"><span data-icon="list"></span>库存</a>
+<a class="tb" data-goto="p16"><span data-icon="user"></span>我的</a>
+      </nav>
+      </div><!-- /main -->
+    </div><!-- /shell -->
+  </section>
+
+  <!-- =========== UI-017 · 提醒中心 =========== -->
+  <section class="page" id="p15" data-pid="UI-017" data-title="提醒中心">
+    <div class="browser-bar">
+      <button class="bb-btn" data-back title="返回上一页"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4l-4 4 4 4"/></svg></button>
+      <span class="bb-id">UI-017</span>
+      <span class="bb-url"></span>
+    </div>
+    <div class="shell">
+    <aside class="sidebar" id="sb-p15">
+      <div class="sb-brand"><span data-icon="grid"></span> 居所收纳</div>
+      <div class="sb-body">
+        <div class="nav">
+          <div class="nav-label">主导航</div>
+<a class="nav-item is-active" data-goto="p1"><span data-icon="home"></span> 首页</a>
+<a class="nav-item" data-goto="p2"><span data-icon="grid"></span> 空间</a>
+<a class="nav-item" data-goto="p8"><span data-icon="inbox"></span> 物品</a>
+<a class="nav-item" data-goto="p13"><span data-icon="list"></span> 库存</a>
+<a class="nav-item" data-goto="p16"><span data-icon="user"></span> 我的</a>
+          <div class="nav-label">评审</div>
+          <a class="nav-item" data-goto="p0"><span data-icon="arrowRight"></span> 流程总览</a>
+        </div>
+      </div>
+      <div class="sb-foot">
+        <div class="row"><span class="avatar avatar-sm">我</span><span class="sm strong">演示账户</span></div>
+      </div>
+    </aside>
+    <div class="scrim" data-close></div>
+      <div class="main">
+        <header class="topbar">
+          <button class="btn btn-ghost btn-icon hamburger" data-sidebar-open="#sb-p15" aria-label="菜单"><span data-icon="menu"></span></button>
+          <span class="tb-title">提醒中心</span>
+          <div class="tb-right">
+          <button class="btn btn-ghost btn-icon" data-icon="more" data-toast="更多操作" aria-label="更多"></button>
+          </div>
+        </header>
+        <div class="content stack">
+
+      <div class="anno"><b>页面目标：</b>集中处理阈值提醒；提醒为派生状态，忽略不改变库存事实，补货后自动结束。</div>
+      <div class="tabs" data-tab-group>
+        <button class="tab is-active" data-tab="has">待处理（2）</button>
+        <button class="tab" data-tab="none">暂无提醒</button>
+      </div>
+      <div data-tab-pane="has" class="tab-pane is-active">
+        <div class="card">
+          <div class="card-bd stack">
+            <div class="row-md"><span class="tag tag-danger">低于阈值</span><span class="body grow">洗衣液 · 剩余 1 瓶（阈值 2）</span><span class="xs-sm">本周期第 1 条</span></div>
+            <div class="row" style="gap:6px"><button class="btn btn-sm btn-primary" data-goto="p14">去补货</button><button class="btn btn-sm btn-ghost" data-toast="已忽略本次提醒">忽略本次</button></div>
+            <div class="row-md"><span class="tag tag-danger">低于阈值</span><span class="body grow">垃圾袋 · 剩余 3 卷（阈值 5）</span><span class="xs-sm">本周期第 1 条</span></div>
+            <div class="row" style="gap:6px"><button class="btn btn-sm btn-primary" data-goto="p14">去补货</button><button class="btn btn-sm btn-ghost" data-toast="已忽略本次提醒">忽略本次</button></div>
+          </div>
+        </div>
+      </div>
+      <div data-tab-pane="none" class="tab-pane">
+        <div class="empty"><span class="e-ico" data-icon="inbox" data-icon-size="40"></span><div class="e-title">暂无提醒</div><div class="e-desc">库存低于阈值时会自动出现在这里；补货后提醒结束。</div></div>
+      </div>
+      <div class="anno"><b>交互说明：</b>同一周期同物品仅一条提醒；忽略仅本次、不改库存事实；补货后自动结束；入口来自首页提醒卡、库存页与我的。</div>
+
+        </div><!-- /content -->
+      <nav class="tabbar">
+<a class="tb is-active" data-goto="p1"><span data-icon="home"></span>首页</a>
+<a class="tb" data-goto="p2"><span data-icon="grid"></span>空间</a>
+<a class="tb" data-goto="p8"><span data-icon="inbox"></span>物品</a>
+<a class="tb" data-goto="p13"><span data-icon="list"></span>库存</a>
+<a class="tb" data-goto="p16"><span data-icon="user"></span>我的</a>
+      </nav>
+      </div><!-- /main -->
+    </div><!-- /shell -->
+  </section>
+
+  <!-- =========== UI-018 · 我的 =========== -->
+  <section class="page" id="p16" data-pid="UI-018" data-title="我的">
+    <div class="browser-bar">
+      <button class="bb-btn" data-back title="返回上一页"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4l-4 4 4 4"/></svg></button>
+      <span class="bb-id">UI-018</span>
+      <span class="bb-url"></span>
+    </div>
+    <div class="shell">
+    <aside class="sidebar" id="sb-p16">
+      <div class="sb-brand"><span data-icon="grid"></span> 居所收纳</div>
+      <div class="sb-body">
+        <div class="nav">
+          <div class="nav-label">主导航</div>
+<a class="nav-item" data-goto="p1"><span data-icon="home"></span> 首页</a>
+<a class="nav-item" data-goto="p2"><span data-icon="grid"></span> 空间</a>
+<a class="nav-item" data-goto="p8"><span data-icon="inbox"></span> 物品</a>
+<a class="nav-item" data-goto="p13"><span data-icon="list"></span> 库存</a>
+<a class="nav-item is-active" data-goto="p16"><span data-icon="user"></span> 我的</a>
+          <div class="nav-label">评审</div>
+          <a class="nav-item" data-goto="p0"><span data-icon="arrowRight"></span> 流程总览</a>
+        </div>
+      </div>
+      <div class="sb-foot">
+        <div class="row"><span class="avatar avatar-sm">我</span><span class="sm strong">演示账户</span></div>
+      </div>
+    </aside>
+    <div class="scrim" data-close></div>
+      <div class="main">
+        <header class="topbar">
+          <button class="btn btn-ghost btn-icon hamburger" data-sidebar-open="#sb-p16" aria-label="菜单"><span data-icon="menu"></span></button>
+          <span class="tb-title">我的</span>
+          <div class="tb-right">
+          <button class="btn btn-ghost btn-icon" data-icon="more" data-toast="更多操作" aria-label="更多"></button>
+          </div>
+        </header>
+        <div class="content stack">
+
+      <div class="anno"><b>页面目标：</b>账户与同步状态、数据管理与功能入口；云端不可用时进入本地模式，恢复后继续同步，不显示虚假成功。</div>
+      <div class="tabs" data-tab-group>
+        <button class="tab is-active" data-tab="sync">已登录</button>
+        <button class="tab" data-tab="local">本地模式 / 待同步</button>
+      </div>
+      <div data-tab-pane="sync" class="tab-pane is-active">
+        <div class="card">
+          <div class="card-hd"><span class="card-title">账户与同步</span><span class="tag tag-strong">已登录</span></div>
+          <div class="card-bd stack">
+            <div class="row-md"><span class="avatar">我</span><div class="grow"><div class="sm strong">演示账户</div><div class="xs-sm">数据仅本账户可见（openid 隔离）</div></div></div>
+            <div class="row-md"><span class="tag">上次同步：今天 10:00</span><button class="btn btn-sm btn-secondary" data-loading="1200" data-loading-done="同步完成"><span data-icon="refresh" data-icon-size="14"></span> 立即同步</button></div>
+          </div>
+        </div>
+      </div>
+      <div data-tab-pane="local" class="tab-pane">
+        <div class="alert alert-error"><span class="a-ico" data-icon="warn"></span><div>云端暂不可用，当前为本地模式：数据保存在本机，标记「待同步」，恢复后可继续同步。本地功能可完整使用。</div></div>
+        <div class="card"><div class="card-bd stack"><div class="row-md"><span class="tag tag-danger">待同步 3 项变更</span><button class="btn btn-sm" data-toast="已重试同步，仍不可用">重试同步</button></div></div></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><span class="card-title">数据管理</span></div>
+        <div class="card-bd"><div class="auto-2">
+          <button class="btn" data-goto="p19"><span data-icon="download" data-icon-size="14"></span> 备份与恢复</button>
+          <button class="btn" data-goto="p17"><span data-icon="image" data-icon-size="14"></span> 房间照片（可选）</button>
+          <button class="btn" data-toast="演示数据重置">演示数据</button>
+          <button class="btn btn-danger" data-modal-open="#m-clear">清空本地数据</button>
+        </div></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><span class="card-title">功能与关于</span></div>
+        <div class="card-bd"><div class="list">
+          <div class="list-item" data-goto="p15"><span class="body grow">提醒中心</span><span data-icon="chevronRight" data-icon-size="12"></span></div>
+          <div class="list-item" data-toast="隐私与数据说明（静态页）"><span class="body grow">隐私与数据说明</span><span data-icon="chevronRight" data-icon-size="12"></span></div>
+          <div class="list-item" data-goto="p20"><span class="body grow">管理后台</span><span class="tag tag-danger">仅管理员</span><span data-icon="chevronRight" data-icon-size="12"></span></div>
+        </div></div>
+      </div>
+      <div class="anno anno-red"><b>待确认 Q-06：</b>管理员 openid 尚未配置；原型默认展示入口用于演示管理员态，实际按 users.role 与 ADMIN_OPENIDS 判定，非管理员不可见且访问被拒。</div>
+      <div class="anno anno-red"><b>待确认 Q-07：</b>用户隐私保护指引、工具类目资质待核；原型不体现合规配置，提审前由用户方完成。</div>
+      <div class="anno"><b>交互说明：</b>离线优先——本地为数据源，云端不可用时标记待同步；清空本地数据为不可逆操作，二次确认。</div>
+
+        </div><!-- /content -->
+      <nav class="tabbar">
+<a class="tb" data-goto="p1"><span data-icon="home"></span>首页</a>
+<a class="tb" data-goto="p2"><span data-icon="grid"></span>空间</a>
+<a class="tb" data-goto="p8"><span data-icon="inbox"></span>物品</a>
+<a class="tb" data-goto="p13"><span data-icon="list"></span>库存</a>
+<a class="tb is-active" data-goto="p16"><span data-icon="user"></span>我的</a>
+      </nav>
+      </div><!-- /main -->
+    </div><!-- /shell -->
+  </section>
+
+  <!-- =========== UI-004 · 房间照片（可选） =========== -->
+  <section class="page" id="p17" data-pid="UI-004" data-title="房间照片（可选）">
+    <div class="browser-bar">
+      <button class="bb-btn" data-back title="返回上一页"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4l-4 4 4 4"/></svg></button>
+      <span class="bb-id">UI-004</span>
+      <span class="bb-url"></span>
+    </div>
+    <div class="shell">
+    <aside class="sidebar" id="sb-p17">
+      <div class="sb-brand"><span data-icon="grid"></span> 居所收纳</div>
+      <div class="sb-body">
+        <div class="nav">
+          <div class="nav-label">主导航</div>
+<a class="nav-item" data-goto="p1"><span data-icon="home"></span> 首页</a>
+<a class="nav-item is-active" data-goto="p2"><span data-icon="grid"></span> 空间</a>
+<a class="nav-item" data-goto="p8"><span data-icon="inbox"></span> 物品</a>
+<a class="nav-item" data-goto="p13"><span data-icon="list"></span> 库存</a>
+<a class="nav-item" data-goto="p16"><span data-icon="user"></span> 我的</a>
+          <div class="nav-label">评审</div>
+          <a class="nav-item" data-goto="p0"><span data-icon="arrowRight"></span> 流程总览</a>
+        </div>
+      </div>
+      <div class="sb-foot">
+        <div class="row"><span class="avatar avatar-sm">我</span><span class="sm strong">演示账户</span></div>
+      </div>
+    </aside>
+    <div class="scrim" data-close></div>
+      <div class="main">
+        <header class="topbar">
+          <button class="btn btn-ghost btn-icon hamburger" data-sidebar-open="#sb-p17" aria-label="菜单"><span data-icon="menu"></span></button>
+          <span class="tb-title">房间照片（可选）</span>
+          <div class="tb-right">
+          <button class="btn btn-ghost btn-icon" data-icon="more" data-toast="更多操作" aria-label="更多"></button>
+          </div>
+        </header>
+        <div class="content stack">
+
+      <div class="anno anno-red"><b>待确认 Q-09：</b>房间照片 / 建模任务在 V1.2 降级为可选分支，但页面仍在代码中注册；是否最终保留入口待产品确认。本页与 UI-005 置于可选区，不进 P0 主流程。</div>
+      <div class="anno"><b>页面目标：</b>可选的照片素材采集——拍照 / 相册、缩略图网格、预览、删除、提交与尺寸参照；不写死照片数量门槛。</div>
+      <div class="breadcrumb"><a data-goto="p3">房间列表</a> / 客厅 / 房间照片</div>
+      <div class="card">
+        <div class="card-hd"><span class="card-title">客厅照片</span><div class="spacer"></div><button class="btn btn-sm btn-secondary" data-toast="调起拍照">拍照</button><button class="btn btn-sm" data-toast="从相册选择">相册</button></div>
+        <div class="card-bd">
+          <div class="auto-4">
+            <div class="ph-img" style="height:90px" data-drawer-open="#d-photo"><span>IMG_01</span></div>
+            <div class="ph-img" style="height:90px" data-drawer-open="#d-photo"><span>IMG_02</span></div>
+            <div class="upload" style="height:90px"><span data-icon="plus" data-icon-size="16"></span> 继续添加</div>
+          </div>
+          <div class="row" style="gap:6px;margin-top:12px"><button class="btn btn-primary" data-loading="1400" data-loading-done="已提交">提交照片</button><button class="btn btn-secondary" data-goto="p18">查看建模任务</button></div>
+        </div>
+      </div>
+      <div class="alert alert-error"><span class="a-ico" data-icon="warn"></span><div>上传中显示进度；失败可重试与删除。照片私有存储、短时授权链接读取，后台仅显示任务元信息不返回照片内容。</div></div>
+      <div class="anno"><b>交互说明：</b>照片仅作为可选素材，处理失败不影响手动主路径；原型不标注任何照片数量门槛。</div>
+
+        </div><!-- /content -->
+      <nav class="tabbar">
+<a class="tb" data-goto="p1"><span data-icon="home"></span>首页</a>
+<a class="tb is-active" data-goto="p2"><span data-icon="grid"></span>空间</a>
+<a class="tb" data-goto="p8"><span data-icon="inbox"></span>物品</a>
+<a class="tb" data-goto="p13"><span data-icon="list"></span>库存</a>
+<a class="tb" data-goto="p16"><span data-icon="user"></span>我的</a>
+      </nav>
+      </div><!-- /main -->
+    </div><!-- /shell -->
+  </section>
+
+  <!-- =========== UI-005 · 建模任务（可选） =========== -->
+  <section class="page" id="p18" data-pid="UI-005" data-title="建模任务（可选）">
+    <div class="browser-bar">
+      <button class="bb-btn" data-back title="返回上一页"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4l-4 4 4 4"/></svg></button>
+      <span class="bb-id">UI-005</span>
+      <span class="bb-url"></span>
+    </div>
+    <div class="shell">
+    <aside class="sidebar" id="sb-p18">
+      <div class="sb-brand"><span data-icon="grid"></span> 居所收纳</div>
+      <div class="sb-body">
+        <div class="nav">
+          <div class="nav-label">主导航</div>
+<a class="nav-item" data-goto="p1"><span data-icon="home"></span> 首页</a>
+<a class="nav-item is-active" data-goto="p2"><span data-icon="grid"></span> 空间</a>
+<a class="nav-item" data-goto="p8"><span data-icon="inbox"></span> 物品</a>
+<a class="nav-item" data-goto="p13"><span data-icon="list"></span> 库存</a>
+<a class="nav-item" data-goto="p16"><span data-icon="user"></span> 我的</a>
+          <div class="nav-label">评审</div>
+          <a class="nav-item" data-goto="p0"><span data-icon="arrowRight"></span> 流程总览</a>
+        </div>
+      </div>
+      <div class="sb-foot">
+        <div class="row"><span class="avatar avatar-sm">我</span><span class="sm strong">演示账户</span></div>
+      </div>
+    </aside>
+    <div class="scrim" data-close></div>
+      <div class="main">
+        <header class="topbar">
+          <button class="btn btn-ghost btn-icon hamburger" data-sidebar-open="#sb-p18" aria-label="菜单"><span data-icon="menu"></span></button>
+          <span class="tb-title">建模任务（可选）</span>
+          <div class="tb-right">
+          <button class="btn btn-ghost btn-icon" data-icon="more" data-toast="更多操作" aria-label="更多"></button>
+          </div>
+        </header>
+        <div class="content stack">
+
+      <div class="anno"><b>页面目标：</b>可选建模任务的状态跟踪——排队 / 处理中 / 成功 / 失败；成功仅表示「候选就绪」，不自动写入事实；失败给重试与手动降级两个出口。</div>
+      <div class="breadcrumb"><a data-goto="p17">房间照片</a> / 建模任务</div>
+      <div class="tabs" data-tab-group>
+        <button class="tab is-active" data-tab="run">处理中</button>
+        <button class="tab" data-tab="ok">候选就绪</button>
+        <button class="tab" data-tab="fail">失败态</button>
+      </div>
+      <div data-tab-pane="run" class="tab-pane is-active">
+        <div class="card"><div class="card-bd stack">
+          <div class="row-md"><span class="tag">处理中</span><span class="body grow">客厅 · 2 张照片</span><span class="xs-sm">任务 #1042</span></div>
+          <div class="progress"><div class="bar" style="width:60%"></div></div>
+          <div class="xs-sm">阶段：生成候选模型（不写入事实）</div>
+        </div></div>
+      </div>
+      <div data-tab-pane="ok" class="tab-pane">
+        <div class="card"><div class="card-bd stack">
+          <div class="row-md"><span class="tag tag-strong">候选就绪</span><span class="body grow">客厅 · 候选模型</span></div>
+          <div class="ph-img" style="height:120px"><span>候选模型（示意，斜线填充区别于确认事实）</span></div>
+          <div class="alert"><span class="a-ico" data-icon="info"></span><div>成功仅表示候选就绪；是否采用由用户确认，确认前不计入住务事实。</div></div>
+          <div class="row" style="gap:6px"><button class="btn btn-secondary" data-toast="已采用候选（写入事实）">采用候选</button><button class="btn" data-goto="p4">仍用手动编辑</button></div>
+        </div></div>
+      </div>
+      <div data-tab-pane="fail" class="tab-pane">
+        <div class="card"><div class="card-bd stack">
+          <div class="alert alert-error"><span class="a-ico" data-icon="warn"></span><div>建模失败：照片素材不足或处理异常；记录保留，可重试，不影响手动主路径。</div></div>
+          <div class="row" style="gap:6px"><button class="btn btn-secondary" data-loading="1200" data-loading-done="已重试">重试</button><button class="btn" data-goto="p4">手动 / 列表方式</button></div>
+        </div></div>
+      </div>
+      <div class="anno"><b>交互说明：</b>四态固定；失败必须同时提供「重试」与「手动降级」两个出口；V1.2 主路径不依赖本流程。</div>
+
+        </div><!-- /content -->
+      <nav class="tabbar">
+<a class="tb" data-goto="p1"><span data-icon="home"></span>首页</a>
+<a class="tb is-active" data-goto="p2"><span data-icon="grid"></span>空间</a>
+<a class="tb" data-goto="p8"><span data-icon="inbox"></span>物品</a>
+<a class="tb" data-goto="p13"><span data-icon="list"></span>库存</a>
+<a class="tb" data-goto="p16"><span data-icon="user"></span>我的</a>
+      </nav>
+      </div><!-- /main -->
+    </div><!-- /shell -->
+  </section>
+
+  <!-- =========== UI-019 · 备份恢复 =========== -->
+  <section class="page" id="p19" data-pid="UI-019" data-title="备份恢复">
+    <div class="browser-bar">
+      <button class="bb-btn" data-back title="返回上一页"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4l-4 4 4 4"/></svg></button>
+      <span class="bb-id">UI-019</span>
+      <span class="bb-url"></span>
+    </div>
+    <div class="shell">
+    <aside class="sidebar" id="sb-p19">
+      <div class="sb-brand"><span data-icon="grid"></span> 居所收纳</div>
+      <div class="sb-body">
+        <div class="nav">
+          <div class="nav-label">主导航</div>
+<a class="nav-item" data-goto="p1"><span data-icon="home"></span> 首页</a>
+<a class="nav-item" data-goto="p2"><span data-icon="grid"></span> 空间</a>
+<a class="nav-item" data-goto="p8"><span data-icon="inbox"></span> 物品</a>
+<a class="nav-item" data-goto="p13"><span data-icon="list"></span> 库存</a>
+<a class="nav-item is-active" data-goto="p16"><span data-icon="user"></span> 我的</a>
+          <div class="nav-label">评审</div>
+          <a class="nav-item" data-goto="p0"><span data-icon="arrowRight"></span> 流程总览</a>
+        </div>
+      </div>
+      <div class="sb-foot">
+        <div class="row"><span class="avatar avatar-sm">我</span><span class="sm strong">演示账户</span></div>
+      </div>
+    </aside>
+    <div class="scrim" data-close></div>
+      <div class="main">
+        <header class="topbar">
+          <button class="btn btn-ghost btn-icon hamburger" data-sidebar-open="#sb-p19" aria-label="菜单"><span data-icon="menu"></span></button>
+          <span class="tb-title">备份恢复</span>
+          <div class="tb-right">
+          <button class="btn btn-ghost btn-icon" data-icon="more" data-toast="更多操作" aria-label="更多"></button>
+          </div>
+        </header>
+        <div class="content stack">
+
+      <div class="anno"><b>页面目标：</b>查看备份记录并创建 / 恢复备份；备份含时间、条数、类型；恢复为不可逆操作需二次确认。</div>
+      <div class="breadcrumb"><a data-goto="p16">我的</a> / 备份恢复</div>
+      <div class="tabs" data-tab-group>
+        <button class="tab is-active" data-tab="has">备份记录（2）</button>
+        <button class="tab" data-tab="loading">加载态</button>
+        <button class="tab" data-tab="none">空记录</button>
+      </div>
+      <div data-tab-pane="has" class="tab-pane is-active">
+        <div class="row-md"><button class="btn btn-primary" data-loading="1000" data-loading-done="备份已创建"><span data-icon="plus" data-icon-size="14"></span> 创建备份</button><span class="xs-sm">系统每日自动备份一次</span></div>
+        <div class="card" style="margin-top:12px"><div class="card-bd" style="padding:0"><div class="table-wrap"><table class="table table-mobile">
+          <thead><tr><th>时间</th><th>类型</th><th>条数</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td data-label="时间">今天 03:00</td><td data-label="类型"><span class="tag">自动</span></td><td data-label="条数" class="num">142</td><td data-label="操作"><button class="btn btn-sm btn-ghost" data-modal-open="#m-restore">恢复</button></td></tr>
+            <tr><td data-label="时间">昨天 03:00</td><td data-label="类型"><span class="tag">自动</span></td><td data-label="条数" class="num">139</td><td data-label="操作"><button class="btn btn-sm btn-ghost" data-modal-open="#m-restore">恢复</button></td></tr>
+          </tbody>
+        </table></div></div></div>
+      </div>
+      <div data-tab-pane="loading" class="tab-pane">
+        <div class="stack" style="padding:16px"><div class="row-md"><div class="skeleton sk-line" style="width:30%"></div><div class="skeleton sk-line" style="width:20%"></div></div><div class="skeleton" style="height:100px"></div></div>
+      </div>
+      <div data-tab-pane="none" class="tab-pane">
+        <div class="empty"><span class="e-ico" data-icon="inbox" data-icon-size="40"></span><div class="e-title">暂无备份记录</div><div class="e-desc">创建一次手动备份，或等待系统每日自动备份。</div><button class="btn btn-primary" style="margin-top:8px" data-toast="备份已创建">创建备份</button></div>
+      </div>
+      <div class="anno"><b>交互说明：</b>恢复将覆盖当前数据，需二次确认并说明「不可恢复」；原型为演示用途，备份为 mock 数据。</div>
+
+        </div><!-- /content -->
+      <nav class="tabbar">
+<a class="tb" data-goto="p1"><span data-icon="home"></span>首页</a>
+<a class="tb" data-goto="p2"><span data-icon="grid"></span>空间</a>
+<a class="tb" data-goto="p8"><span data-icon="inbox"></span>物品</a>
+<a class="tb" data-goto="p13"><span data-icon="list"></span>库存</a>
+<a class="tb is-active" data-goto="p16"><span data-icon="user"></span>我的</a>
+      </nav>
+      </div><!-- /main -->
+    </div><!-- /shell -->
+  </section>
+
+  <!-- =========== UI-020 · 管理后台（管理员态） =========== -->
+  <section class="page" id="p20" data-pid="UI-020" data-title="管理后台（管理员态）">
+    <div class="browser-bar">
+      <button class="bb-btn" data-back title="返回上一页"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4l-4 4 4 4"/></svg></button>
+      <span class="bb-id">UI-020</span>
+      <span class="bb-url"></span>
+    </div>
+    <div class="shell">
+    <aside class="sidebar" id="sb-p20">
+      <div class="sb-brand"><span data-icon="grid"></span> 居所收纳</div>
+      <div class="sb-body">
+        <div class="nav">
+          <div class="nav-label">主导航</div>
+<a class="nav-item" data-goto="p1"><span data-icon="home"></span> 首页</a>
+<a class="nav-item" data-goto="p2"><span data-icon="grid"></span> 空间</a>
+<a class="nav-item" data-goto="p8"><span data-icon="inbox"></span> 物品</a>
+<a class="nav-item" data-goto="p13"><span data-icon="list"></span> 库存</a>
+<a class="nav-item is-active" data-goto="p16"><span data-icon="user"></span> 我的</a>
+          <div class="nav-label">评审</div>
+          <a class="nav-item" data-goto="p0"><span data-icon="arrowRight"></span> 流程总览</a>
+        </div>
+      </div>
+      <div class="sb-foot">
+        <div class="row"><span class="avatar avatar-sm">我</span><span class="sm strong">演示账户</span></div>
+      </div>
+    </aside>
+    <div class="scrim" data-close></div>
+      <div class="main">
+        <header class="topbar">
+          <button class="btn btn-ghost btn-icon hamburger" data-sidebar-open="#sb-p20" aria-label="菜单"><span data-icon="menu"></span></button>
+          <span class="tb-title">管理后台（管理员态）</span>
+          <div class="tb-right">
+          <button class="btn btn-ghost btn-icon" data-icon="more" data-toast="更多操作" aria-label="更多"></button>
+          </div>
+        </header>
+        <div class="content stack">
+
+      <div class="anno anno-red"><b>待确认 Q-06：</b>本页为管理员态演示分支；实际入口按 users.role 与 ADMIN_OPENIDS 判定，非管理员不可见且访问被拒（下方提供无权限态演示）。</div>
+      <div class="tabs" data-tab-group>
+        <button class="tab is-active" data-tab="task">任务状态</button>
+        <button class="tab" data-tab="log">错误日志</button>
+        <button class="tab" data-tab="user">用户统计</button>
+        <button class="tab" data-tab="deny">无权限态</button>
+      </div>
+      <div data-tab-pane="task" class="tab-pane is-active">
+        <div class="card"><div class="card-hd"><span class="card-title">云函数任务状态</span><div class="spacer"></div><button class="btn btn-sm btn-icon" data-icon="refresh" data-skeleton="#adminTbl" data-skeleton-ms="1200" aria-label="刷新"></button></div>
+          <div class="card-bd" id="adminTbl" style="padding:0;position:relative"><div class="table-wrap"><table class="table table-mobile"><thead><tr><th>任务</th><th>状态</th><th>时间</th></tr></thead><tbody>
+            <tr><td data-label="任务">backupService</td><td data-label="状态"><span class="tag tag-strong">Active</span></td><td data-label="时间">今天 03:00</td></tr>
+            <tr><td data-label="任务">cloud-sync</td><td data-label="状态"><span class="tag">正常</span></td><td data-label="时间">今天 10:00</td></tr>
+          </tbody></table></div></div></div>
+      </div>
+      <div data-tab-pane="log" class="tab-pane">
+        <div class="card"><div class="card-bd"><div class="empty"><span class="e-ico" data-icon="inbox" data-icon-size="40"></span><div class="e-title">暂无错误日志</div><div class="e-desc">错误上报已脱敏，不包含照片与物品明细。</div></div></div></div>
+      </div>
+      <div data-tab-pane="user" class="tab-pane">
+        <div class="auto-3"><div class="stat"><div class="stat-label">用户总数</div><div class="stat-value">128</div></div><div class="stat"><div class="stat-label">活跃（近 7 日）</div><div class="stat-value">46</div></div><div class="stat"><div class="stat-label">管理员</div><div class="stat-value">1</div></div></div>
+      </div>
+      <div data-tab-pane="deny" class="tab-pane">
+        <div class="alert alert-error"><span class="a-ico" data-icon="warn"></span><div>无权限：当前账户非管理员，管理后台入口不可见；直接访问被拒。此态用于评审权限边界。</div></div>
+      </div>
+      <div class="anno"><b>交互说明：</b>后台仅显示任务状态与元信息，不返回照片内容；错误上报脱敏；三 tab 列表可刷新。</div>
+
+        </div><!-- /content -->
+      <nav class="tabbar">
+<a class="tb" data-goto="p1"><span data-icon="home"></span>首页</a>
+<a class="tb" data-goto="p2"><span data-icon="grid"></span>空间</a>
+<a class="tb" data-goto="p8"><span data-icon="inbox"></span>物品</a>
+<a class="tb" data-goto="p13"><span data-icon="list"></span>库存</a>
+<a class="tb is-active" data-goto="p16"><span data-icon="user"></span>我的</a>
+      </nav>
+      </div><!-- /main -->
+    </div><!-- /shell -->
+  </section>
+</div><!-- /app -->
+</div><!-- /stage -->
+
+
+<!-- ==================== 全局浮层 ==================== -->
+<div class="mask" id="m-new-space">
+  <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal-hd"><span class="modal-title">新建空间</span><button class="modal-close" data-close aria-label="关闭"><span data-icon="close" data-icon-size="14"></span></button></div>
+    <form data-validate data-success="空间已创建" data-success-close="#m-new-space">
+      <div class="modal-bd stack">
+        <div class="field"><label class="field-label">空间名称 <span class="req">*</span></label><input class="input" data-required placeholder="例如：我的家"><span class="field-error"></span><div class="field-hint">名称即可建档，房间与物品可稍后补充。</div></div>
+      </div>
+      <div class="modal-ft"><button class="btn" type="button" data-close>取消</button><button class="btn btn-primary" type="submit">创建</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="mask" id="m-new-room">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-hd"><span class="modal-title">新建房间</span><button class="modal-close" data-close aria-label="关闭"><span data-icon="close" data-icon-size="14"></span></button></div>
+    <form data-validate data-success="房间已创建" data-success-close="#m-new-room">
+      <div class="modal-bd stack">
+        <div class="field"><label class="field-label">房间名称 <span class="req">*</span></label><input class="input" data-required placeholder="例如：客厅"><span class="field-error"></span></div>
+        <div class="auto-3"><div class="field"><label class="field-label">宽 (m)</label><input class="input" placeholder="可留空"></div><div class="field"><label class="field-label">深 (m)</label><input class="input" placeholder="可留空"></div><div class="field"><label class="field-label">高 (m)</label><input class="input" placeholder="可留空"></div></div>
+        <div class="field"><label class="field-label">起点</label><div class="check-group">
+          <label class="check radio"><input type="radio" name="start" checked><span class="box"></span>空白房间</label>
+          <label class="check radio"><input type="radio" name="start"><span class="box"></span>典型场景模板（预置一组可编辑家具）</label>
+        </div><div class="field-hint">模板加载失败时降级为空白房间并提示。</div></div>
+      </div>
+      <div class="modal-ft"><button class="btn" type="button" data-close>取消</button><button class="btn btn-primary" type="submit">创建房间</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="mask" id="m-model-lib">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-hd"><span class="modal-title">从模型库添加</span><button class="modal-close" data-close aria-label="关闭"><span data-icon="close" data-icon-size="14"></span></button></div>
+    <div class="modal-bd stack">
+      <div class="auto-3">
+        <button class="btn" data-close data-toast="已添加：三人沙发">三人沙发</button>
+        <button class="btn" data-close data-toast="已添加：电视柜">电视柜</button>
+        <button class="btn" data-close data-toast="已添加：茶几">茶几</button>
+        <button class="btn" data-close data-toast="已添加：床">床</button>
+        <button class="btn" data-close data-toast="已添加：书架">书架</button>
+        <button class="btn" data-close data-toast="已添加占位模型">占位模型</button>
+      </div>
+      <div class="anno"><b>说明：</b>类别清单与数量上限未冻结（Q-04）；缺失时可选占位模型，不影响家具与收纳建档。</div>
+    </div>
+    <div class="modal-ft"><button class="btn" data-close>关闭</button></div>
+  </div>
+</div>
+
+<div class="mask" id="m-bind-confirm">
+  <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal-hd"><span class="modal-title">确认更换绑定</span><button class="modal-close" data-close aria-label="关闭"><span data-icon="close" data-icon-size="14"></span></button></div>
+    <div class="modal-bd stack">
+      <div class="alert"><span class="a-ico" data-icon="info"></span><div>将模型「三人沙发」绑定到「客厅 / 沙发 / 扶手侧袋」？单件物品只保留一个当前位置。</div></div>
+      <div class="anno"><b>规则：</b>绑定关系复用 nodes.furnitureId 与 items.currentNodeId 单源，避免双写；写入与历史同事务。</div>
+    </div>
+    <div class="modal-ft"><button class="btn" data-close>取消</button><button class="btn btn-primary" data-close data-toast="绑定已更新">确认绑定</button></div>
+  </div>
+</div>
+
+<div class="mask" id="m-del-model">
+  <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal-hd"><span class="modal-title" style="color:var(--danger)">删除模型确认</span><button class="modal-close" data-close aria-label="关闭"><span data-icon="close" data-icon-size="14"></span></button></div>
+    <div class="modal-bd stack"><div class="alert alert-error"><span class="a-ico" data-icon="warn"></span><div>该模型已绑定 1 个收纳节点、关联 2 件物品。删除后<b>不可恢复</b>，请先解绑或迁移物品。</div></div></div>
+    <div class="modal-ft"><button class="btn" data-close>取消</button><button class="btn btn-danger-solid" data-close data-toast="请先解绑或迁移物品" data-toast-type="error">仍要删除</button></div>
+  </div>
+</div>
+
+<div class="mask" id="m-del-furniture">
+  <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal-hd"><span class="modal-title" style="color:var(--danger)">删除被拒 · 关联保护</span><button class="modal-close" data-close aria-label="关闭"><span data-icon="close" data-icon-size="14"></span></button></div>
+    <div class="modal-bd stack"><div class="alert alert-error"><span class="a-ico" data-icon="warn"></span><div>HAS_LINKS：该家具含 2 个收纳节点、3 件物品，无法直接删除。请先迁移或归档。</div></div></div>
+    <div class="modal-ft"><button class="btn" data-close>知道了</button></div>
+  </div>
+</div>
+
+<div class="mask" id="m-new-node">
+  <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal-hd"><span class="modal-title">新增收纳节点</span><button class="modal-close" data-close aria-label="关闭"><span data-icon="close" data-icon-size="14"></span></button></div>
+    <form data-validate data-success="节点已创建" data-success-close="#m-new-node">
+      <div class="modal-bd stack"><div class="field"><label class="field-label">节点名称 <span class="req">*</span></label><input class="input" data-required placeholder="例如：隔层 / 收纳盒"><span class="field-error"></span></div></div>
+      <div class="modal-ft"><button class="btn" type="button" data-close>取消</button><button class="btn btn-primary" type="submit">添加</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="mask" id="m-rename-node">
+  <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal-hd"><span class="modal-title">重命名节点</span><button class="modal-close" data-close aria-label="关闭"><span data-icon="close" data-icon-size="14"></span></button></div>
+    <form data-validate data-success="已重命名" data-success-close="#m-rename-node">
+      <div class="modal-bd stack"><div class="field"><label class="field-label">新名称 <span class="req">*</span></label><input class="input" value="坐垫下储物格" data-required><span class="field-error"></span><div class="field-hint">同名节点用完整路径区分。</div></div></div>
+      <div class="modal-ft"><button class="btn" type="button" data-close>取消</button><button class="btn btn-primary" type="submit">保存</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="mask" id="m-del-node">
+  <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal-hd"><span class="modal-title" style="color:var(--danger)">删除节点确认</span><button class="modal-close" data-close aria-label="关闭"><span data-icon="close" data-icon-size="14"></span></button></div>
+    <div class="modal-bd stack"><div class="alert alert-error"><span class="a-ico" data-icon="warn"></span><div>节点含 2 件物品，删除后物品将失去位置。<b>不可恢复</b>，请先迁移物品。</div></div></div>
+    <div class="modal-ft"><button class="btn" data-close>取消</button><button class="btn btn-danger-solid" data-close data-toast="请先迁移物品" data-toast-type="error">仍要删除</button></div>
+  </div>
+</div>
+
+<div class="mask" id="m-end-manage">
+  <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal-hd"><span class="modal-title" style="color:var(--danger)">结束管理确认</span><button class="modal-close" data-close aria-label="关闭"><span data-icon="close" data-icon-size="14"></span></button></div>
+    <div class="modal-bd stack"><div class="alert alert-error"><span class="a-ico" data-icon="warn"></span><div>结束后档案默认隐藏，可在「含已结束」中恢复，不做硬删除。</div></div><div class="xs-sm">如有剩余库存，请先明确去向。</div></div>
+    <div class="modal-ft"><button class="btn" data-close>取消</button><button class="btn btn-danger-solid" data-close data-toast="已结束管理，可恢复" data-toast-type="error">确认结束</button></div>
+  </div>
+</div>
+
+<div class="mask" id="m-restore">
+  <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal-hd"><span class="modal-title" style="color:var(--danger)">恢复备份确认</span><button class="modal-close" data-close aria-label="关闭"><span data-icon="close" data-icon-size="14"></span></button></div>
+    <div class="modal-bd stack"><div class="alert alert-error"><span class="a-ico" data-icon="warn"></span><div>恢复将<b>覆盖当前全部数据且不可恢复</b>，请确认已备份当前状态。</div></div></div>
+    <div class="modal-ft"><button class="btn" data-close>取消</button><button class="btn btn-danger-solid" data-close data-toast="已恢复备份（演示）" data-toast-type="error">确认恢复</button></div>
+  </div>
+</div>
+
+<div class="mask" id="m-clear">
+  <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal-hd"><span class="modal-title" style="color:var(--danger)">清空本地数据</span><button class="modal-close" data-close aria-label="关闭"><span data-icon="close" data-icon-size="14"></span></button></div>
+    <div class="modal-bd stack"><div class="alert alert-error"><span class="a-ico" data-icon="warn"></span><div>将清空本机全部数据且<b>不可恢复</b>；如已登录请先确认云端同步完成。</div></div></div>
+    <div class="modal-ft"><button class="btn" data-close>取消</button><button class="btn btn-danger-solid" data-close data-toast="已清空（演示）" data-toast-type="error">确认清空</button></div>
+  </div>
+</div>
+
+<div class="mask" id="m-rename-space">
+  <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal-hd"><span class="modal-title">空间改名</span><button class="modal-close" data-close aria-label="关闭"><span data-icon="close" data-icon-size="14"></span></button></div>
+    <form data-validate data-success="已改名" data-success-close="#m-rename-space">
+      <div class="modal-bd stack"><div class="field"><label class="field-label">空间名称 <span class="req">*</span></label><input class="input" value="我的家" data-required><span class="field-error"></span></div></div>
+      <div class="modal-ft"><button class="btn" type="button" data-close>取消</button><button class="btn btn-primary" type="submit">保存</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="mask" id="m-rename-room">
+  <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal-hd"><span class="modal-title">房间改名</span><button class="modal-close" data-close aria-label="关闭"><span data-icon="close" data-icon-size="14"></span></button></div>
+    <form data-validate data-success="已改名" data-success-close="#m-rename-room">
+      <div class="modal-bd stack"><div class="field"><label class="field-label">房间名称 <span class="req">*</span></label><input class="input" value="客厅" data-required><span class="field-error"></span></div></div>
+      <div class="modal-ft"><button class="btn" type="button" data-close>取消</button><button class="btn btn-primary" type="submit">保存</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="mask" id="m-archive-space">
+  <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal-hd"><span class="modal-title" style="color:var(--danger)">归档空间确认</span><button class="modal-close" data-close aria-label="关闭"><span data-icon="close" data-icon-size="14"></span></button></div>
+    <div class="modal-bd stack"><div class="alert alert-error"><span class="a-ico" data-icon="warn"></span><div>归档后该空间不可编辑。当前空间归档后将自动切换到其他空间，如无其他空间则提示新建。</div></div></div>
+    <div class="modal-ft"><button class="btn" data-close>取消</button><button class="btn btn-danger-solid" data-close data-toast="已归档" data-toast-type="error">确认归档</button></div>
+  </div>
+</div>
+
+<aside class="drawer" id="d-photo">
+  <div class="modal-hd"><span class="modal-title">照片预览</span><button class="modal-close" data-close aria-label="关闭"><span data-icon="close" data-icon-size="14"></span></button></div>
+  <div class="modal-bd stack"><div class="ph-img" style="height:220px"><span>IMG_01（示意）</span></div><div class="xs-sm">照片私有存储、短时授权链接读取；后台不返回照片内容。</div><div class="row" style="gap:6px"><button class="btn btn-sm btn-danger" data-close data-toast="已删除照片" data-toast-type="error">删除</button><button class="btn btn-sm" data-close data-toast="已设为尺寸参照">设为尺寸参照</button></div></div>
+</aside>
+
+
+<script src="lofi.js"></script>
+</body>
+</html>

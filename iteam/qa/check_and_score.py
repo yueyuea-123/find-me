@@ -228,6 +228,16 @@ def check_d8():
     for k in core:
         if k not in fields:
             miss += 1; issues.append(f'数据层 blank() 缺实体字段: {k}')
+    # CR-001 / V1.2 新增能力的方法与字段（T7~T10）：缺失计入 D8，保证方案与测试口径一致
+    for method in ['transformFurniture', 'listRoomTemplates', 'applyRoomTemplate',
+                   'itemsOfFurniture', 'bindingsOfFurniture']:
+        if not re.search(r'\b' + method + r'\s*:', m.group(1)):
+            miss += 1; issues.append(f'数据层 store.js 缺 CR-001 方法: {method}()')
+    if 'source:' not in store or 'templateKey:' not in store:
+        miss += 1; issues.append('数据层缺 CR-001 房间字段 source/templateKey')
+    const = read('utils', 'constants.js')
+    if 'ROOM_TEMPLATES' not in const:
+        miss += 1; issues.append('constants.js 缺 CR-001 典型场景模板 ROOM_TEMPLATES')
     if miss >= 8: blockers.append('数据层存在系统性缺陷（缺失方法/实体过多）')
     score = 12 * (1 - min(1.0, miss / 5))
     return round(score, 1), issues, blockers

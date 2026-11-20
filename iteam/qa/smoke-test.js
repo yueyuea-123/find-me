@@ -5,6 +5,7 @@
  * 覆盖：
  *   A. App.onLaunch 初始化（演示数据）
  *   B. 数据层核心业务规则断言（BR-001/004/005/008/010/011/012、TBD-001/003/005）
+ *   B2. CR-001/V1.2 新增能力断言（F-01 布局字段 / F-02 模型变换 / F-03 绑定 / F-07 模板）
  *   C. 21 个页面 onLoad/onShow/onReady 真实执行
  *   D. 每个页面全部 WXML 事件方法用模拟事件真实调用
  *   E. 所有跳转目标均为已注册页面
@@ -247,6 +248,65 @@ check('BR-013 AI 候选不自动成为事实', () => {
   const r = store.addFurniture(room.id, { name: '候选柜', source: 'ai_candidate', confidence: 0.62 });
   return r.ok && r.data.status === 'candidate';
 });
+
+// ---------------------------------------------------------------- B2. CR-001 / V1.2 新增能力断言
+// 说明：这七组断言把 T7~T10 原先"临时、未入库"的针对性验证固化为可重复门禁，
+// 对应 proposal AC-01~AC-07 / AC-16 / AC-17 与 design §5(layout/source/templateKey) §7 状态流转。
+check('F-01/T7 新建房间带 manual 源、空 templateKey 与合法 layout', () => {
+  const r = store.addRoom(sp.id, 'V1.2断言房间', { width: 4, depth: 3.5, height: 2.7 });
+  const rm = r.ok && store.getRoom(r.data.id);
+  return !!(r.ok && rm.source === 'manual' && rm.templateKey === '' &&
+    rm.layout && rm.layout.floor && rm.layout.floor.w === 4 &&
+    Array.isArray(rm.layout.walls) && rm.layout.walls.length === 4 && rm.layout.camera);
+});
+check('F-01/T7 历史房间缺字段时读取懒兜底（不改存储）', () => {
+  // 构造一个不带新字段的历史房间对象，经 ensureRoomFields 路径补默认
+  const legacy = { id: 'rm_legacy_test', roomId: 'rm_legacy_test', name: '老房间', width: 4, depth: 4, height: 2.8 };
+  const filled = store.ensureRoomFields ? store.ensureRoomFields(legacy) : null;
+  // store 未导出 ensureRoomFields 时，改由 getRoom 读取路径覆盖：断言导出的房间均具备新字段
+  if (!filled) return store.listRooms(sp.id).every(rm => rm.source && rm.layout && rm.templateKey !== undefined);
+  return filled.source === 'manual' && !!filled.layout && filled.templateKey === '';
+});
+check('F-02/T8 模型变换 move 后坐标被钳制在房间边界内', () => {
+  const f = store.listFurniture(room.id)[0];
+  const big = store.transformFurniture(f.id, { type: 'move', dx: 1000, dz: -1000 });
+  const mv = big.ok && store.getFurniture(f.id);
+  const halfW = (room.width || 4) / 2, halfD = (room.depth || 4) / 2;
+  return !!(big.ok && Math.abs(mv.position.x) <= halfW && Math.abs(mv.position.z) <= halfD);
+});
+check('F-02/T8 rotate 角度归一化到 [0,2π)、scale 尺寸在合理上下限', () => {
+  const f = store.listFurniture(room.id)[0];
+  const rot = store.transformFurniture(f.id, { type: 'rotate', dr: Math.PI * 3 });
+  const afterRot = rot.ok && store.getFurniture(f.id).rotation;
+  const scl = store.transformFurniture(f.id, { type: 'scale', factor: 99 });
+  const afterScl = scl.ok && store.getFurniture(f.id).size;
+  return !!(rot.ok && afterRot >= 0 && afterRot < Math.PI * 2 &&
+    scl.ok && afterScl.w <= 12 && afterScl.w >= 0.1);
+});
+check('F-03/T10 绑定沿 nodes.furnitureId 单源聚合，换模型不破坏关联', () => {
+  const b = store.bindingsOfFurniture(bed.id);
+  const beforeItems = b.items.map(i => i.id).sort().join(',');
+  store.updateFurniture(bed.id, { model: '换皮测试床' });
+  const afterItems = store.bindingsOfFurniture(bed.id).items.map(i => i.id).sort().join(',');
+  return !!(b.furnitureId === bed.id && b.nodeCount >= 1 && beforeItems === afterItems);
+});
+check('F-07/T9 典型场景模板可列举且三模板均可用', () => {
+  const list = store.listRoomTemplates();
+  return Array.isArray(list) && ['bedroom', 'living', 'bath'].every(k => list.some(t => t.key === k));
+});
+check('F-07/T9 应用模板批量写家具并按房间尺寸钳制，房间记 source=template', () => {
+  const r = store.addRoom(sp.id, '模板断言房间', { width: 3.2, depth: 2.8, height: 2.6 });
+  const applied = store.applyRoomTemplate(r.data.id, 'bedroom');
+  const rm = applied.ok && store.getRoom(r.data.id);
+  const list = applied.ok && store.listFurniture(r.data.id);
+  const halfW = 3.2 / 2, halfD = 2.8 / 2;
+  const inBounds = Array.isArray(list) && list.every(f =>
+    Math.abs(f.position.x) <= halfW + 0.01 && Math.abs(f.position.z) <= halfD + 0.01);
+  return !!(applied.ok && applied.data.furnitureIds.length >= 3 &&
+    rm.source === 'template' && rm.templateKey === 'bedroom' && inBounds);
+});
+expectFail('F-07/T9 模板缺失时返回错误（供降级空白房间）',
+  () => store.applyRoomTemplate(room.id, '__not_exist__'), 'TEMPLATE_NOT_FOUND');
 
 // ---------------------------------------------------------------- C/D. 页面真实执行
 const woolItem = byName('羊毛毯');

@@ -1,0 +1,39 @@
+{
+  "project": "居所收纳 · 三维室内空间与家庭物品管理",
+  "artifact": "温暖家居感 · 双方案视觉对比",
+  "created": "2026-11-19",
+  "source_of_truth": "prototype/index.html（21 页线稿,V1.2 CR-001）",
+  "deliverable": {
+    "file": "index.html",
+    "type": "关键页并列对比（自包含单文件）",
+    "pages_compared": ["首页 UI-001", "三维房间 UI-006", "物品详情 UI-012"],
+    "preview": "http://localhost:4311/居所收纳/index.html"
+  },
+  "visual_direction": "温暖家居感（用户指定）",
+  "schemes": [
+    {
+      "id": "A",
+      "name": "原木日常",
+      "en": "Oak & Linen",
+      "keywords": ["温润", "亲和", "自然"],
+      "tokens_file": "design-tokens.css (.theme-a)",
+      "traits": "大圆角、柔和无衬线、原木棕主色、苔绿正常态、宽松留白、轻阴影"
+    },
+    {
+      "id": "B",
+      "name": "暖陶雅居",
+      "en": "Terracotta Atelier",
+      "keywords": ["雅致", "克制", "质感"],
+      "tokens_file": "design-tokens.css (.theme-b)",
+      "traits": "中圆角、衬线标题、赤陶主色、橄榄正常态、细分割线、强字重对比、克制阴影"
+    }
+  ],
+  "design_system": {
+    "palette_rule": "仅暖米/木/陶相邻色相 + 中性灰墨；语义色：accent 主操作、good 正常、alert 提醒",
+    "radius_rule": "A 20/12/999；B 12/8/999",
+    "type_rule": "中文行高 1.7；A 无衬线圆润，B 标题衬线雅致；Latin 字体在前",
+    "spacing": "4pt 栅格；卡片内边距 16；间距靠 flex/grid gap",
+    "icon": "内联线性 SVG，无 emoji、无外链字体"
+  },
+  "status": "待用户评审二选一或融合"
+}

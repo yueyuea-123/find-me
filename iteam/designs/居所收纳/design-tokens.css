@@ -1,0 +1,62 @@
+/* ============================================================
+   居所收纳 · 温暖家居感双方案设计令牌
+   方案 A「原木日常」Oak & Linen  —— 温润 · 亲和 · 自然
+   方案 B「暖陶雅居」Terracotta Atelier —— 雅致 · 克制 · 质感
+   所有色值围绕暖米 / 木 / 陶相邻色相构成和谐配色，无随意发明色。
+   ============================================================ */
+
+:root{
+  --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-serif-b: "Songti SC", "STSong", "Source Han Serif SC", Georgia, serif;
+  --lh-cjk: 1.7;
+}
+
+/* ---------- 方案 A：原木日常 ---------- */
+.theme-a{
+  --bg:        #FAF6EE;  /* 暖米白画布 */
+  --surface:   #FFFFFF;  /* 卡片 */
+  --surface-2: #F3EDE2;  /* 分组浅木底 */
+  --ink:       #3B3229;  /* 暖褐墨 */
+  --ink-2:     #6B5D4D;
+  --ink-3:     #A29481;
+  --line:      #E9E0D2;
+  --accent:    #9C6B3F;  /* 原木棕 */
+  --accent-2:  #7E5330;
+  --accent-soft:#EFE2D1;
+  --accent-ink:#FFFFFF;
+  --good:      #6E7F59;  /* 苔绿 · 已定位/正常 */
+  --alert:     #BE5F44;  /* 陶红 · 提醒/低库存 */
+  --alert-soft:#F6E2D9;
+  --r-card: 20px;
+  --r-ctl: 12px;
+  --r-pill: 999px;
+  --shadow: 0 6px 22px rgba(92,68,40,.10);
+  --font-head: var(--font-sans);
+  --head-weight: 700;
+  --head-spacing: -0.01em;
+}
+
+/* ---------- 方案 B：暖陶雅居 ---------- */
+.theme-b{
+  --bg:        #F4EDE4;
+  --surface:   #FDFAF6;
+  --surface-2: #EBE0D4;
+  --ink:       #342821;
+  --ink-2:     #6A5346;
+  --ink-3:     #A18A7B;
+  --line:      #E1D4C6;
+  --accent:    #B0563A;  /* 赤陶 */
+  --accent-2:  #8E4029;
+  --accent-soft:#F1DCD1;
+  --accent-ink:#FFFFFF;
+  --good:      #6C6A46;  /* 橄榄 · 已定位/正常 */
+  --alert:     #A5402D;  /* 深陶红 · 提醒 */
+  --alert-soft:#F2DAD0;
+  --r-card: 12px;
+  --r-ctl: 8px;
+  --r-pill: 999px;
+  --shadow: 0 8px 28px rgba(62,40,28,.12);
+  --font-head: var(--font-serif-b);
+  --head-weight: 600;
+  --head-spacing: 0.01em;
+}

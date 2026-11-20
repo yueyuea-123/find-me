@@ -1,3 +1,9 @@
 .DS_Store
 node_modules/
 *.log
+.fusion/
+.pi/
+.worktrees/
+fusion.db
+fusion.db-wal
+fusion.db-shm

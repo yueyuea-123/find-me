@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="docx-page-size" content="A4">
+<title>原型设计需求梳理与评审说明</title>
+<style>
+:root {
+  --typography-fontFamily-heading: "黑体", "SimHei", sans-serif;
+  --typography-fontFamily-body: "宋体", "SimSun", serif;
+  --typography-fontSize-h1: 18pt;
+  --typography-fontSize-h2: 15pt;
+  --typography-fontSize-h3: 13pt;
+  --typography-fontSize-body: 12pt;
+  --typography-fontSize-small: 10.5pt;
+  --typography-lineHeight-body: 1.6;
+  --typography-lineHeight-heading: 1.4;
+  --typography-fontWeight-bold: 700;
+  --typography-fontWeight-normal: 400;
+  --color-primary: #2B5F75;
+  --color-accent: #2B7A9B;
+  --color-text: #24323B;
+  --color-muted: #8A94A0;
+  --color-border: #D8DEE4;
+  --color-bg: #F5F6F8;
+  --color-headbg: #EAF1F5;
+  --color-danger: #C0392B;
+  --fs-h1: var(--typography-fontSize-h1);
+  --fs-h2: var(--typography-fontSize-h2);
+  --fs-h3: var(--typography-fontSize-h3);
+  --fs-body: var(--typography-fontSize-body);
+  --fs-small: var(--typography-fontSize-small);
+  --fs-cover-title: 30pt;
+  --fs-cover-sub: 15pt;
+  --ff-heading: var(--typography-fontFamily-heading);
+  --ff-body: var(--typography-fontFamily-body);
+  --lh-body: var(--typography-lineHeight-body);
+  --lh-heading: var(--typography-lineHeight-heading);
+  --fw-bold: var(--typography-fontWeight-bold);
+  --fw-normal: var(--typography-fontWeight-normal);
+  --spacing-paragraph: 0.7em;
+  --spacing-section: 1.6em;
+  --spacing-block: 1em;
+  --margin-page: var(--layout-margin, 3.17cm);
+  --page-content-width: var(--layout-contentWidth, 15.6cm);
+}
+@page { @bottom-center { content: counter(page); } }
+@page cover { @bottom-center { content: none; } }
+section[role="cover"] { page: cover; }
+body {
+  max-width: var(--page-content-width);
+  margin-left: auto;
+  margin-right: auto;
+  font-family: var(--ff-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--color-text);
+}
+p { font-family: var(--ff-body); font-size: var(--fs-body); line-height: var(--lh-body); text-indent: 2em; margin: var(--spacing-paragraph) 0; }
+.cover-title { font-family: var(--ff-heading); font-size: var(--fs-cover-title); font-weight: var(--fw-bold); color: var(--color-primary); text-align: center; text-indent: 0; margin-top: 4em; margin-bottom: 0.6em; }
+.cover-sub { font-family: var(--ff-heading); font-size: var(--fs-cover-sub); color: var(--color-accent); text-align: center; text-indent: 0; margin-bottom: 4em; }
+.cover-meta { font-family: var(--ff-body); font-size: var(--fs-body); text-align: center; text-indent: 0; color: var(--color-text); margin: 0.4em 0; }
+.cover-note { font-family: var(--ff-body); font-size: var(--fs-small); text-align: center; text-indent: 0; color: var(--color-muted); margin-top: 3em; }
+.toc-title { font-family: var(--ff-heading); font-size: var(--fs-h1); font-weight: var(--fw-bold); text-align: center; text-indent: 0; color: var(--color-primary); margin-bottom: 1em; }
+.toc-list, .toc-list ol, .toc-list ul { list-style: none; padding-left: 0; }
+.toc-list li { font-family: var(--ff-body); font-size: var(--fs-body); margin: 0.4em 0; }
+.toc-list ol li { padding-left: 1.5em; font-size: var(--fs-small); color: var(--color-text); }
+.toc-list a { color: var(--color-text); text-decoration: none; }
+h1 { font-family: var(--ff-heading); font-size: var(--fs-h1); font-weight: var(--fw-bold); line-height: var(--lh-heading); color: var(--color-primary); margin-top: var(--spacing-section); margin-bottom: var(--spacing-block); }
+h2 { font-family: var(--ff-heading); font-size: var(--fs-h2); font-weight: var(--fw-bold); line-height: var(--lh-heading); color: var(--color-accent); margin-top: var(--spacing-section); margin-bottom: var(--spacing-block); }
+h3 { font-family: var(--ff-heading); font-size: var(--fs-h3); font-weight: var(--fw-bold); line-height: var(--lh-heading); color: var(--color-text); margin-top: var(--spacing-block); margin-bottom: 0.5em; }
+ul, ol { font-family: var(--ff-body); font-size: var(--fs-body); line-height: var(--lh-body); margin: var(--spacing-block) 0; padding-left: 2em; }
+li { margin: 0.35em 0; }
+table { width: 100%; border-collapse: collapse; margin: var(--spacing-block) 0; font-family: var(--ff-body); font-size: var(--fs-small); }
+caption { font-family: var(--ff-heading); font-size: var(--fs-body); font-weight: var(--fw-bold); text-align: left; color: var(--color-text); margin-bottom: 0.5em; }
+th { background-color: var(--color-headbg); color: var(--color-text); font-weight: var(--fw-bold); text-align: left; padding: 6px 8px; border: 1px solid var(--color-border); }
+td { padding: 6px 8px; border: 1px solid var(--color-border); vertical-align: top; }
+.callout-danger { border-left: 3px solid var(--color-danger); background: var(--color-bg); padding: 8px; text-indent: 0; font-size: var(--fs-small); }
+.qnote { color: var(--color-danger); }
+</style>
+</head>
+<body>
+
+<section role="cover">
+  <p class="cover-title">原型设计需求梳理与评审说明</p>
+  <p class="cover-sub">居所收纳 · 三维室内空间与家庭物品管理微信小程序</p>
+  <p class="cover-meta">版本 V1.0　｜　编制日期 2026-11-19</p>
+  <p class="cover-meta">用途：低保真线稿原型绘制与需求评审输入</p>
+  <p class="cover-note">事实源：proposal.md V1.2（经 CR-001 变更批准）｜页面口径：app.json 实际注册 21 页</p>
+</section>
+
+<section role="cover">
+<nav class="doc-toc" aria-label="文档目录">
+  <p class="toc-title">目录</p>
+  <ol class="toc-list">
+    <li><a href="#s-doc">文档说明</a></li>
+    <li><a href="#s-1">一、设计目标与原则</a></li>
+    <li><a href="#s-2">二、功能模块清单</a></li>
+    <li><a href="#s-3">三、页面清单</a></li>
+    <li><a href="#s-4">四、用户流程说明</a></li>
+    <li><a href="#s-5">五、界面交互逻辑</a></li>
+    <li><a href="#s-6">六、待确认项与合理假设</a></li>
+    <li><a href="#s-7">七、原型设计要求</a></li>
+    <li><a href="#s-8">八、评审要点小结</a></li>
+  </ol>
+</nav>
+</section>
+
+<section role="body" data-page-restart="1">
+
+<h1 id="s-doc">文档说明</h1>
+<p>本文档名为《原型设计需求梳理与评审说明》（居所收纳 · 三维室内空间与家庭物品管理微信小程序），版本 V1.0，编制日期 2026-11-19。用途是作为低保真线稿原型绘制与需求评审的输入，明确功能模块、页面入口、信息结构、核心流程、关键状态与异常场景、界面与交互规范、权限与数据限制、响应式口径，并标注待确认项与合理假设。</p>
+<p>事实源以 <strong>docs/proposal.md（V1.2，经 CR-001 变更批准）</strong>为唯一事实源；设计口径见 docs/design.md；页面与路由以 miniprogram/app.json 实际注册的 21 页为准；视觉与逐页交互基线见《小程序界面设计文档 V1.0》；布局现状见 docs/layouts/；系统页与异常文案参照实际 wxml/js 结构。</p>
+<p>版本口径：三维主路径为「用户手动自由编辑三维场景」（CR-001 已批准，V1.2）；照片上传 / 尺寸参照 / 建模任务（原 MVP-004/005/007）降级为可选，不进入主流程。早期文档中的「18 页 / 19 页」为陈旧口径，本文统一采用 21 页。</p>
+<p class="callout-danger">&nbsp;&nbsp;边界：本文只梳理「画什么、怎么走、什么状态」，不改变 PRD 与业务规则已冻结的功能范围；不新增冻结范围外功能。</p>
+
+<h1 id="s-1">一、设计目标与原则</h1>
+<p>原型服务于三个目标：低门槛建档（名称即可建档，其余渐进补充）、位置可信（当前事实与候选建议视觉严格区分）、失败可用（三维、云同步任一失败时列表与手动通路始终可达）。</p>
+<p>界面与原型须遵守六项原则：事实与预测分离；用户确认优先；失败可降级；解耦可见（家具外观与收纳节点分区展示）；数据可追溯（固定移动历史入口）；单手可达（高频操作集中于底部或拇指可及区，危险操作二次确认）。</p>
+<p>V1.2 已取消 AI 生成环节，场景结构与绑定均为用户确认事实；「候选/建议」样式规则予以保留，仅用于兼容历史候选数据与后续可选素材处理，不作为主路径状态。</p>
+
+<h1 id="s-2">二、功能模块清单</h1>
+<p>按模块梳理功能点，编号沿用 P0 需求（MVP-001～034）与变更项（CR-001 F-01～F-07），标注承载页面与原型处理级别（P0 核心闭环 / P1 可选 / 系统页）。</p>
+<table>
+<caption>表 2-1　功能模块清单</caption>
+<thead><tr><th>模块</th><th>功能点</th><th>需求编号</th><th>承载页面</th><th>原型级别</th></tr></thead>
+<tbody>
+<tr><td>M1 账户与隔离</td><td>个人账户登录、openid 数据隔离</td><td>MVP-001/032</td><td>全局（app.js）、我的</td><td>系统页</td></tr>
+<tr><td>M2 空间与房间</td><td>多空间创建/切换/编辑/归档</td><td>MVP-002</td><td>UI-002 空间列表</td><td>P0 核心闭环</td></tr>
+<tr><td>M2 空间与房间</td><td>房间创建/编辑/查看/归档，宽深高手动录入</td><td>MVP-003、CR-001 F-01</td><td>UI-003 房间列表</td><td>P0 核心闭环</td></tr>
+<tr><td>M2 空间与房间</td><td>房间起点选择：空白房间 / 典型场景模板</td><td>CR-001 F-07</td><td>UI-003 房间列表</td><td>P0 核心闭环</td></tr>
+<tr><td>M3 三维场景</td><td>三维房间浏览、视角旋转缩放、点选家具</td><td>MVP-006、CR-001 F-04</td><td>UI-006 三维房间</td><td>P0 核心闭环</td></tr>
+<tr><td>M3 三维场景</td><td>从模型库添加家具（含占位模型）</td><td>MVP-008</td><td>UI-006、UI-007 家具编辑</td><td>P0 核心闭环</td></tr>
+<tr><td>M3 三维场景</td><td>模型拖动/旋转/缩放、越界钳制、贴地吸附</td><td>MVP-009/010、CR-001 F-02</td><td>UI-006 三维房间</td><td>P0 核心闭环</td></tr>
+<tr><td>M3 三维场景</td><td>三维失败列表降级</td><td>MVP-012、CR-001 F-06</td><td>UI-006 三维房间</td><td>P0 核心闭环</td></tr>
+<tr><td>M3 三维场景</td><td>照片上传 / 建模任务（保留接口、不阻塞主路径）</td><td>MVP-004/005/007</td><td>UI-004 房间照片、UI-005 建模任务</td><td>P1 可选</td></tr>
+<tr><td>M4 家具与收纳</td><td>家具新增/编辑/删除（含关联保护）</td><td>MVP-011/015</td><td>UI-007 家具编辑、UI-008 家具详情</td><td>P0 核心闭环</td></tr>
+<tr><td>M4 家具与收纳</td><td>多级收纳节点：新增/改名/排序/归档</td><td>MVP-013/014/016</td><td>UI-008 家具详情、UI-009 收纳节点</td><td>P0 核心闭环</td></tr>
+<tr><td>M4 家具与收纳</td><td>模型—物品绑定（复用 nodes.furnitureId + items.currentNodeId 单源）</td><td>CR-001 F-03</td><td>UI-006 三维房间、UI-009 收纳节点</td><td>P0 核心闭环</td></tr>
+<tr><td>M5 物品档案</td><td>单件 / 连续添加，仅名称即可建档，渐进完善</td><td>MVP-017/018/022</td><td>UI-010 物品列表、UI-011 物品添加编辑</td><td>P0 核心闭环</td></tr>
+<tr><td>M5 物品档案</td><td>统一跟踪模式 location/inventory/hybrid</td><td>MVP-026</td><td>UI-011 物品添加编辑</td><td>P0 核心闭环</td></tr>
+<tr><td>M5 物品档案</td><td>物品列表与详情、按名称/分类/空间/房间/位置搜索筛选</td><td>MVP-019、TBD-008</td><td>UI-010 物品列表、UI-012 物品详情</td><td>P0 核心闭环</td></tr>
+<tr><td>M5 物品档案</td><td>单物件单位置、位置状态（已确认/未知/外出/借出）</td><td>MVP-020/021</td><td>UI-011、UI-012、UI-013</td><td>P0 核心闭环</td></tr>
+<tr><td>M6 移动与历史</td><td>移动确认、当前位置与历史同事务</td><td>MVP-023、TBD-001/002</td><td>UI-013 移动物品</td><td>P0 核心闭环</td></tr>
+<tr><td>M6 移动与历史</td><td>位置历史只读回溯（首次确认为独立类型）</td><td>MVP-024</td><td>UI-014 移动历史</td><td>P0 核心闭环</td></tr>
+<tr><td>M6 移动与历史</td><td>结束管理/归档而非硬删除</td><td>MVP-025、TBD-003</td><td>UI-012 物品详情</td><td>P0 核心闭环</td></tr>
+<tr><td>M7 库存与提醒</td><td>库存记录（数量/单位/阈值）</td><td>MVP-027</td><td>UI-015 库存总览、UI-016 库存详情</td><td>P0 核心闭环</td></tr>
+<tr><td>M7 库存与提醒</td><td>入库/消耗/调整交易、余额不为负</td><td>MVP-028/029</td><td>UI-016 库存详情</td><td>P0 核心闭环</td></tr>
+<tr><td>M7 库存与提醒</td><td>阈值提醒（同周期一条、达标自动结束）</td><td>MVP-030、TBD-005</td><td>首页、UI-017 提醒中心、UI-015 库存总览</td><td>P0 核心闭环</td></tr>
+<tr><td>M8 系统与安全</td><td>个人中心、同步状态、立即同步</td><td>MVP-032</td><td>UI-018 我的</td><td>系统页</td></tr>
+<tr><td>M8 系统与安全</td><td>备份与恢复</td><td>MVP-033</td><td>备份恢复</td><td>系统页</td></tr>
+<tr><td>M8 系统与安全</td><td>基础管理后台（任务/日志/用户统计，admin 权限）</td><td>MVP-031</td><td>管理后台</td><td>系统页（管理员可见）</td></tr>
+<tr><td>M8 系统与安全</td><td>隐私与数据说明</td><td>MVP-032</td><td>隐私说明</td><td>系统页</td></tr>
+<tr><td>M8 系统与安全</td><td>本地离线持久化 + 云端异步同步</td><td>MVP-034</td><td>全局（store.js / cloud-sync.js）</td><td>系统页</td></tr>
+</tbody>
+</table>
+
+<h1 id="s-3">三、页面清单</h1>
+<p>实际注册 21 页。P0 原型优先覆盖 16 个页面编号（UI-001～UI-016，其中 UI-004/005 为可选分支）；系统页（提醒中心、我的、备份恢复、管理后台、隐私说明）作为 P0 辅助页纳入。下表中「关键状态」与界面设计文档、布局示意图一致。</p>
+<table>
+<caption>表 3-1　页面清单</caption>
+<thead><tr><th>页面</th><th>名称</th><th>入口</th><th>核心信息结构</th><th>关键状态</th><th>原型处理</th></tr></thead>
+<tbody>
+<tr><td>UI-001</td><td>首页</td><td>tab 首页</td><td>当前空间名+切换、四项统计（房间/物品/库存/提醒）、库存提醒卡、快捷操作四宫格、最近变动列表（历史+交易倒序 5 条）</td><td>首次空 / 正常 / 提醒</td><td>P0 核心</td></tr>
+<tr><td>UI-002</td><td>空间列表</td><td>首页点空间名、我的→空间管理</td><td>空间卡片（名称、房间数）、新建入口；每项编辑/切换/归档</td><td>空列表 / 正常</td><td>P0 核心</td></tr>
+<tr><td>UI-003</td><td>房间列表</td><td>tab 空间、首页快捷</td><td>房间卡片（名称、尺寸、家具数、物品数、建模状态）；新建/改名/归档；起点选择（空白/模板）；三维/照片/家具独立入口</td><td>无房间 / 正常 / 建模失败态</td><td>P0 核心</td></tr>
+<tr><td>UI-004</td><td>房间照片</td><td>房间卡片「房间照片」</td><td>拍照/相册入口、缩略图网格、预览、删除、提交、尺寸参照</td><td>待上传 / 上传中 / 失败 / 完成</td><td>P1 可选</td></tr>
+<tr><td>UI-005</td><td>建模任务</td><td>照片页「查看建模任务」</td><td>任务状态、进度、结果入口、重试、手动降级</td><td>排队 / 处理中 / 成功 / 失败</td><td>P1 可选</td></tr>
+<tr><td>UI-006</td><td>三维房间</td><td>房间卡片「三维查看」</td><td>三维编辑画布、模式栏（浏览/编辑/收纳）、起点选择、选中模型卡（位置/角度/尺寸+绑定）、列表视图、加模型</td><td>空/加载中/成功/错误降级/确认中</td><td>P0 核心</td></tr>
+<tr><td>UI-007</td><td>家具编辑</td><td>三维页加模型、家具入口</td><td>类别/名称/外观模型、尺寸宽高深、初始位置 X/Z、保存/删除、摆放辅助说明</td><td>新建/编辑/保存失败/删除确认</td><td>P0 核心</td></tr>
+<tr><td>UI-008</td><td>家具详情</td><td>家具卡片/三维点选</td><td>家具信息、模型与逻辑节点分区、收纳节点列表、添加节点</td><td>无节点 / 有节点 / 删除被拒</td><td>P0 核心</td></tr>
+<tr><td>UI-009</td><td>收纳节点</td><td>家具详情点节点</td><td>层级路径（面包屑）、节点信息+完整路径、下级位置、节点内物品、添加物品/子节点、排序</td><td>空节点/有物品/重命名确认</td><td>P0 核心</td></tr>
+<tr><td>UI-010</td><td>物品列表</td><td>tab 物品、首页快捷</td><td>搜索框、状态/分类/位置 3 个筛选、含已结束开关、物品卡、右下 FAB「+」</td><td>空列表 / 无结果 / 正常</td><td>P0 核心</td></tr>
+<tr><td>UI-011</td><td>物品添加编辑</td><td>物品页 FAB、节点页加物品、首页快捷</td><td>名称（必填）、分类、照片、备注、跟踪模式、库存字段（条件）、当前位置或未知/外出/借出、保存单件/保存并继续</td><td>新建/连续添加/表单错误</td><td>P0 核心</td></tr>
+<tr><td>UI-012</td><td>物品详情</td><td>物品列表点卡片</td><td>概览（名称/管理状态/完善度条）、当前状态卡、库存卡（条件）、操作卡（编辑/移动/历史/库存/结束管理↔恢复）</td><td>未知/已定位/外出/借出/结束确认</td><td>P0 核心</td></tr>
+<tr><td>UI-013</td><td>移动物品</td><td>物品详情「移动」</td><td>当前信息卡、位置状态 chip（在家/未知/外出/借出）、目标位置 picker（在家时）、备注、确认移动</td><td>未选择/确认中/成功/失败</td><td>P0 核心</td></tr>
+<tr><td>UI-014</td><td>移动历史</td><td>物品详情「历史」</td><td>按时间倒序时间轴条目（类型、来源位置、目标位置、时间、备注）</td><td>无历史 / 有历史</td><td>P0 核心</td></tr>
+<tr><td>UI-015</td><td>库存总览</td><td>tab 库存、首页快捷</td><td>易耗品清单（名称/余额/单位/阈值）、低库存标记、提醒入口、右下 FAB</td><td>空列表 / 低库存 / 正常</td><td>P0 核心</td></tr>
+<tr><td>UI-016</td><td>库存详情</td><td>库存总览点条目、物品详情</td><td>余额卡、库存变更（类型 chip+数量+备注）、阈值设置、交易记录</td><td>正常/低库存/消耗为负拦截</td><td>P0 核心</td></tr>
+<tr><td>UI-017</td><td>提醒中心</td><td>首页提醒卡、库存页提醒入口、我的</td><td>提醒卡（名称/剩余/阈值/状态）、去补货、忽略本次</td><td>暂无提醒/待处理/已忽略</td><td>P0 辅助</td></tr>
+<tr><td>UI-018</td><td>我的</td><td>tab 我的</td><td>账户与同步（登录/同步状态、立即同步）、数据管理（备份/管理后台/演示/清空）、功能入口、关于</td><td>已登录/本地模式/待同步</td><td>P0 辅助</td></tr>
+<tr><td>系统</td><td>备份恢复</td><td>我的→备份与恢复</td><td>创建备份、备份记录（时间/条数/类型）、恢复</td><td>加载中/有记录/空记录</td><td>P0 辅助</td></tr>
+<tr><td>系统</td><td>管理后台</td><td>我的→管理后台（仅 admin）</td><td>任务状态/错误日志/用户统计 三 tab、列表、刷新</td><td>有记录/空记录/无权限</td><td>系统页</td></tr>
+<tr><td>系统</td><td>隐私说明</td><td>我的→隐私与数据说明</td><td>数据存放、照片私有、第三方处理、事实与预测、可追溯、用户权利、官方指引</td><td>静态展示</td><td>系统页</td></tr>
+</tbody>
+</table>
+<p>页面编号说明：界面设计文档定义 UI-001～UI-016，其中 UI-004/005 在 V1.2 降级为可选；提醒中心（UI-017）、我的（UI-018）及三个系统页沿用实际页面名称，编号为本文为便于评审而设置，非历史文档既有编号。</p>
+
+<h1 id="s-4">四、用户流程说明</h1>
+<h2>4.1 主路径（happy path）</h2>
+<table>
+<caption>表 4-1　五条主路径</caption>
+<thead><tr><th>流程</th><th>名称</th><th>主路径步骤</th><th>起点→终点</th></tr></thead>
+<tbody>
+<tr><td>UF-001</td><td>首次建立空间（V1.2 重写）</td><td>登录 → 创建空间命名 → 创建房间并手动填写宽/深/高（可默认）→ 选起点：空白房间或典型场景模板 → 进入三维房间 → 从模型库添加家具或编辑模板预置家具 → 拖动/旋转/缩放 → 保存</td><td>UI-002 → UI-006</td></tr>
+<tr><td>UF-002</td><td>建立家具与收纳（V1.2 增强）</td><td>进入房间编辑画布 → 从模型库选家具（或占位）→ 拖动/旋转/缩放并保存 → 进入家具详情创建抽屉/隔层/收纳盒 → 选中模型并将物品绑定到具体收纳节点 → 点选模型可查看关联物品</td><td>UI-006 → UI-009</td></tr>
+<tr><td>UF-003</td><td>添加物品并完善</td><td>从首页/物品页或收纳节点添加 → 输入名称（分类/照片/备注可选）→ 选跟踪模式与位置（可未知/外出/借出）→ 保存单件或保存并继续 → 日后补完档案</td><td>UI-010/UI-011 → UI-012</td></tr>
+<tr><td>UF-004</td><td>移动物品</td><td>打开详情 → 选择移动 → 选目标位置或状态 → 确认 → 同事务更新当前位置并写历史 → 详情显示最新位置</td><td>UI-012 → UI-013 → UI-014</td></tr>
+<tr><td>UF-005</td><td>库存管理</td><td>打开库存页或易耗品详情 → 选择入库/消耗/调整 → 填数量 → 校验并更新余额、记交易 → 达阈值显示提醒</td><td>UI-015 → UI-016 → UI-017</td></tr>
+</tbody>
+</table>
+<h2>4.2 异常与分支路径</h2>
+<ul>
+<li>模型编辑越界：模型拖出房间或缩放超范围 → 钳制到边界与合理上下限并提示，不产生非法布局数据。</li>
+<li>绑定冲突：一个物品被绑定到多个模型 / 删除含绑定物品的模型 → 单物件单位置，只保留一个当前绑定；删除前阻断并提示先解绑或迁移。</li>
+<li>三维不可用：WebGL 不可用或模型加载失败 → 自动/手动切换到列表视图 → 房间、家具、收纳、物品管理仍可完成。</li>
+<li>照片/建模任务（可选）：若用户使用可选照片素材且处理失败 → 保留记录并可重试，不影响手动主路径。</li>
+<li>首次位置：unknown 状态首次确认到家庭内具体位置 → 记为独立「首次位置确认」事件，不伪装为 A→B 移动；创建时直接填初始位置不记移动。</li>
+<li>外出/借出：日常外出不强制记录；返回后可选具体位置或「在家，位置未知」，只记录用户明确执行的操作。</li>
+<li>关联保护：删除含物品的家具/节点 → 提示并先迁移或归档 → 处理完成后才允许删除/归档。</li>
+<li>库存不足：消耗导致余额低于零 → 拒绝并提示；纠错走「调整」交易，不伪装为消耗。</li>
+<li>模板缺失（CR-001 F-07）：典型场景模板缺失/加载失败 → 降级为空白房间并提示；预置家具按房间宽/深/高钳制。</li>
+</ul>
+<h2>4.3 关键状态串接</h2>
+<table>
+<caption>表 4-2　界面状态串接</caption>
+<thead><tr><th>流程</th><th>界面状态串联</th></tr></thead>
+<tbody>
+<tr><td>首次建立空间</td><td>登录 → 空间列表空态 → 新建空间 → 房间列表空态 → 新建房间（选空白/模板，可跳过照片）→ 三维/列表房间页</td></tr>
+<tr><td>建立家具与收纳</td><td>三维房间页 → 家具编辑页（新建）→ 保存回三维 → 家具详情页空节点态 → 添加节点 → 节点页可定位物品</td></tr>
+<tr><td>添加物品并完善</td><td>首页/节点页 → 物品添加页（仅名称即可）→ 保存单件或继续 → 物品详情页逐步补充分类/照片/位置</td></tr>
+<tr><td>移动物品</td><td>物品详情 → 移动页选择目标或状态 → 确认 → 详情显示新位置 → 历史页出现本次记录（首次确认为独立类型）</td></tr>
+<tr><td>库存管理</td><td>库存总览 → 库存详情 → 入库/消耗/调整 → 校验 → 余额与交易更新 → 低库存时提醒出现</td></tr>
+</tbody>
+</table>
+
+<h1 id="s-5">五、界面交互逻辑</h1>
+<h2>5.1 信息架构与导航</h2>
+<p>底部导航固定 5 项（核心任务入口不可改变）：首页（UI-001）、空间（UI-002/003）、物品（UI-010）、库存（UI-015）、我的（UI-018）。层级树：首页 → 空间列表 → 房间列表 →〔房间照片 → 建模任务（可选）/ 三维房间 → 家具编辑 / 家具详情 → 收纳节点（可多级嵌套）〕；物品列表 → 物品添加/物品详情 → 移动物品/移动历史；库存总览 → 库存详情；我的 → 账户/隐私说明/备份恢复/管理后台（管理员可见）。</p>
+<h2>5.2 页面布局与组件使用</h2>
+<p>整体采用低饱和冷色、克制清晰的风格；rpx 布局，页面左右边距 32rpx、卡片间距 24rpx、卡片内边距 32rpx、列表项 18～24rpx、表单项 24rpx；卡片圆角 24rpx、按钮圆角 12rpx、标签/徽章 999rpx；点击热区 ≥88rpx×88rpx，危险按钮与普通按钮间隔 ≥16rpx。</p>
+<p>组件规范：主按钮为主色实心白字、置灰态给出原因文案；次按钮白底主色描边、危险操作用危险色文字+描边；状态标签实线=已确认事实、虚线+浅底=候选/建议且必须带文字；进度/任务态固定排队→处理中→成功/失败四态，失败附「重试」与「手动降级」两个出口；空状态统一「图标+一句说明+一个主操作入口」三段式；表单标签在上输入在下、必填标注、错误就近显示；弹层确认采用「标题+具体后果说明+取消/确认」，删除/归档/结束管理等不可逆操作必用。</p>
+<h2>5.3 交互反馈</h2>
+<p>写操作须有 loading 与结果反馈；错误文案说明原因与下一步动作，不暴露技术错误码；状态一律「颜色+文字+形状」三重表达，候选/建议带文字角标，避免色觉障碍误判；字体跟随系统设置，标题与正文比例稳定；所有可点元素须有明确反馈，跳转须有落点。</p>
+<h2>5.4 关键状态与异常场景（逐页）</h2>
+<table>
+<caption>表 5-1　逐页关键状态与异常场景</caption>
+<thead><tr><th>页面</th><th>关键状态</th><th>主要异常场景与界面行为</th></tr></thead>
+<tbody>
+<tr><td>UI-001 首页</td><td>首次空/正常/提醒</td><td>无变动显示引导添加；低库存提醒卡置顶显示条数与明细</td></tr>
+<tr><td>UI-002 空间列表</td><td>空列表/正常</td><td>归档当前空间后自动切换到其他空间或提示新建；空态引导创建第一个空间</td></tr>
+<tr><td>UI-003 房间列表</td><td>无房间/正常/建模失败态</td><td>尺寸留空显示「尺寸未定标（相对估算）」；建模失败显示「建模失败·可手动」并提供手动降级入口；模板缺失降级空白房间</td></tr>
+<tr><td>UI-004 房间照片</td><td>待上传/上传中/失败/完成</td><td>上传中进度反馈、失败重试与删除；不写死照片数量门槛</td></tr>
+<tr><td>UI-005 建模任务</td><td>排队/处理中/成功/失败</td><td>成功仅表示「候选就绪」不自动写入事实；失败给「重试」与「手动/列表方式」两个出口</td></tr>
+<tr><td>UI-006 三维房间</td><td>空/加载中/成功/错误降级/确认中</td><td>WebGL 不可用或渲染异常自动切列表并说明原因；模型越界钳制提示；删除含绑定模型解绑提示；绑定二次确认</td></tr>
+<tr><td>UI-007 家具编辑</td><td>新建/编辑/保存失败/删除确认</td><td>保存失败显示具体原因；无合适模型选占位；删除含物品触发 HAS_LINKS 关联保护弹窗</td></tr>
+<tr><td>UI-008 家具详情</td><td>无节点/有节点/删除被拒</td><td>无节点显示「添加第一个收纳位置」；删除被拒提示关联数量与类型</td></tr>
+<tr><td>UI-009 收纳节点</td><td>空节点/有物品/重命名确认</td><td>空节点显示「添加物品」；含物品或子节点时删除受限并说明；同名节点用完整路径区分</td></tr>
+<tr><td>UI-010 物品列表</td><td>空列表/无结果/正常</td><td>有筛选显示「没有匹配的物品」并提供清空筛选；无筛选显示「还没有物品档案」；已结束物品默认隐藏</td></tr>
+<tr><td>UI-011 物品添加编辑</td><td>新建/连续添加/表单错误</td><td>名称为空就近校验不阻断已有记录；数量&lt;0 拦截；连续添加保留上下文、每件独立建档</td></tr>
+<tr><td>UI-012 物品详情</td><td>未知/已定位/外出/借出/结束确认</td><td>未知与外出不得显示为具体节点；完善度仅提示不强制；结束管理若有剩余库存需明确去向</td></tr>
+<tr><td>UI-013 移动物品</td><td>未选择/确认中/成功/失败</td><td>未选状态不可确认；在家但目标为空 toast 拦截；失败时当前位置与历史均不变更</td></tr>
+<tr><td>UI-014 移动历史</td><td>无历史/有历史</td><td>无历史显示「暂无移动记录」并说明创建时初始位置不计为移动；历史只读</td></tr>
+<tr><td>UI-015 库存总览</td><td>空列表/低库存/正常</td><td>低库存置顶并颜色+文字双重标识；location 模式物品不出现在此页</td></tr>
+<tr><td>UI-016 库存详情</td><td>正常/低库存/消耗为负拦截</td><td>消耗超过余额拦截并保留原值，就近提示余额与可用范围；调整与消耗分别记录</td></tr>
+<tr><td>UI-017 提醒中心</td><td>暂无提醒/待处理/已忽略</td><td>同周期仅一条；忽略不改变库存事实；补货后自动结束</td></tr>
+<tr><td>UI-018 我的</td><td>已登录/本地模式/待同步</td><td>云端不可用时显示本地模式与待同步标记，恢复后可继续同步</td></tr>
+</tbody>
+</table>
+<h2>5.5 权限与数据限制</h2>
+<ul>
+<li>身份隔离：个人账户单用户；openid 从云函数上下文获取，前端不传；所有查询强制带 openid 条件，非本人数据拒绝并明确提示。</li>
+<li>角色：管理员由 users.role 与环境变量 ADMIN_OPENIDS 判定；管理后台入口仅管理员可见，非管理员访问被拒。</li>
+<li>数据保护：删除含物品的节点/家具/绑定模型前阻断并提示先解绑、迁移或归档；绑定写入与历史同事务；单物件单位置；库存余额不得为负。</li>
+<li>隐私：家庭照片私有路径存储、短时授权链接读取；后台只显示任务状态与元信息，不返回照片内容；错误上报脱敏，不发照片与物品明细；第三方 AI 未经授权不得用于训练（V1.2 主路径无第三方 AI 依赖）。</li>
+<li>离线限制：本地 wx.Storage 为主数据源；云端不可用时本地完整可用并标记「待同步」，恢复后重试；不显示虚假成功。</li>
+<li>原型数据限制：原型为演示用途，mock 数据即可，不接真实后端、不处理真实鉴权与支付；不得在原型中写入任何真实家庭数据。</li>
+</ul>
+<h2>5.6 响应式要求</h2>
+<p>小程序端使用 rpx 覆盖 iPhone SE（375px）至主流大屏，三维画布按容器自适应、避免固定像素，底部操作栏适配 home indicator，弹层不遮挡关键操作。若原型以 HTML 线稿形式交付评审，须同时适配桌面（1440）/平板（768）/移动（375）三档视口，采用容器查询相对舞台而非浏览器宽度，保证视口切换条生效；断点以 768px 为界，桌面多列、移动单列。</p>
+
+<h1 id="s-6">六、待确认项与合理假设</h1>
+<p>信息不完整或存在歧义之处标注为待确认项（Q-xx），并给出合理假设（A-xx）供评审时校正。评审前请产品负责人逐项确认；假设在确认前作为原型绘制的暂定口径。</p>
+<table>
+<caption>表 6-1　待确认项与合理假设</caption>
+<thead><tr><th>编号</th><th>待确认项</th><th>现状/歧义</th><th>合理假设（暂定口径）</th></tr></thead>
+<tbody>
+<tr><td>Q-01</td><td>页面编号口径</td><td>界面设计文档 UI-001～UI-016；提醒中心/我的/系统页无正式 UI 编号；app.json 注册 21 页</td><td>按 21 页实际注册为准；UI-017/018 及系统页编号仅为本文评审编号，落地前由产品确认</td></tr>
+<tr><td>Q-02</td><td>三维编辑手势细节</td><td>代码层 T8 已完成模型级变换+钳制，真机手感（触控灵敏度、双指与单指区分、编辑/浏览模式切换手感）待验</td><td>原型按「点选→拖动/旋转/缩放→保存」表达主流程，手势细节以真机验证结论为准，不写死参数</td></tr>
+<tr><td>Q-03</td><td>典型场景模板清单</td><td>代码已定义卧室/客厅/卫生间模板，房间页显示「（N件）」；模板具体家具构成与件数未在产品文档冻结</td><td>原型展示三类模板入口与「预置一组可编辑家具」结果态，具体家具清单以常量定义为准，不虚构</td></tr>
+<tr><td>Q-04</td><td>模型库范围与占位规则</td><td>标准模型库覆盖核心类别，但具体类别清单、数量上限、缺失时占位模型样式未冻结</td><td>原型以有限类别选择器+占位模型表达，不写死数量门槛（性能门槛须真机验证）</td></tr>
+<tr><td>Q-05</td><td>数值类指标</td><td>帧率、加载时长、最大模型数、照片数量上限等未设定门槛</td><td>原型不标注任何量化数值，仅表达状态与流程；指标待真机验证后另定</td></tr>
+<tr><td>Q-06</td><td>管理员入口可见性</td><td>管理员 openid 尚未配置到 ADMIN_OPENIDS / users.role</td><td>原型默认隐藏管理后台入口，另提供「管理员态」分支页演示，配置完成后按真实角色显示</td></tr>
+<tr><td>Q-07</td><td>提审合规项</td><td>用户隐私保护指引、工具类目资质待核</td><td>原型不体现合规配置；提审前由用户方完成，见需求确认单假设 A-001</td></tr>
+<tr><td>Q-08</td><td>首页统计项口径</td><td>四项统计（房间/物品/库存/提醒），「最近变动」取前 5 条</td><td>沿用现有实现：统计四项、最近变动倒序 5 条；如需调整在评审确认</td></tr>
+<tr><td>Q-09</td><td>照片/任务页去留</td><td>CR-001 降级为可选，但页面仍在代码中注册</td><td>原型将其置于可选分支、不进 P0 主流程；是否最终保留入口待产品确认</td></tr>
+<tr><td>Q-10</td><td>交接与展示形态</td><td>用户已挂载线稿原型 skill，但本次交付为文字说明；是否需同步产出可点击线稿原型未明确</td><td>先交付本说明作为绘制输入；如需可点击线稿原型，按本说明第五、七节规范另行生成</td></tr>
+</tbody>
+</table>
+
+<h1 id="s-7">七、原型设计要求</h1>
+<p>本节为原型绘制与评审的可执行约定，供低保真线稿原型直接采用。</p>
+<h2>7.1 交付形态与范围</h2>
+<ul>
+<li>产出单文件目录（index.html + lofi.css + lofi.js），可直接双击打开，无 CDN 依赖。</li>
+<li>页面范围：P0 为固定「页面流程总览」节点页；核心闭环页 UI-001/002/003/006/007/008/009/010/011/012/013/014/015/016；辅助页 UI-017/018 及备份恢复；可选分支 UI-004/005 与管理后台管理员态作为补充页。</li>
+<li>桌面/平板/移动三档视口自适应；点击节点可跳转，主流程可从总览一路点通。</li>
+</ul>
+<h2>7.2 视觉规范（低保真线稿）</h2>
+<ul>
+<li>配色：仅灰阶+白+唯一红色 #d93025。灰阶层级 #111 标题 / #3d3d3d 正文 / #767676 辅助 / #bfbfbf 禁用；填充 #f4f4f4 hover / #ededed 选中 / #e2e2e2 禁用 / #2b2b2b 主操作。</li>
+<li>红色仅用于：必填与校验错误、危险/破坏性操作、错误 Alert/Toast、异常标签、待确认批注、热区标注；其余任何色相禁止。</li>
+<li>控件高度 28/32/40（移动触控档 32/40/44）；圆角 2（按钮/输入/标签）/3（卡片）/4（弹窗）/全圆；间距 4pt 基准栅格，卡片内边距 16、字段间距 16、标签与控件 6；栅格 12 栏槽宽 16，桌面 4 列/平板 2 列/移动 1 列。</li>
+<li>说明：产品视觉色板（主色 #2B7A9B 等）属于高保真设计规范，不在低保真线稿阶段使用；线稿以灰阶保证评审聚焦信息架构与任务流。</li>
+</ul>
+<h2>7.3 状态与交互规范</h2>
+<ul>
+<li>六态可演示：hover / focus / selected / disabled / loading / error；每页至少覆盖一种异常态（空状态/骨架加载/校验错误/禁用/无权限）。</li>
+<li>交互全部采用声明式 data-* 驱动（跳转/弹窗/校验/加载），不写业务 JS；每个可点元素必须有行为，每个页面必须有编号与标题标识。</li>
+<li>反馈时长：hover/focus ≤120ms，Toast 停留约 2.2s；破坏性操作（删除、归档、结束管理）二次确认。</li>
+<li>待确认事项用红色批注标注在相关页面，交互规则用灰色批注写在页面底部。</li>
+</ul>
+<h2>7.4 待确认项在原型中的标注</h2>
+<p>Q-01～Q-10 以红色批注落到对应页面：Q-01 页面编号、Q-02/Q-03 三维房间页、Q-04 家具编辑页、Q-05 数值指标（不标注具体数字）、Q-06 我的/管理后台、Q-07 隐私说明页、Q-08 首页、Q-09 照片/任务页、Q-10 在流程总览页说明交付形态。</p>
+<h2>7.5 交付自检清单</h2>
+<ul>
+<li>页面：每页含编号与标题；主流程可从总览点通；每个跳转有落点。</li>
+<li>状态：六态齐全；每页至少一种异常态；五态模型（空/加载/成功/错误/操作中断）在关键页体现。</li>
+<li>一致性：同类组件复用同一 class；流程节点编号与页面编号一致；间距取 4pt 栅格。</li>
+<li>技术：node --check lofi.js 通过；三档视口（1440/768/375）实测可用；单目录无外链依赖。</li>
+<li>合规：无真实家庭数据；红色使用符合 7.2 约束；待确认项全部红标。</li>
+</ul>
+
+<h1 id="s-8">八、评审要点小结</h1>
+<ol>
+<li>版本口径：确认以 V1.2（CR-001 手动编辑主路径）为准，照片/任务页作为可选分支。</li>
+<li>页面口径：确认 21 页实际注册为准及 UI-017/018、系统页编号。</li>
+<li>核心闭环：逐条核对 UF-001～005 是否在原型中可完整演示，尤其三维手动编辑、绑定、降级三条 V1.2 关键路径。</li>
+<li>状态与异常：确认五态/六态覆盖，越界钳制、关联保护、库存为负、首次位置等异常态是否达预期。</li>
+<li>待确认项：产品负责人对 Q-01～Q-10 逐项拍板，修正 A-xx 假设后更新原型。</li>
+</ol>
+
+<p>—— 本文档结束 ——</p>
+
+</section>
+</body>
+</html>
