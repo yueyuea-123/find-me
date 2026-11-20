@@ -51,6 +51,14 @@ class CDP {
 }
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function drag(cdp, from, to, steps = 6) {
+  await cdp.cmd('Input.dispatchMouseEvent', { type: 'mousePressed', x: from.x, y: from.y, button: 'left', buttons: 1, clickCount: 1 });
+  for (let i = 1; i <= steps; i++) {
+    await cdp.cmd('Input.dispatchMouseEvent', { type: 'mouseMoved', x: from.x + (to.x - from.x) * i / steps, y: from.y + (to.y - from.y) * i / steps, button: 'left', buttons: 1 });
+  }
+  await cdp.cmd('Input.dispatchMouseEvent', { type: 'mouseReleased', x: to.x, y: to.y, button: 'left', buttons: 0, clickCount: 1 });
+  await sleep(120);
+}
 const results = [];
 function check(name, cond, detail) { results.push({ name, ok: !!cond, detail }); console.log((cond ? 'PASS ' : 'FAIL ') + name + (detail ? ' — ' + detail : '')); }
 
@@ -88,6 +96,62 @@ function check(name, cond, detail) { results.push({ name, ok: !!cond, detail });
     check('户型视图含家具微缩块', (await cdp.eval(`document.querySelectorAll('#screen .fp-furn').length`)) >= 5);
     check('户型视图面积标注', await cdp.eval(`document.querySelector('#screen .fp-meta').textContent.includes('㎡')`));
     check('点击户型房间进入三维', await cdp.eval(`(function(){document.querySelector('#screen .fp-room').click();return !!document.querySelector('#screen .canvas3d') && document.querySelector('#crumb').textContent.includes('三维房间')})()`));
+
+    // 1c. 户型布局编辑：进入编辑 / 拖动 / 越界钳制 / 重叠阻断 / 缩放 / 自动排布 / 重进一致
+    const backHome = async () => { await cdp.eval(`(function(){var b=document.querySelector('#screen [data-act="back"]');if(b)b.click();var h=document.querySelector('#screen .tabbar [data-p="home"]');if(h)h.click();})()`); await sleep(100); };
+    await backHome();
+    await cdp.eval(`document.querySelector('[data-act="reset-demo"]').click()`); await sleep(100);
+    check('户型编辑：可进入编辑模式', await cdp.eval(`(function(){document.querySelector('[data-act="floor-edit"]').click();return document.querySelector('.floorplan').classList.contains('fp-grid-on') && document.querySelectorAll('.fp-handle').length===3})()`));
+
+    // 拖动卫生间(rm3)向下移动到空位（下移不与其他房间冲突）
+    const g = await cdp.eval(`(function(){var el=document.querySelector('.fp-room[data-id="rm3"]'),r=el.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height}})()`);
+    await drag(cdp, { x: g.x + g.w / 2, y: g.y + g.h / 2 }, { x: g.x + g.w / 2, y: g.y + g.h / 2 + g.h });
+    check('户型编辑：拖动房间并保存位置', await cdp.eval(`(function(){var el=document.querySelector('.fp-room[data-id="rm3"]');return el && el.style.gridRow.indexOf('6 /')===0 && document.querySelector('#dataLog').textContent.includes('调整「卫生间」布局')})()`));
+
+    // 越界钳制：把卫生间继续向右拖出边界，x 应被钳制到不越界
+    const g2 = await cdp.eval(`(function(){var el=document.querySelector('.fp-room[data-id="rm3"]'),r=el.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height}})()`);
+    await drag(cdp, { x: g2.x + g2.w / 2, y: g2.y + g2.h / 2 }, { x: g2.x + g2.w / 2 + g2.w * 4, y: g2.y + g2.h / 2 });
+    check('户型编辑：越界自动钳制', await cdp.eval(`(function(){var el=document.querySelector('.fp-room[data-id="rm3"]'),m=el.style.gridColumn.match(/^(\\d+) \\/ (\\d+)$/);return !!m && Number(m[2])<=7})()`));
+
+    // 重叠阻断：把卫生间拖回主卧/客厅所在区域，应被拒绝且不保存
+    const g3 = await cdp.eval(`(function(){var el=document.querySelector('.fp-room[data-id="rm3"]'),r=el.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height}})()`);
+    const beforeOverlap = await cdp.eval(`document.querySelector('.fp-room[data-id="rm3"]').style.gridColumn + '|' + document.querySelector('.fp-room[data-id="rm3"]').style.gridRow`);
+    await drag(cdp, { x: g3.x + g3.w / 2, y: g3.y + g3.h / 2 }, { x: g3.x - g3.w * 6, y: g3.y - g3.h * 8 });
+    check('户型编辑：重叠被阻断且不保存', await cdp.eval(`(function(){var el=document.querySelector('.fp-room[data-id="rm3"]');return document.querySelector('#dataLog').textContent.includes('被阻断（重叠/越界）') && el.style.gridColumn.indexOf('4 /')===0})()`), '重叠校验');
+
+    // 缩放：拖右下把手向下放大卫生间（向下为空位）
+    await cdp.eval(`document.querySelector('.fp-room[data-id="rm3"] .fp-handle').scrollIntoView({block:'center'})`); await sleep(120);
+    const gh = await cdp.eval(`(function(){var hd=document.querySelector('.fp-room[data-id="rm3"] .fp-handle'),r=hd.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height}})()`);
+    const rowBefore = await cdp.eval(`document.querySelector('.fp-room[data-id="rm3"]').style.gridRow`);
+    await drag(cdp, { x: gh.x + gh.w / 2, y: gh.y + gh.h / 2 }, { x: gh.x + gh.w / 2, y: gh.y + gh.h / 2 + gh.h * 8 });
+    const rowAfter = await cdp.eval(`document.querySelector('.fp-room[data-id="rm3"]').style.gridRow`);
+    check('户型编辑：拖把手缩放房间', rowAfter !== rowBefore);
+
+    check('户型编辑：重进布局保持一致', await cdp.eval(`(function(){var before=document.querySelector('.fp-room[data-id="rm3"]').style.gridColumn;document.querySelector('[data-act="floor-done"]').click();document.querySelector('[data-act="floor-edit"]').click();return before===document.querySelector('.fp-room[data-id="rm3"]').style.gridColumn})()`));
+
+    check('户型编辑：恢复自动排布', await cdp.eval(`(function(){document.querySelector('[data-act="floor-auto"]').click();var el=document.querySelector('.fp-room[data-id="rm3"]');return el.style.gridColumn==='1 / 4' && el.style.gridRow==='4 / 6'})()`));
+
+    // 1d. 家具交互：点击进入添加物品 / 拖动摆放 / 长按删除（关联保护）
+    await cdp.eval(`document.querySelector('[data-act="reset-demo"]').click()`); await sleep(80);
+    await cdp.eval(`document.querySelector('[data-act="goto"][data-p="room3d"]').click()`); await sleep(80);
+    // 点击家具（无位移）→ 进入建档页，且预选该家具节点
+    check('家具交互：点击进入添加物品界面', await cdp.eval(`(function(){var el=document.querySelector('.furn');var r=el.getBoundingClientRect();['pointerdown','pointerup'].forEach(function(t){el.dispatchEvent(new PointerEvent(t,{bubbles:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2}));});return document.querySelector('#fName')!==null && document.querySelector('#fNode')!==null})()`));
+    await cdp.eval(`(function(){var b=document.querySelector('#screen [data-act="back"]');if(b)b.click()})()`); await sleep(80);
+    // 拖动家具：位置数据变化并写日志
+    const fb = await cdp.eval(`(function(){var el=document.querySelector('.furn'),r=el.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`);
+    await drag(cdp, { x: fb.x, y: fb.y }, { x: fb.x + 30, y: fb.y });
+    check('家具交互：拖动摆放并保存', await cdp.eval(`document.querySelector('#dataLog').textContent.includes('拖动家具')`));
+    // 长按删除：床头柜含子节点（上层抽屉），应被关联保护阻断
+    await cdp.eval(`(function(){var el=Array.prototype.find.call(document.querySelectorAll('.furn'),function(x){return x.textContent.indexOf('床头柜')>=0});var r=el.getBoundingClientRect();el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2}));})()`);
+    await sleep(700);
+    await cdp.eval(`document.dispatchEvent(new PointerEvent('pointerup',{bubbles:true}))`);
+    check('家具交互：长按删除（含节点被阻断）', await cdp.eval(`document.querySelector('#dataLog').textContent.includes('被阻断（关联保护）')`));
+    // 长按删除：无关联的家具（落地窗）可删除，家具数 -1
+    const furnBefore = await cdp.eval(`document.querySelectorAll('.furn').length`);
+    await cdp.eval(`(function(){var el=Array.prototype.find.call(document.querySelectorAll('.furn'),function(x){return x.textContent.indexOf('落地窗')>=0});var r=el.getBoundingClientRect();el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2}));})()`);
+    await sleep(700);
+    await cdp.eval(`document.dispatchEvent(new PointerEvent('pointerup',{bubbles:true}))`);
+    check('家具交互：长按删除无关联家具', (await cdp.eval(`document.querySelectorAll('.furn').length`)) === furnBefore - 1);
 
     // 2. 逐条流程跑完，检查无异常、步骤计数推进
     const errors = [];

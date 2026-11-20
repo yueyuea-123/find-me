@@ -45,7 +45,9 @@
   const MV = { initial: '初始存放信息', first_confirm: '首次位置确认', move: '移动', out: '外出/借出', return: '带回/归还', end: '结束管理' };
   const CATS = ['证件卡片', '家居布艺', '电子数码', '卫浴清洁', '书籍文具', '其他'];
   const UNITS = ['个', '件', '瓶', '包', '盒', '卷'];
-  // 整体户型示意：按房间创建顺序映射到 6 列网格的槽位（仅示意，不代表真实户型结构）
+  // 整体户型：6 列网格。房间 floor 为用户可编辑的布局数据（x/y 起点，w/h 跨度，单位=格）
+  // 无 floor 的房间按创建顺序回退到默认槽位；位置为布局输入，不承诺测量精度。
+  const FLOOR_COLS = 6;
   const FLOOR_SLOTS = [
     { c: 1, r: 1, cw: 3, rh: 3 }, { c: 4, r: 1, cw: 3, rh: 4 },
     { c: 1, r: 4, cw: 3, rh: 2 }, { c: 4, r: 5, cw: 3, rh: 2 },
@@ -53,14 +55,30 @@
     { c: 1, r: 8, cw: 3, rh: 2 }, { c: 4, r: 9, cw: 3, rh: 2 }
   ];
   const floorSlot = i => FLOOR_SLOTS[i] || { c: 1, r: 10 + (i - 8) * 2, cw: 6, rh: 2 };
+  const floorOf = (r, i) => r.floor || (() => { const s = floorSlot(i); return { x: s.c, y: s.r, w: s.cw, h: s.rh }; })();
+  const floorOverlap = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  // 越界或与其他房间重叠均判为非法布局，不写入 state
+  function floorValid(rooms, selfId, cand) {
+    if (!cand || cand.x < 1 || cand.y < 1 || cand.w < 1 || cand.h < 1 || cand.x + cand.w - 1 > FLOOR_COLS) return false;
+    return !rooms.some((r, i) => r.id !== selfId && floorOverlap(floorOf(r, i), cand));
+  }
+  // 新建房间：从左上起扫描第一个能放下 3×2 的空位
+  function autoFloorPlace(sid) {
+    const used = roomsOf(sid).map((r, i) => floorOf(r, i));
+    for (let y = 1; y <= 40; y++) for (let x = 1; x + 2 <= FLOOR_COLS; x++) {
+      const c = { x, y, w: 3, h: 2 };
+      if (!used.some(u => floorOverlap(u, c))) return c;
+    }
+    return { x: 1, y: 40, w: 3, h: 2 };
+  }
 
   let S;
   function seed() {
     seq = 100;
     const sp = { id: 'sp1', name: '我的家', archived: false };
-    const rm1 = { id: 'rm1', spaceId: sp.id, name: '主卧', width: 4.6, depth: 4.2, height: 2.8, templateKey: 'bedroom' };
-    const rm2 = { id: 'rm2', spaceId: sp.id, name: '客厅', width: 4.2, depth: 3.8, height: 2.8, templateKey: 'living' };
-    const rm3 = { id: 'rm3', spaceId: sp.id, name: '卫生间', width: 2.4, depth: 2, height: 2.6, templateKey: 'bath' };
+    const rm1 = { id: 'rm1', spaceId: sp.id, name: '主卧', width: 4.6, depth: 4.2, height: 2.8, templateKey: 'bedroom', floor: { x: 1, y: 1, w: 3, h: 3 } };
+    const rm2 = { id: 'rm2', spaceId: sp.id, name: '客厅', width: 4.2, depth: 3.8, height: 2.8, templateKey: 'living', floor: { x: 4, y: 1, w: 3, h: 4 } };
+    const rm3 = { id: 'rm3', spaceId: sp.id, name: '卫生间', width: 2.4, depth: 2, height: 2.6, templateKey: 'bath', floor: { x: 1, y: 4, w: 3, h: 2 } };
     const furniture = [], nodes = [];
     function addF(rm, cat, name, x, z, model) {
       const f = { id: uid('fu'), roomId: rm.id, category: cat, name, model: model || LIB[cat].size && '默认', position: { x, y: 0, z }, rotation: 0, size: { w: LIB[cat].size[0], h: LIB[cat].size[1], d: LIB[cat].size[2] }, status: 'confirmed' };
@@ -94,7 +112,7 @@
         { id: 'tx2', itemId: 'it3', type: 'consume', delta: -2, balanceAfter: 1, note: '', createdAt: now() - 6e5 }
       ],
       alerts: [{ id: 'al1', itemId: 'it3', status: 'pending', createdAt: now() - 36e5 }],
-      ui: { page: 'home', ctx: {}, stack: [], listMode: false, mode: '浏览', selF: cab.f.id, search: '', filter: 'all' },
+      ui: { page: 'home', ctx: {}, stack: [], listMode: false, mode: '浏览', floorEdit: false, selF: cab.f.id, search: '', filter: 'all' },
       log: []
     };
   }
@@ -205,13 +223,14 @@
   }
   function cta(html) { return html ? `<div class="bottom-cta">${html}</div>` : ''; }
 
-  // 首页整体户型视图：按空间下所有房间渲染平面示意，点击房间进入三维
+  // 首页整体户型视图：按房间 floor 布局渲染平面示意，可手动拖动/缩放并保存
   function floorplanCard() {
     const sp = activeSpace();
     const rooms = roomsOf(sp.id);
     if (!rooms.length) return '';
-    const slots = rooms.map((_, i) => floorSlot(i));
-    const rows = Math.max(5, ...slots.map(s => s.r + s.rh - 1));
+    const edit = S.ui.floorEdit;
+    const slots = rooms.map((r, i) => floorOf(r, i));
+    const rows = Math.max(5, 10, ...slots.map(s => s.y + s.h - 1));
     const tone = r => r.templateKey === 'bedroom' ? 't-bedroom'
       : r.templateKey === 'living' ? 't-living' : r.templateKey === 'bath' ? 't-bath' : 't-blank';
     const area = rooms.reduce((n, r) => n + r.width * r.depth, 0);
@@ -227,17 +246,22 @@
         const h = clamp(f.size.d / r.depth * 100, 6, 48);
         return `<div class="fp-furn" title="${e(f.name)}" style="left:${left}%;top:${top}%;width:${w}%;height:${h}%">${LIB[f.category] ? LIB[f.category].icon : '▪'}</div>`;
       }).join('');
-      return `<div class="fp-room ${tone(r)}" data-act="goto" data-p="room3d" data-id="${r.id}"
-        style="grid-column:${s.c} / ${s.c + s.cw};grid-row:${s.r} / ${s.r + s.rh}">
+      return `<div class="fp-room ${tone(r)} ${edit ? 'fp-editing' : ''}" ${edit ? '' : `data-act="goto" data-p="room3d"`} data-id="${r.id}"
+        style="grid-column:${s.x} / ${s.x + s.w};grid-row:${s.y} / ${s.y + s.h}">
         <div class="fp-hd"><span>${e(r.name)}</span><em>${r.width}×${r.depth}m</em></div>
         <div class="fp-body">${furn}</div>
         ${itemCount ? `<div class="fp-badge" title="房间内物品数">${itemCount}</div>` : ''}
+        ${edit ? `<div class="fp-handle" title="拖动调整房间大小"></div>` : ''}
       </div>`;
     }).join('');
+    const gridHint = edit ? `编辑中：拖动房间移动、拖右下角把手缩放；越界自动钳制，重叠不可保存` : '点击房间查看三维 · 可「编辑布局」调整房间排布';
     return `<div class="card fp-card" style="margin-top:10px">
-      <div class="card-t">户型总览 <span class="fp-meta">${rooms.length} 间 · 约 ${area.toFixed(1)} ㎡</span></div>
-      <div class="fp-hint">按房间创建顺序自动排布（示意），点击房间查看三维</div>
-      <div class="floorplan" style="grid-template-rows:repeat(${rows},42px)">${blocks}</div>
+      <div class="card-t">户型总览 <span class="fp-meta">${rooms.length} 间 · 约 ${area.toFixed(1)} ㎡</span>
+        <span class="fp-actions">${edit
+          ? `<span class="fp-auto" data-act="floor-auto">恢复自动排布</span><span class="fp-done" data-act="floor-done">完成</span>`
+          : `<span class="fp-edit" data-act="floor-edit">编辑布局</span>`}</span></div>
+      <div class="fp-hint">${gridHint}</div>
+      <div class="floorplan ${edit ? 'fp-grid-on' : ''}" data-rows="${rows}" style="grid-template-rows:repeat(${rows},42px)">${blocks}</div>
       <div class="fp-legend"><span><i class="lg-f"></i>家具</span><span><i class="lg-i"></i>物品数</span><span class="fp-tip">墙线为示意，不承诺测量精度</span></div>
     </div>`;
   }
@@ -303,12 +327,12 @@
       const left = 18 + (f.position.x + (r.width / 2)) / r.width * 54;
       const top = 16 + (f.position.z + (r.depth / 2)) / r.depth * 52;
       const w = Math.max(10, Math.min(38, f.size.w / r.width * 100));
-      return `<div class="furn ${sel && sel.id === f.id ? 'sel' : ''}" data-act="select-f" data-id="${f.id}" style="left:${left}%;top:${top}%;width:${w}%;height:${Math.max(8, Math.min(20, f.size.d / r.depth * 100))}%">${e(f.name.slice(0, 4))}<span class="cap">${e(f.name)}</span></div>`;
+      return `<div class="furn ${sel && sel.id === f.id ? 'sel' : ''}" data-f-id="${f.id}" style="left:${left}%;top:${top}%;width:${w}%;height:${Math.max(8, Math.min(20, f.size.d / r.depth * 100))}%">${e(f.name.slice(0, 4))}<span class="cap">${e(f.name)}</span></div>`;
     }).join('');
     return `<div class="scroll">
       <div class="segbar"><span class="s ${S.ui.mode === '浏览' ? 'on' : ''}" data-act="mode" data-v="浏览">浏览</span><span class="s ${S.ui.mode === '编辑' ? 'on' : ''}" data-act="mode" data-v="编辑">编辑</span><span class="s ${S.ui.mode === '收纳' ? 'on' : ''}" data-act="mode" data-v="收纳">收纳</span></div>
       ${S.ui.listMode ? `<div class="card" style="margin-top:10px"><div class="card-t">家具列表（三维降级）</div>${fs.map(f => `<div class="row" data-act="goto" data-p="furniture" data-id="${f.id}"><div class="dot">${I('box', 15)}</div><div class="rt"><b>${e(f.name)}</b><span>${itemsOfFurniture(f.id).length} 件关联物品</span></div>${I('chev', 14)}</div>`).join('') || '<div class="empty">暂无家具</div>'}</div>` : `
-      <div class="canvas3d"><div class="floor"></div>${furnHtml}<div class="canvas-hint">${S.ui.mode === '编辑' ? '选中模型后可用下方按钮编辑' : '点选模型可查看与编辑'}</div></div>`}
+      <div class="canvas3d"><div class="floor"></div>${furnHtml}<div class="canvas-hint">拖动摆放 · 长按删除 · 点击进入添加物品</div></div>`}
       ${sel ? `<div class="card" style="margin-top:10px">
         <div style="display:flex;align-items:center;gap:6px"><div class="card-t">${e(sel.name)}</div><span class="chip good" style="margin-left:auto"><span class="cdot"></span>已保存</span></div>
         <div class="field-row"><div class="field"><span class="fl">位置 X / Z</span><div class="fv" style="font-size:11.5px;background:var(--surface-2);padding:7px 8px;border-radius:10px">${sel.position.x} / ${sel.position.z}</div></div>
@@ -609,7 +633,7 @@
       case 'reset-demo': S = seed(); renderFlow(); render(); toast('演示数据已重置', 'ok'); break;
       case 'activate-space': S.activeSpaceId = id; writeLog('切换当前空间'); nav('room'); break;
       case 'new-space': sheet('新建空间', '支持多个空间，首版仅个人使用', [{ label: '取消' }, { label: '创建', primary: true, run(n) { if (!n) return bad('请输入名称'); S.spaces.push({ id: uid('sp'), name: n, archived: false }); S.activeSpaceId = S.spaces[S.spaces.length - 1].id; writeLog(`新建空间「${n}」`); ok('空间已创建'); nav('space'); } }]); break;
-      case 'new-room': sheet('新建房间', '填写宽 / 深 / 高作为布局输入，不承诺测量精度', [{ label: '取消' }, { label: '创建空白房间', primary: true, run(n) { if (!n) return bad('请输入房间名称'); const r = { id: uid('rm'), spaceId: activeSpace().id, name: n, width: 4, depth: 4, height: 2.8, templateKey: '' }; S.rooms.push(r); writeLog(`新建房间「${n}」（空白）`); ok('房间已创建'); nav('room3d', { id: r.id }); } }, { label: '用卧室模板', run(n) { if (!n) return bad('请输入房间名称'); const r = { id: uid('rm'), spaceId: activeSpace().id, name: n, width: 4, depth: 4, height: 2.8, templateKey: 'bedroom' }; S.rooms.push(r); TEMPLATES.bedroom.items.forEach(([c, nm, x, z]) => { const f = { id: uid('fu'), roomId: r.id, category: c, name: nm, model: '默认', position: { x, y: 0, z }, rotation: 0, size: { w: LIB[c].size[0], h: LIB[c].size[1], d: LIB[c].size[2] }, status: 'confirmed' }; S.furniture.push(f); S.nodes.push({ id: uid('nd'), roomId: r.id, furnitureId: f.id, parentId: '', name: nm, type: '家具' }); }); writeLog(`新建房间「${n}」（卧室模板，家具可编辑）`); ok('模板家具已预置'); nav('room3d', { id: r.id }); } }]); break;
+      case 'new-room': sheet('新建房间', '填写宽 / 深 / 高作为布局输入，不承诺测量精度', [{ label: '取消' }, { label: '创建空白房间', primary: true, run(n) { if (!n) return bad('请输入房间名称'); const r = { id: uid('rm'), spaceId: activeSpace().id, name: n, width: 4, depth: 4, height: 2.8, templateKey: '', floor: autoFloorPlace(activeSpace().id) }; S.rooms.push(r); writeLog(`新建房间「${n}」（空白，户型自动占位）`); ok('房间已创建'); nav('room3d', { id: r.id }); } }, { label: '用卧室模板', run(n) { if (!n) return bad('请输入房间名称'); const r = { id: uid('rm'), spaceId: activeSpace().id, name: n, width: 4, depth: 4, height: 2.8, templateKey: 'bedroom', floor: autoFloorPlace(activeSpace().id) }; S.rooms.push(r); TEMPLATES.bedroom.items.forEach(([c, nm, x, z]) => { const f = { id: uid('fu'), roomId: r.id, category: c, name: nm, model: '默认', position: { x, y: 0, z }, rotation: 0, size: { w: LIB[c].size[0], h: LIB[c].size[1], d: LIB[c].size[2] }, status: 'confirmed' }; S.furniture.push(f); S.nodes.push({ id: uid('nd'), roomId: r.id, furnitureId: f.id, parentId: '', name: nm, type: '家具' }); }); writeLog(`新建房间「${n}」（卧室模板，家具可编辑）`); ok('模板家具已预置'); nav('room3d', { id: r.id }); } }]); break;
       case 'toggle-list': S.ui.listMode = !S.ui.listMode; render(); break;
       case 'mode': S.ui.mode = v; render(); break;
       case 'select-f': S.ui.selF = id; render(); break;
@@ -629,6 +653,9 @@
       case 'end-item': { const it = itemById(id); if (!it) return; const v = invOf(it.id); if (v && v.balance > 0) { bad(`剩余 ${v.balance} ${v.unit} 库存，须先明确处置方式`); writeLog(`结束管理「${it.name}」被阻断（库存处置）`); renderData(); } else { it.managementStatus = 'ended'; S.movements.unshift({ id: uid('mv'), itemId: it.id, type: 'end', note: '结束管理', createdAt: now() }); writeLog(`结束管理「${it.name}」`); ok('已结束管理'); nav('itemList'); } break; }
       case 'tx': doTx(v); break;
       case 'ignore-alert': { const al = S.alerts.find(x => x.id === id); if (al) { al.status = 'ignored'; writeLog('忽略一条提醒'); render(); } break; }
+      case 'floor-edit': S.ui.floorEdit = true; writeLog('进入户型布局编辑'); render(); break;
+      case 'floor-done': S.ui.floorEdit = false; ok('户型布局已保存'); render(); break;
+      case 'floor-auto': { const rs = roomsOf(activeSpace().id); rs.forEach((r, i) => { const s = floorSlot(i); r.floor = { x: s.c, y: s.r, w: s.cw, h: s.rh }; }); writeLog('户型恢复自动排布'); ok('已恢复按创建顺序自动排布'); render(); break; }
       case 'sheet-act': { const act = window._sheetActions[Number(el.dataset.i)]; closeSheet(); if (act && act.run) act.run(($('#sheetName') || {}).value || ''); break; }
       case 'flow-tab': gotoFlow(Number(el.dataset.i)); break;
       case 'flow-step': jumpStep(Number(el.dataset.i)); break;
@@ -636,6 +663,142 @@
       case 'flow-prev': prevStep(); break;
     }
   });
+  /* 户型布局拖拽：移动房间 / 拖把手缩放；越界钳制、重叠不可保存 */
+  let drag = null;
+  function floorMetrics() {
+    const grid = $('.floorplan');
+    if (!grid) return null;
+    const r = grid.getBoundingClientRect();
+    const rows = grid.querySelectorAll('.fp-room').length;
+    return { x: r.left, y: r.top, cw: r.width / FLOOR_COLS, ch: r.height / Math.max(10, Number(grid.dataset.rows) || 10), grid };
+  }
+  document.addEventListener('pointerdown', ev => {
+    if (!S.ui.floorEdit) return;
+    const handle = ev.target.closest('.fp-handle');
+    const roomEl = ev.target.closest('.fp-room');
+    if (!roomEl) return;
+    const rid = roomEl.dataset.id;
+    const rooms = roomsOf(activeSpace().id);
+    const r = rooms.find(x => x.id === rid); if (!r) return;
+    const idx = rooms.indexOf(r);
+    const m = floorMetrics(); if (!m) return;
+    drag = { rid, roomEl, mode: handle ? 'resize' : 'move', sx: ev.clientX, sy: ev.clientY,
+      base: Object.assign({}, floorOf(r, idx)), cur: Object.assign({}, floorOf(r, idx)), cw: m.cw, ch: m.ch };
+    roomEl.classList.add('fp-dragging');
+    ev.preventDefault();
+  });
+  document.addEventListener('pointermove', ev => {
+    if (!drag) return;
+    const dx = Math.round((ev.clientX - drag.sx) / drag.cw);
+    const dy = Math.round((ev.clientY - drag.sy) / drag.ch);
+    const b = drag.base, c = Object.assign({}, b);
+    if (drag.mode === 'move') {
+      c.x = Math.max(1, Math.min(FLOOR_COLS - b.w + 1, b.x + dx));
+      c.y = Math.max(1, b.y + dy);
+    } else {
+      c.w = Math.max(1, Math.min(FLOOR_COLS - b.x + 1, b.w + dx));
+      c.h = Math.max(1, Math.min(8, b.h + dy));
+    }
+    drag.cur = c;
+    const rooms = roomsOf(activeSpace().id);
+    const valid = floorValid(rooms, drag.rid, c);
+    drag.roomEl.classList.toggle('fp-invalid', !valid);
+    drag.roomEl.style.gridColumn = `${c.x} / ${c.x + c.w}`;
+    drag.roomEl.style.gridRow = `${c.y} / ${c.y + c.h}`;
+    ev.preventDefault();
+  });
+  function endFloorDrag() {
+    if (!drag) return;
+    const d = drag; drag = null;
+    d.roomEl.classList.remove('fp-dragging', 'fp-invalid');
+    const rooms = roomsOf(activeSpace().id);
+    const r = rooms.find(x => x.id === d.rid); if (!r) { render(); return; }
+    const changed = ['x', 'y', 'w', 'h'].some(k => d.cur[k] !== d.base[k]);
+    if (!changed) { render(); return; }
+    if (!floorValid(rooms, r.id, d.cur)) {
+      bad('布局与其他房间重叠或越界，未保存');
+      writeLog(`调整「${r.name}」布局被阻断（重叠/越界）`);
+      render(); return;
+    }
+    r.floor = d.cur;
+    writeLog(`调整「${r.name}」布局 → ${d.cur.x},${d.cur.y} · ${d.cur.w}×${d.cur.h} 格`);
+    render();
+  }
+  document.addEventListener('pointerup', endFloorDrag);
+  document.addEventListener('pointercancel', endFloorDrag);
+
+  /* 家具交互：拖动摆放（越界钳制）/ 长按删除（关联保护）/ 点击进入添加物品 */
+  let fdrag = null, longTimer = null;
+  function roomCanvasMetrics() {
+    const c = $('.canvas3d'); if (!c) return null;
+    const r = c.getBoundingClientRect();
+    return { x: r.left, y: r.top, w: r.width, h: r.height };
+  }
+  document.addEventListener('pointerdown', ev => {
+    const el = ev.target.closest('.furn'); if (!el) return;
+    const fid = el.dataset.fId;
+    const r = S.rooms.find(x => x.id === S.ui.ctx.id) || roomsOf(activeSpace().id)[0];
+    const f = S.furniture.find(x => x.id === fid); if (!r || !f) return;
+    S.ui.selF = fid;
+    $$('.furn').forEach(x => x.classList.toggle('sel', x === el));
+    const m = roomCanvasMetrics(); if (!m) return;
+    fdrag = { fid, el, room: r, sx: ev.clientX, sy: ev.clientY, moved: false, deleted: false,
+      base: { x: f.position.x, z: f.position.z }, cur: { x: f.position.x, z: f.position.z }, m };
+    longTimer = setTimeout(() => {
+      if (!fdrag || fdrag.moved) return;
+      const target = S.furniture.find(x => x.id === fid); if (!target) return;
+      fdrag.deleted = true;
+      const bound = itemsOfFurniture(fid), kids = S.nodes.filter(n => n.furnitureId === fid && n.type !== '家具');
+      if (bound.length || kids.length) {
+        bad(`已被关联：${bound.length} 件物品 / ${kids.length} 个节点，须先迁移或归档`);
+        writeLog(`删除「${target.name}」被阻断（关联保护）`);
+      } else {
+        S.furniture = S.furniture.filter(x => x.id !== fid);
+        S.nodes = S.nodes.filter(n => n.furnitureId !== fid);
+        if (S.ui.selF === fid) S.ui.selF = '';
+        writeLog(`长按删除家具「${target.name}」`); ok('家具已删除');
+      }
+      render();
+    }, 600);
+    ev.preventDefault();
+  });
+  document.addEventListener('pointermove', ev => {
+    if (!fdrag || fdrag.deleted) return;
+    const dist = Math.hypot(ev.clientX - fdrag.sx, ev.clientY - fdrag.sy);
+    if (!fdrag.moved && dist > 6) { fdrag.moved = true; clearTimeout(longTimer); fdrag.el.classList.add('f-dragging'); }
+    if (!fdrag.moved) return;
+    const r = fdrag.room, f = S.furniture.find(x => x.id === fdrag.fid); if (!f) return;
+    // 画布百分比 → 房间米：Δx = Δpx/画布宽*100/54*房间宽
+    const ngx = fdrag.base.x + ((ev.clientX - fdrag.sx) / fdrag.m.w * 100) / 54 * r.width;
+    const ngz = fdrag.base.z + ((ev.clientY - fdrag.sy) / fdrag.m.h * 100) / 52 * r.depth;
+    const cx = Math.max(-r.width / 2 + f.size.w / 2, Math.min(r.width / 2 - f.size.w / 2, ngx));
+    const cz = Math.max(-r.depth / 2 + f.size.d / 2, Math.min(r.depth / 2 - f.size.d / 2, ngz));
+    fdrag.cur = { x: Math.round(cx * 10) / 10, z: Math.round(cz * 10) / 10 };
+    fdrag.el.style.left = `${18 + (fdrag.cur.x + r.width / 2) / r.width * 54}%`;
+    fdrag.el.style.top = `${16 + (fdrag.cur.z + r.depth / 2) / r.depth * 52}%`;
+    ev.preventDefault();
+  });
+  function endFurnDrag() {
+    clearTimeout(longTimer);
+    if (!fdrag) return;
+    const d = fdrag; fdrag = null;
+    d.el.classList.remove('f-dragging');
+    if (d.deleted) return;
+    if (d.moved) {
+      const f = S.furniture.find(x => x.id === d.fid);
+      if (f && (f.position.x !== d.cur.x || f.position.z !== d.cur.z)) {
+        f.position.x = d.cur.x; f.position.z = d.cur.z;
+        writeLog(`拖动家具「${f.name}」到 ${f.position.x},${f.position.z}（越界已钳制）`); ok('位置已保存');
+      }
+      render(); return;
+    }
+    // 短按视为点击：进入添加物品界面，并预选该家具对应的收纳节点
+    const root = S.nodes.find(n => n.furnitureId === d.fid && !n.parentId);
+    nav('itemEdit', { node: root ? root.id : '' });
+  }
+  document.addEventListener('pointerup', endFurnDrag);
+  document.addEventListener('pointercancel', endFurnDrag);
+
   document.addEventListener('input', ev => {
     if (ev.target.id === 'searchInput') { S.ui.search = ev.target.value; render(); const inp = $('#searchInput'); if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); } }
   });
