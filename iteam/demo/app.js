@@ -48,6 +48,7 @@
   // 整体户型：6 列网格。房间 floor 为用户可编辑的布局数据（x/y 起点，w/h 跨度，单位=格）
   // 无 floor 的房间按创建顺序回退到默认槽位；位置为布局输入，不承诺测量精度。
   const FLOOR_COLS = 6;
+  const FLOOR_MAX_ROWS = 8;
   const FLOOR_SLOTS = [
     { c: 1, r: 1, cw: 3, rh: 3 }, { c: 4, r: 1, cw: 3, rh: 4 },
     { c: 1, r: 4, cw: 3, rh: 2 }, { c: 4, r: 5, cw: 3, rh: 2 },
@@ -55,11 +56,13 @@
     { c: 1, r: 8, cw: 3, rh: 2 }, { c: 4, r: 9, cw: 3, rh: 2 }
   ];
   const floorSlot = i => FLOOR_SLOTS[i] || { c: 1, r: 10 + (i - 8) * 2, cw: 6, rh: 2 };
+  // 房间块 8 个缩放把手：四角（nw/ne/se/sw）+ 四边中点（n/e/s/w）
+  const FP_HANDLES = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
   const floorOf = (r, i) => r.floor || (() => { const s = floorSlot(i); return { x: s.c, y: s.r, w: s.cw, h: s.rh }; })();
   const floorOverlap = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
   // 越界或与其他房间重叠均判为非法布局，不写入 state
   function floorValid(rooms, selfId, cand) {
-    if (!cand || cand.x < 1 || cand.y < 1 || cand.w < 1 || cand.h < 1 || cand.x + cand.w - 1 > FLOOR_COLS) return false;
+    if (!cand || cand.x < 1 || cand.y < 1 || cand.w < 1 || cand.h < 1 || cand.x + cand.w - 1 > FLOOR_COLS || cand.y + cand.h - 1 > FLOOR_MAX_ROWS) return false;
     return !rooms.some((r, i) => r.id !== selfId && floorOverlap(floorOf(r, i), cand));
   }
   // 新建房间：从左上起扫描第一个能放下 3×2 的空位
@@ -230,7 +233,8 @@
     if (!rooms.length) return '';
     const edit = S.ui.floorEdit;
     const slots = rooms.map((r, i) => floorOf(r, i));
-    const rows = Math.max(5, 10, ...slots.map(s => s.y + s.h - 1));
+    // 高度自适应：网格只画到房间实际占用的最下一行，不再留固定 10 行空白
+    const rows = Math.max(1, ...slots.map(s => s.y + s.h - 1));
     const tone = r => r.templateKey === 'bedroom' ? 't-bedroom'
       : r.templateKey === 'living' ? 't-living' : r.templateKey === 'bath' ? 't-bath' : 't-blank';
     const area = rooms.reduce((n, r) => n + r.width * r.depth, 0);
@@ -251,17 +255,17 @@
         <div class="fp-hd"><span>${e(r.name)}</span><em>${r.width}×${r.depth}m</em></div>
         <div class="fp-body">${furn}</div>
         ${itemCount ? `<div class="fp-badge" title="房间内物品数">${itemCount}</div>` : ''}
-        ${edit ? `<div class="fp-handle" title="拖动调整房间大小"></div>` : ''}
+        ${edit ? FP_HANDLES.map(h => `<div class="fp-handle fh-${h}" data-h="${h}" title="拖动调整房间大小"></div>`).join('') : ''}
       </div>`;
     }).join('');
-    const gridHint = edit ? `编辑中：拖动房间移动、拖右下角把手缩放；越界自动钳制，重叠不可保存` : '点击房间查看三维 · 可「编辑布局」调整房间排布';
+    const gridHint = edit ? `编辑中：拖动房间移动、拖任意边/角把手调整宽高；越界自动钳制，重叠不可保存` : '点击房间查看三维 · 可「编辑布局」调整房间排布';
     return `<div class="card fp-card" style="margin-top:10px">
       <div class="card-t">户型总览 <span class="fp-meta">${rooms.length} 间 · 约 ${area.toFixed(1)} ㎡</span>
         <span class="fp-actions">${edit
           ? `<span class="fp-auto" data-act="floor-auto">恢复自动排布</span><span class="fp-done" data-act="floor-done">完成</span>`
           : `<span class="fp-edit" data-act="floor-edit">编辑布局</span>`}</span></div>
       <div class="fp-hint">${gridHint}</div>
-      <div class="floorplan ${edit ? 'fp-grid-on' : ''}" data-rows="${rows}" style="grid-template-rows:repeat(${rows},42px)">${blocks}</div>
+      <div class="floorplan ${edit ? 'fp-grid-on' : ''}" data-rows="${rows}" style="--fp-rh:42px;grid-template-rows:repeat(${rows},var(--fp-rh))">${blocks}</div>
       <div class="fp-legend"><span><i class="lg-f"></i>家具</span><span><i class="lg-i"></i>物品数</span><span class="fp-tip">墙线为示意，不承诺测量精度</span></div>
     </div>`;
   }
@@ -663,14 +667,19 @@
       case 'flow-prev': prevStep(); break;
     }
   });
-  /* 户型布局拖拽：移动房间 / 拖把手缩放；越界钳制、重叠不可保存 */
+  /* 户型布局拖拽：移动房间 / 拖四边或四角把手缩放；越界钳制、重叠不可保存 */
   let drag = null;
   function floorMetrics() {
     const grid = $('.floorplan');
     if (!grid) return null;
     const r = grid.getBoundingClientRect();
-    const rows = grid.querySelectorAll('.fp-room').length;
-    return { x: r.left, y: r.top, cw: r.width / FLOOR_COLS, ch: r.height / Math.max(10, Number(grid.dataset.rows) || 10), grid };
+    const cs = getComputedStyle(grid);
+    // 用计算样式取单格步长（含 gap），高度自适应后行数变化也不影响换算
+    const cw = parseFloat(cs.gridTemplateColumns.split(' ')[0]) || r.width / FLOOR_COLS;
+    const ch = parseFloat(cs.gridTemplateRows.split(' ')[0]) || 42;
+    const gx = parseFloat(cs.columnGap) || 0;
+    const gy = parseFloat(cs.rowGap) || 0;
+    return { x: r.left, y: r.top, cw: cw + gx, ch: ch + gy, grid };
   }
   document.addEventListener('pointerdown', ev => {
     if (!S.ui.floorEdit) return;
@@ -682,7 +691,8 @@
     const r = rooms.find(x => x.id === rid); if (!r) return;
     const idx = rooms.indexOf(r);
     const m = floorMetrics(); if (!m) return;
-    drag = { rid, roomEl, mode: handle ? 'resize' : 'move', sx: ev.clientX, sy: ev.clientY,
+    const dir = handle ? (handle.dataset.h || 'se') : 'move';
+    drag = { rid, roomEl, dir, sx: ev.clientX, sy: ev.clientY,
       base: Object.assign({}, floorOf(r, idx)), cur: Object.assign({}, floorOf(r, idx)), cw: m.cw, ch: m.ch };
     roomEl.classList.add('fp-dragging');
     ev.preventDefault();
@@ -692,12 +702,15 @@
     const dx = Math.round((ev.clientX - drag.sx) / drag.cw);
     const dy = Math.round((ev.clientY - drag.sy) / drag.ch);
     const b = drag.base, c = Object.assign({}, b);
-    if (drag.mode === 'move') {
+    if (drag.dir === 'move') {
       c.x = Math.max(1, Math.min(FLOOR_COLS - b.w + 1, b.x + dx));
-      c.y = Math.max(1, b.y + dy);
+      c.y = Math.max(1, Math.min(FLOOR_MAX_ROWS - b.h + 1, b.y + dy));
     } else {
-      c.w = Math.max(1, Math.min(FLOOR_COLS - b.x + 1, b.w + dx));
-      c.h = Math.max(1, Math.min(8, b.h + dy));
+      const dir = drag.dir;
+      if (dir.includes('w')) { c.x = Math.max(1, Math.min(b.x + b.w - 1, b.x + dx)); c.w = b.w + b.x - c.x; }
+      else if (dir.includes('e')) c.w = Math.max(1, Math.min(FLOOR_COLS - b.x + 1, b.w + dx));
+      if (dir.includes('n')) { c.y = Math.max(1, Math.min(b.y + b.h - 1, b.y + dy)); c.h = b.h + b.y - c.y; }
+      else if (dir.includes('s')) c.h = Math.max(1, Math.min(FLOOR_MAX_ROWS - b.y + 1, b.h + dy));
     }
     drag.cur = c;
     const rooms = roomsOf(activeSpace().id);

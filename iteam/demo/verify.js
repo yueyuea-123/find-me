@@ -101,7 +101,8 @@ function check(name, cond, detail) { results.push({ name, ok: !!cond, detail });
     const backHome = async () => { await cdp.eval(`(function(){var b=document.querySelector('#screen [data-act="back"]');if(b)b.click();var h=document.querySelector('#screen .tabbar [data-p="home"]');if(h)h.click();})()`); await sleep(100); };
     await backHome();
     await cdp.eval(`document.querySelector('[data-act="reset-demo"]').click()`); await sleep(100);
-    check('户型编辑：可进入编辑模式', await cdp.eval(`(function(){document.querySelector('[data-act="floor-edit"]').click();return document.querySelector('.floorplan').classList.contains('fp-grid-on') && document.querySelectorAll('.fp-handle').length===3})()`));
+    check('户型视图：高度按实际占用自适应（无 10 行空白）', await cdp.eval(`(function(){var g=document.querySelector('.floorplan');return Number(g.dataset.rows)===5 && g.getBoundingClientRect().height<280})()`));
+    check('户型编辑：可进入编辑模式（8 方向把手）', await cdp.eval(`(function(){document.querySelector('[data-act="floor-edit"]').click();var hs=document.querySelectorAll('.fp-handle');return document.querySelector('.floorplan').classList.contains('fp-grid-on') && hs.length===24 && ['nw','n','ne','e','se','s','sw','w'].every(function(d){return !!document.querySelector('.fh-'+d)})})()`));
 
     // 拖动卫生间(rm3)向下移动到空位（下移不与其他房间冲突）
     const g = await cdp.eval(`(function(){var el=document.querySelector('.fp-room[data-id="rm3"]'),r=el.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height}})()`);
@@ -119,13 +120,21 @@ function check(name, cond, detail) { results.push({ name, ok: !!cond, detail });
     await drag(cdp, { x: g3.x + g3.w / 2, y: g3.y + g3.h / 2 }, { x: g3.x - g3.w * 6, y: g3.y - g3.h * 8 });
     check('户型编辑：重叠被阻断且不保存', await cdp.eval(`(function(){var el=document.querySelector('.fp-room[data-id="rm3"]');return document.querySelector('#dataLog').textContent.includes('被阻断（重叠/越界）') && el.style.gridColumn.indexOf('4 /')===0})()`), '重叠校验');
 
-    // 缩放：拖右下把手向下放大卫生间（向下为空位）
-    await cdp.eval(`document.querySelector('.fp-room[data-id="rm3"] .fp-handle').scrollIntoView({block:'center'})`); await sleep(120);
-    const gh = await cdp.eval(`(function(){var hd=document.querySelector('.fp-room[data-id="rm3"] .fp-handle'),r=hd.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height}})()`);
+    // 角把手缩放：拖右下（se）向下放大卫生间（向下为空位）
+    await cdp.eval(`document.querySelector('.fp-room[data-id="rm3"] .fh-se').scrollIntoView({block:'center'})`); await sleep(120);
+    const gh = await cdp.eval(`(function(){var hd=document.querySelector('.fp-room[data-id="rm3"] .fh-se'),r=hd.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height}})()`);
     const rowBefore = await cdp.eval(`document.querySelector('.fp-room[data-id="rm3"]').style.gridRow`);
     await drag(cdp, { x: gh.x + gh.w / 2, y: gh.y + gh.h / 2 }, { x: gh.x + gh.w / 2, y: gh.y + gh.h / 2 + gh.h * 8 });
     const rowAfter = await cdp.eval(`document.querySelector('.fp-room[data-id="rm3"]').style.gridRow`);
-    check('户型编辑：拖把手缩放房间', rowAfter !== rowBefore);
+    check('户型编辑：拖角把手缩放房间', rowAfter !== rowBefore);
+
+    // 边把手缩放：拖左边缘（w）向右收缩卫生间宽度
+    await cdp.eval(`document.querySelector('.fp-room[data-id="rm3"] .fh-w').scrollIntoView({block:'center'})`); await sleep(120);
+    const gw = await cdp.eval(`(function(){var hd=document.querySelector('.fp-room[data-id="rm3"] .fh-w'),r=hd.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height}})()`);
+    const colBefore = await cdp.eval(`document.querySelector('.fp-room[data-id="rm3"]').style.gridColumn`);
+    await drag(cdp, { x: gw.x + gw.w / 2, y: gw.y + gw.h / 2 }, { x: gw.x + gw.w / 2 + gw.w * 8, y: gw.y + gw.h / 2 });
+    const colAfter = await cdp.eval(`document.querySelector('.fp-room[data-id="rm3"]').style.gridColumn`);
+    check('户型编辑：拖边把手调整宽度', colAfter !== colBefore, '边把手缩放');
 
     check('户型编辑：重进布局保持一致', await cdp.eval(`(function(){var before=document.querySelector('.fp-room[data-id="rm3"]').style.gridColumn;document.querySelector('[data-act="floor-done"]').click();document.querySelector('[data-act="floor-edit"]').click();return before===document.querySelector('.fp-room[data-id="rm3"]').style.gridColumn})()`));
 
