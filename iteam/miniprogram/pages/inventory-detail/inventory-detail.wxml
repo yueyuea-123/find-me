@@ -8,26 +8,25 @@
       </view>
       <text class="tag {{low?'red':'green'}}" wx:if="{{threshold>0}}">{{low?'低库存':'正常'}}</text>
     </view>
+    <view class="progress"><view class="progress-bar {{low?'warn':''}}" style="width:{{progress}}%"></view></view>
+    <view class="chip warn-chip" wx:if="{{low}}">达到最低库存，已生成提醒</view>
   </view>
 
   <view class="card">
     <view class="card-t">库存变更</view>
     <view class="field" style="margin-top:16rpx">
-      <text class="label">变更类型</text>
-      <view class="chip-grid">
-        <view class="chip {{txType===item.key?'on':''}}" wx:for="{{txTypes}}" wx:key="key" data-key="{{item.key}}" bindtap="chooseType">{{item.name}}</view>
+      <text class="label">数量与说明</text>
+      <view class="row">
+        <input class="input grow" style="margin-right:12rpx" type="digit" placeholder="数量" value="{{amount}}" bindinput="onAmount" />
+        <input class="input grow" placeholder="说明（可选）" value="{{txNote}}" bindinput="onTxNote" />
       </view>
     </view>
-    <view class="field">
-      <text class="label">数量（{{unit}}）</text>
-      <input class="input" type="digit" placeholder="输入正数" value="{{amount}}" bindinput="onAmount" />
+    <view class="row wrap">
+      <button class="btn sm primary" data-key="in" bindtap="quickTx">入库</button>
+      <button class="btn sm" data-key="consume" bindtap="quickTx">消耗</button>
+      <button class="btn sm" data-key="adjust" bindtap="quickTx">调整</button>
     </view>
-    <view class="field">
-      <text class="label">{{txType==='adjust'?'调整原因（必填）':'备注（可选）'}}</text>
-      <input class="input" placeholder="{{txType==='adjust'?'例如：盘点差异修正':'例如：采购入库 / 日常使用'}}" value="{{txNote}}" bindinput="onTxNote" />
-    </view>
-    <button class="btn primary block" bindtap="submitTx">提交变更</button>
-    <view class="small muted" style="margin-top:12rpx">调整与消耗分开记录；超额消耗被拒绝，库存不会低于零（BR-011）。</view>
+    <view class="small muted" style="margin-top:12rpx">调整与消耗分开记录；超额消耗被拒绝，库存不会低于零。</view>
   </view>
 
   <view class="card">

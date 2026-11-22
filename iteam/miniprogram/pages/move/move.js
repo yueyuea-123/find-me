@@ -10,7 +10,7 @@ Page({
   },
   onLoad: function (q) {
     this._id = q.id || '';
-    var opts = [{ id: '', label: '（在家，位置未知）' }];
+    var opts = [{ id: '', label: '请选择具体位置' }];
     var active = store.getActiveSpace();
     store.listRooms(active ? active.id : '').forEach(function (rm) {
       store.listNodes(rm.id).forEach(function (n) {
@@ -41,12 +41,11 @@ Page({
     var d = this.data, self = this;
     if (this._submitting) return;
     var nodeId = d.statusKey === 'at_home' ? d.nodeOptions[d.nodeIndex].id : '';
-    if (d.statusKey === 'at_home' && !nodeId && d.nodeIndex !== 0) {
+    // demo 对齐：选择「在家」必须同时选定具体收纳节点；位置未知走独立状态入口
+    if (d.statusKey === 'at_home' && !nodeId) {
       wx.showToast({ title: '请选择目标位置', icon: 'none' }); return;
     }
-    // 返回时可选"在家，位置未知"：选索引 0 时按 unknown 状态处理，记为 return（TBD-002）
     var status = d.statusKey;
-    if (status === 'at_home' && !nodeId) status = 'unknown';
     var requestId = store.uid('req');
     wx.showModal({
       title: '确认移动',

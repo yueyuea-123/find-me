@@ -311,6 +311,56 @@ function archiveRoom(id) {
   rm.archived = true; rm.updatedAt = now();
   var r = commit(); return r.ok ? { ok: true } : r;
 }
+// 房间删除/归档前的关联检查（业务规则第11章）：统计家具/节点/物品，阻断位置关系断裂
+// 房间物理删除：移除房间及其家具/节点记录并写墓碑供云同步；
+// 关联物品不物理删除，解除位置引用置为"位置未知"并写历史，避免悬空引用（业务规则第11章）
+function deleteRoom(id) {
+  var d = load(), rm = findById(d.rooms, id);
+  if (!rm) return { ok: false, error: 'NOT_FOUND' };
+  var furniture = d.furniture.filter(function (f) { return f.roomId === id; });
+  var nodes = d.nodes.filter(function (n) { return n.roomId === id; });
+  var nodeIds = nodes.map(function (n) { return n.id; });
+  var linked = d.items.filter(function (it) {
+    return it.managementStatus !== 'ended' && nodeIds.indexOf(it.currentNodeId) >= 0;
+  });
+  // 物品解绑：位置置未知，保留物品档案，写 restore 历史可追溯
+  linked.forEach(function (it) {
+    var from = it.currentNodeId, fromStatus = it.locationStatus;
+    it.currentNodeId = '';
+    it.locationStatus = 'unknown';
+    it.borrowTo = ''; it.dueDate = '';
+    it.updatedAt = now();
+    it.completed = calcCompletion(it);
+    d.movements.push({
+      id: uid('mv'), itemId: it.id, type: 'restore',
+      fromNodeId: from, fromStatus: fromStatus,
+      toNodeId: '', toStatus: 'unknown',
+      note: '房间删除后位置归未知', createdAt: now()
+    });
+  });
+  // 物理移除记录
+  d.rooms = d.rooms.filter(function (r) { return r.id !== id; });
+  d.furniture = d.furniture.filter(function (f) { return f.roomId !== id; });
+  d.nodes = d.nodes.filter(function (n) { return n.roomId !== id; });
+  // 墓碑：供云端同步表达物理删除
+  tombstone('rooms', id);
+  furniture.forEach(function (f) { tombstone('furniture', f.id); });
+  nodes.forEach(function (n) { tombstone('nodes', n.id); });
+  var r = commit();
+  return r.ok ? { ok: true, data: { furniture: furniture.length, nodes: nodes.length, itemsReset: linked.length } } : r;
+}
+
+function roomAssociations(roomId) {
+  var d = load();
+  var furniture = d.furniture.filter(function (f) { return f.roomId === roomId; });
+  var nodes = d.nodes.filter(function (n) { return n.roomId === roomId; });
+  var nodeIds = nodes.map(function (n) { return n.id; });
+  var items = d.items.filter(function (it) {
+    return it.managementStatus !== 'ended' && nodeIds.indexOf(it.currentNodeId) >= 0;
+  });
+  return { furniture: furniture.length, nodes: nodes.length, items: items.length,
+    total: furniture.length + nodes.length + items.length };
+}
 
 // ---------- 照片与建模任务（PRD-005/006/007） ----------
 function addPhotos(roomId, paths) {
@@ -1049,7 +1099,8 @@ module.exports = {
   listSpaces: listSpaces, listAllSpaces: listAllSpaces, getActiveSpace: getActiveSpace,
   setActiveSpace: setActiveSpace, addSpace: addSpace, updateSpace: updateSpace, archiveSpace: archiveSpace,
   // 房间
-  listRooms: listRooms, getRoom: getRoom, addRoom: addRoom, updateRoom: updateRoom, archiveRoom: archiveRoom,
+  listRooms: listRooms, getRoom: getRoom, addRoom: addRoom, updateRoom: updateRoom,   archiveRoom: archiveRoom, deleteRoom: deleteRoom,
+  roomAssociations: roomAssociations,
   // 照片与任务
   addPhotos: addPhotos, removePhoto: removePhoto, startTask: startTask, finishTask: finishTask,
   // 家具

@@ -13,8 +13,20 @@
     <view class="small muted" style="margin-top:10rpx">渐进式档案：分类、照片、位置可随时补充</view>
   </view>
 
+  <view class="card" wx:if="{{justCreated}}">
+    <view class="card-t">档案已建立</view>
+    <view class="small muted">只需名称即可先建档；分类、照片、位置可随时补充，档案完善度会随之提高。</view>
+  </view>
+
   <view class="card">
     <view class="card-t">当前状态</view>
+    <view class="small muted" style="margin-top:6rpx">最近确认：{{item.updatedText}}</view>
+    <view class="chips4">
+      <text class="tag {{item.locationKey==='at_home'?'green':'gray'}}">在家</text>
+      <text class="tag {{item.locationKey==='unknown'?'orange':'gray'}}">位置未知</text>
+      <text class="tag {{item.locationKey==='out'?'orange':'gray'}}">外出携带</text>
+      <text class="tag {{item.locationKey==='borrowed'?'orange':'gray'}}">借出</text>
+    </view>
     <view class="kv"><text class="muted">位置状态</text><text class="tag {{item.locClass}}">{{item.locText}}</text></view>
     <view class="kv"><text class="muted">存放位置</text><text>{{item.locPath}}</text></view>
     <view class="kv" wx:if="{{item.borrowTo}}"><text class="muted">借出对象</text><text>{{item.borrowTo}}</text></view>
@@ -46,8 +58,8 @@
     <view class="card-t">操作</view>
     <view class="row wrap">
       <block wx:if="{{item.mgmt==='active'}}">
-        <button class="btn sm primary" bindtap="editItem">编辑资料</button>
-        <button class="btn sm" bindtap="moveItem">移动 / 改状态</button>
+        <button class="btn sm primary" bindtap="editItem">编辑档案</button>
+        <button class="btn sm" bindtap="moveItem">移动物品</button>
         <button class="btn sm danger" bindtap="endManage">结束管理</button>
       </block>
       <button class="btn sm" bindtap="goHistory">位置历史</button>
@@ -55,6 +67,8 @@
     </view>
     <view class="small muted" wx:if="{{item.mgmt==='ended'}}" style="margin-top:12rpx">已结束管理物品默认只读：可查看档案与历史，不可移动或进行库存交易。</view>
   </view>
+
+  <button class="btn primary block" style="margin-top:20rpx" bindtap="goBackList">返回物品列表</button>
 </view>
 
 <view class="page" wx:else>

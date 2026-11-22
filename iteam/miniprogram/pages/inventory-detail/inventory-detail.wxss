@@ -10,3 +10,7 @@
 .plus { color: #6E7F59; }
 .minus { color: #BE5F44; }
 .empty-line { text-align: center; color: #A29481; font-size: 26rpx; padding: 40rpx 0; }
+.progress { height: 10rpx; border-radius: 999rpx; background: #F3EDE2; overflow: hidden; margin-top: 18rpx; }
+.progress-bar { height: 100%; background: #9C6B3F; border-radius: 999rpx; }
+.progress-bar.warn { background: #BE5F44; }
+.warn-chip { display: inline-block; margin-top: 14rpx; font-size: 24rpx; color: #BE5F44; background: #F6E2D9; border-radius: 999rpx; padding: 8rpx 18rpx; }

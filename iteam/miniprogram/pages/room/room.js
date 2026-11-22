@@ -3,7 +3,7 @@ var store = require('../../utils/store.js');
 
 Page({
   data: {
-    spaceName: '', rooms: [],
+    spaceName: '', rooms: [], hasSpace: false,
     showEditor: false, editing: false, editingId: '',
     formName: '', formW: '', formD: '', formH: '', formError: '',
     // CR-001 F-07 典型场景起点：'' = 空白房间；否则为模板 key
@@ -29,11 +29,12 @@ Page({
       var dim = r.calibrated ? (r.width + '×' + r.depth + '×' + r.height + 'm') : '尺寸未定标（相对估算）';
       return {
         id: r.id, name: r.name, dimText: dim,
+        templateText: r.templateKey ? '场景模板' : '空白房间',
         furnitureCount: furn.length, itemCount: items.length,
         statusText: statusText, statusClass: statusClass
       };
     });
-    this.setData({ spaceName: sp ? sp.name : '未设置空间', rooms: rooms });
+    this.setData({ spaceName: sp ? sp.name : '未设置空间', rooms: rooms, hasSpace: !!sp });
   },
 
   enterRoom: function (e) {
@@ -79,7 +80,13 @@ Page({
       if (r.ok) r = store.updateRoom(f.editingId, dims);
     } else {
       var sp = store.getActiveSpace();
-      if (!sp) { this.setData({ formError: '请先创建一个空间' }); return; }
+      // 首次使用可能没有任何空间：自动建立默认空间，避免建房间被“请先创建一个空间”卡住
+      if (!sp) {
+        var sr = store.addSpace('我的空间');
+        if (!sr.ok) { this.setData({ formError: '默认空间创建失败：' + sr.error }); return; }
+        store.setActiveSpace(sr.data.id);
+        sp = sr.data;
+      }
       r = store.addRoom(sp.id, f.formName, dims);
     }
     if (!r.ok) { this.setData({ formError: '保存失败：' + r.error }); return; }
@@ -93,11 +100,41 @@ Page({
     this.load();
   },
 
+  // 物理删除房间（用户确认口径）：不可恢复，须强提示；关联物品解绑置为位置未知
+  destroy: function (e) {
+    var d = e.currentTarget.dataset, self = this;
+    var a = store.roomAssociations(d.id);
+    var detail = '这将永久删除「' + d.name + '」及其全部家具、节点，操作不可恢复。';
+    if (a.items > 0) detail += '\n其中 ' + a.items + ' 件物品不会被删除，但会变为「位置未知」。';
+    wx.showModal({
+      title: '永久删除房间',
+      content: detail + '\n确认继续？',
+      confirmText: '永久删除',
+      confirmColor: '#BE5F44',
+      success: function (res) {
+        if (!res.confirm) return;
+        var r = store.deleteRoom(d.id);
+        if (!r.ok) { wx.showToast({ title: '删除失败：' + r.error, icon: 'none' }); return; }
+        wx.showToast({ title: '已永久删除', icon: 'success' });
+        self.load();
+      }
+    });
+  },
+
   archive: function (e) {
     var d = e.currentTarget.dataset, self = this;
+    // 业务规则第11章：删除/归档前检查家具、节点、物品关联，避免位置关系断裂
+    var a = store.roomAssociations(d.id);
+    var content = '归档「' + d.name + '」？数据保留但退出日常列表，历史可追溯。';
+    if (a.total > 0) {
+      content = '「' + d.name + '」下仍有 ' + a.furniture + ' 件家具、' + a.nodes + ' 个收纳节点、'
+        + a.items + ' 件物品。归档后该房间不再作为新物品与家具的可选位置，历史记录仍可追溯。是否继续？';
+    }
     wx.showModal({
-      title: '归档房间',
-      content: '归档「' + d.name + '」？数据保留但退出日常列表。',
+      title: a.total > 0 ? '房间存在关联数据' : '删除房间',
+      content: content,
+      confirmText: a.total > 0 ? '仍要删除' : '删除',
+      confirmColor: '#BE5F44',
       success: function (res) {
         if (res.confirm && store.archiveRoom(d.id).ok) {
           wx.showToast({ title: '已归档', icon: 'success' }); self.load();

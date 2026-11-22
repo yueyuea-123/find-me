@@ -3,7 +3,7 @@ var store = require('../../utils/store.js');
 var C = require('../../utils/constants.js');
 
 Page({
-  data: { furniture: null, nodes: [], roomName: '', furnitureList: [] },
+  data: { furniture: null, nodes: [], bindings: null, roomName: '', furnitureList: [] },
 
   onLoad: function (q) {
     this._id = q.id || '';
@@ -34,7 +34,9 @@ Page({
           id: f.id, name: f.name, category: f.category, model: f.model,
           status: f.status, icon: lib.icon || '▣'
         },
-        nodes: nodes
+        nodes: nodes,
+        // demo 对齐：家具详情直接展示该模型关联的物品
+        bindings: store.bindingsOfFurniture(f.id)
       });
     } else if (this._roomId) {
       var room = store.getRoom(this._roomId);
@@ -56,6 +58,48 @@ Page({
   addFurniture: function () { wx.navigateTo({ url: '/pages/furniture-edit/furniture-edit?roomId=' + this._roomId }); },
   openFurniture: function (e) { wx.navigateTo({ url: '/pages/furniture-detail/furniture-detail?id=' + e.currentTarget.dataset.id }); },
   openNode: function (e) { wx.navigateTo({ url: '/pages/node/node?id=' + e.currentTarget.dataset.id }); },
+  openItem: function (e) { wx.navigateTo({ url: '/pages/item-detail/item-detail?id=' + e.currentTarget.dataset.id }); },
+
+  // demo 对齐：更换外观模型，节点与物品关联不变
+  changeModel: function () {
+    var f = this.data.furniture;
+    if (!f) return;
+    var self = this;
+    var vars = (C.FURNITURE_LIB[f.category] || {}).vars || ['默认', '木色原木'];
+    wx.showActionSheet({
+      itemList: vars,
+      success: function (res) {
+        var model = vars[res.tapIndex];
+        if (!model) return;
+        var r = store.updateFurniture(f.id, { model: model });
+        if (!r.ok) { wx.showToast({ title: '更换失败', icon: 'none' }); return; }
+        wx.showToast({ title: '外观已更换，关联不变', icon: 'success' });
+        self.load();
+      }
+    });
+  },
+  // demo 对齐：删除家具，仍走 BR-008 关联保护
+  delFurniture: function () {
+    var f = this.data.furniture;
+    if (!f) return;
+    var self = this;
+    wx.showModal({
+      title: '删除家具',
+      content: '删除后不可恢复；若家具下仍有节点或物品关联会被阻断，请先迁移或归档。确认删除？',
+      success: function (res) {
+        if (!res.confirm) return;
+        var r = store.removeFurniture(f.id);
+        if (!r.ok) {
+          if (r.error === 'HAS_LINKS') {
+            wx.showModal({ title: '无法删除', content: '家具下还有 ' + r.childNodes + ' 个节点 / ' + r.items + ' 件物品关联，须先迁移或归档。', showCancel: false });
+          } else wx.showToast({ title: '删除失败', icon: 'none' });
+          return;
+        }
+        wx.showToast({ title: '家具已删除', icon: 'success' });
+        wx.navigateBack();
+      }
+    });
+  },
 
   addNode: function () {
     var self = this, f = this.data.furniture;

@@ -1,3 +1,5 @@
 /* pages/item-detail/item-detail.wxss */
 .kv { display: flex; justify-content: space-between; align-items: flex-start; padding: 14rpx 0; font-size: 27rpx; border-bottom: 1rpx solid #f2f4f6; }
 .thumb { width: 120rpx; height: 120rpx; border-radius: 10rpx; }
+.chips4 { display: flex; flex-wrap: wrap; margin: 12rpx 0 6rpx; }
+.chips4 .tag { margin-right: 12rpx; }

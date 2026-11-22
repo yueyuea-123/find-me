@@ -54,6 +54,12 @@ Page({
   // ---------- 导航 ----------
   goSpaces: function () { wx.navigateTo({ url: '/pages/space/space' }); },
   goRooms: function () { wx.switchTab({ url: '/pages/room/room' }); },
+  // demo 对齐：首页快捷「三维」直接进入当前空间第一个房间的三维页
+  go3d: function () {
+    var rooms = this.data.overview && this.data.overview.rooms ? this.data.overview.rooms : [];
+    if (rooms.length && rooms[0].id) wx.navigateTo({ url: '/pages/room3d/room3d?id=' + rooms[0].id });
+    else wx.switchTab({ url: '/pages/room/room' });
+  },
   goItems: function () { wx.switchTab({ url: '/pages/item-list/item-list' }); },
   goInventory: function () { wx.switchTab({ url: '/pages/inventory/inventory' }); },
   goAlerts: function () { wx.navigateTo({ url: '/pages/alerts/alerts' }); },

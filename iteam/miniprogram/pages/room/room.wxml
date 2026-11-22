@@ -8,12 +8,14 @@
   </view>
 
   <view class="card" wx:for="{{rooms}}" wx:key="id">
-    <view class="row between" bindtap="enterRoom" data-id="{{item.id}}">
-      <view class="grow">
-        <view class="card-t">🏠 {{item.name}}</view>
+    <view class="row" bindtap="enterRoom" data-id="{{item.id}}">
+      <view class="room-icon">⌗</view>
+      <view class="grow" style="margin-left:20rpx">
+        <view class="card-t">{{item.name}}</view>
         <view class="card-s">{{item.dimText}} · {{item.furnitureCount}} 件家具 · {{item.itemCount}} 件物品</view>
-        <view class="row" style="margin-top:10rpx">
+        <view class="row wrap" style="margin-top:12rpx">
           <text class="tag {{item.statusClass}}">{{item.statusText}}</text>
+          <text class="tag gray">{{item.templateText}}</text>
         </view>
       </view>
       <text class="muted">▸</text>
@@ -24,14 +26,18 @@
       <button class="btn sm" catchtap="enterPhotos" data-id="{{item.id}}">房间照片</button>
       <button class="btn sm" catchtap="enterFurniture" data-id="{{item.id}}">家具</button>
       <button class="btn sm" catchtap="rename" data-id="{{item.id}}" data-name="{{item.name}}">改名</button>
-      <button class="btn sm danger" catchtap="archive" data-id="{{item.id}}" data-name="{{item.name}}">归档</button>
+      <button class="btn sm" catchtap="archive" data-id="{{item.id}}" data-name="{{item.name}}">归档</button>
+      <button class="btn sm danger" catchtap="destroy" data-id="{{item.id}}" data-name="{{item.name}}">删除房间</button>
     </view>
   </view>
+
+  <view class="note-inline" wx:if="{{rooms.length>0}}">房间可先以基础信息存在；三维不是业务数据可用的前提，WebGL 失败可切列表管理。</view>
 
   <view class="state" wx:if="{{rooms.length===0}}">
     <text class="state-icon">⌂</text>
     <text class="state-title">还没有房间</text>
-    <text class="state-desc">新建房间后可上传照片、添加家具与收纳位置</text>
+    <text class="state-desc" wx:if="{{hasSpace}}">新建房间后可上传照片、添加家具与收纳位置</text>
+    <text class="state-desc" wx:else>还没有空间，点击右下角「+」新建房间将自动创建默认空间</text>
   </view>
 
   <view class="fab" bindtap="openCreate">+</view>
@@ -39,6 +45,7 @@
   <view class="mask" wx:if="{{showEditor}}" bindtap="closeEditor"></view>
   <view class="sheet" wx:if="{{showEditor}}">
     <text class="sheet-title">{{editing?'编辑房间':'新建房间'}}</text>
+    <view class="small muted" wx:if="{{!editing}}" style="margin:-12rpx 0 24rpx">填写宽 / 深 / 高作为布局输入，不承诺测量精度</view>
     <view class="form-error" wx:if="{{formError}}">{{formError}}</view>
     <!-- CR-001 F-07：起点选择，仅新建时显示；模板为静态预置布置，家具落库后可自由编辑 -->
     <view class="field" wx:if="{{!editing}}">

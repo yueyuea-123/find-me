@@ -1,1 +1,8 @@
 /* pages/room/room.wxss */
+/* 房间卡片左侧图标块：对齐 demo 的 accent-soft 方块 + grid 图标 */
+.room-icon {
+  width: 80rpx; height: 80rpx; border-radius: 24rpx;
+  background: #EFE2D1; color: #9C6B3F;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40rpx; flex-shrink: 0;
+}

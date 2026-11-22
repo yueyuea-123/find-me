@@ -1,9 +1,9 @@
 <view class="page">
   <view class="card profile-card">
-    <view class="avatar">居</view>
+    <view class="avatar">康</view>
     <view class="grow">
-      <view class="strong" style="font-size:34rpx">个人空间</view>
-      <view class="small muted">MVP 个人账户 · 数据云端隔离存储</view>
+      <view class="strong" style="font-size:34rpx">康女士</view>
+      <view class="small muted">个人单用户 · 本机数据优先，云端同步可选</view>
     </view>
   </view>
 
@@ -36,6 +36,6 @@
 
   <view class="card">
     <view class="card-t">关于</view>
-    <view class="small muted">三维室内空间与家庭物品管理系统 · MVP<br/>版本 V1.1 · 依据 PRD V1.1 / 业务规则 V1.1</view>
+    <view class="small muted">三维室内空间与家庭物品管理系统 · MVP<br/>版本 V1.2 · 依据产品方案 V1.2 / CR-001</view>
   </view>
 </view>

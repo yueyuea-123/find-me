@@ -1,7 +1,7 @@
 <view class="page">
   <view class="card">
     <view class="card-t">提醒中心</view>
-    <view class="card-s">低于阈值时开启一个提醒周期，同一周期只生成一条；补货后自动结束（TBD-005）。</view>
+    <view class="card-s">低于阈值时开启一个提醒周期，同一周期只生成一条；补货后自动结束。</view>
     <view class="chip-grid" style="margin-top:16rpx">
       <view class="chip {{tabKey===item.key?'on':''}}" wx:for="{{tabs}}" wx:key="key" data-key="{{item.key}}" bindtap="switchTab">{{item.name}}</view>
     </view>
@@ -20,14 +20,14 @@
     </view>
     <view class="divider"></view>
     <view class="row wrap">
-      <button class="btn sm primary" wx:if="{{item.status!=='recovered'}}" bindtap="goDetail" data-id="{{item.itemId}}">去补货</button>
+      <button class="btn sm primary" wx:if="{{item.status!=='recovered'}}" bindtap="goDetail" data-id="{{item.itemId}}">去处理</button>
       <button class="btn sm" wx:if="{{item.status==='pending'}}" bindtap="ignore" data-id="{{item.id}}">忽略本次</button>
     </view>
   </view>
 
   <view class="state" wx:if="{{alerts.length===0}}">
     <text class="state-icon">✓</text>
-    <text class="state-title">暂无提醒</text>
-    <text class="state-desc">所有易耗品库存都在阈值以上</text>
+    <text class="state-title">暂无待处理提醒</text>
+    <text class="state-desc">补货使余额高于阈值后，当前提醒周期自动结束并恢复。</text>
   </view>
 </view>

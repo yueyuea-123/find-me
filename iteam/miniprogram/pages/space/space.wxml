@@ -14,6 +14,8 @@
     </view>
   </view>
 
+  <view class="note-inline" wx:if="{{spaces.length>0}}">首版仅支持个人单用户，不支持家庭成员共享；可创建多个空间分别管理。</view>
+
   <view class="state" wx:if="{{spaces.length===0}}">
     <text class="state-icon">⌂</text>
     <text class="state-title">还没有空间</text>

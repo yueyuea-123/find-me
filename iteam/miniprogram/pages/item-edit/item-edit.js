@@ -136,7 +136,13 @@ Page({
     if (cont) {
       this.setData({ formName: '', note: '', formError: '' });
     } else {
-      setTimeout(function () { wx.navigateBack(); }, 500);
+      // demo 对齐：建档后进入详情页，并给出「档案已建立」引导
+      var self = this;
+      var targetId = this.data.editing ? this.data.id : (r.data && r.data.id);
+      var url = targetId
+        ? ('/pages/item-detail/item-detail?id=' + targetId + (this.data.editing ? '' : '&justCreated=1'))
+        : '/pages/item-list/item-list';
+      setTimeout(function () { wx.navigateTo({ url: url }); }, 500);
     }
   }
 });

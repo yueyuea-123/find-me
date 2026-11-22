@@ -7,12 +7,17 @@ Page({
   data: {
     roomId: '', roomName: '', dimText: '', mode: 'browse', view: '3d',
     furniture: [], selected: null, glError: '',
-    bindings: null // CR-001 F-03：当前选中模型的关联物品汇总
+    bindings: null, // CR-001 F-03：当前选中模型的关联物品汇总
+    // demo 对齐：家具模型库（来自 constants.FURNITURE_LIB，含 icon）
+    lib: Object.keys(C.FURNITURE_LIB || {}).map(function (k) {
+      return { key: k, icon: (C.FURNITURE_LIB[k] || {}).icon || '▣' };
+    }),
+    showLib: false
   },
 
   onLoad: function (q) { this.setData({ roomId: q.id || '' }); },
   onShow: function () { this.loadData(); },
-  onUnload: function () { this.renderer = null; },
+  onUnload: function () { this._clearLongPress(); this.renderer = null; },
 
   loadData: function () {
     var room = store.getRoom(this.data.roomId);
@@ -24,14 +29,28 @@ Page({
         model: f.model, status: f.status, confidence: f.confidence,
         px: (f.position.x || 0).toFixed(2), pz: (f.position.z || 0).toFixed(2),
         rot: Math.round((f.rotation || 0) * 180 / Math.PI),
+        sz: ((f.size && f.size.w) || 0) + '×' + ((f.size && f.size.d) || 0) + '×' + ((f.size && f.size.h) || 0),
         // 渲染用原始数据
         _raw: f
       };
     });
     this._room = room;
     this._furniture = list;
+    // demo 对齐：选中卡默认展示第一件家具；短按改为建档后仍保持选中状态
+    var selected = this.data.selected, selRow = null;
+    if (selected) {
+      for (var si = 0; si < list.length; si++) if (list[si].id === selected.id) { selRow = list[si]; break; }
+    }
+    if (!selRow && list.length) selRow = list[0];
     var dim = room.calibrated ? (room.width + '×' + room.depth + '×' + room.height + ' m') : '尺寸未定标（相对估算）';
-    this.setData({ roomName: room.name, dimText: dim, furniture: list });
+    this.setData({
+      roomName: room.name, dimText: dim, furniture: list,
+      selected: selRow ? {
+        id: selRow.id, name: selRow.name, px: selRow.px, pz: selRow.pz,
+        rot: selRow.rot, sz: selRow.sz, status: selRow.status
+      } : null,
+      bindings: selRow ? store.bindingsOfFurniture(selRow.id) : null
+    });
     this._safeRender();
   },
 
@@ -79,16 +98,29 @@ Page({
   },
   onTouchStart: function (e) {
     if (!this.renderer) return;
-    var ts = e.touches;
-    if (ts.length === 1) { this._sx = ts[0].x; this._sy = ts[0].y; this._moved = false; }
-    else if (ts.length === 2) { this._pinch = this._dist(ts); this._moved = true; }
+    var ts = e.touches, self = this;
+    if (ts.length === 1) {
+      this._sx = ts[0].x; this._sy = ts[0].y; this._moved = false; this._lpFired = false;
+      // demo 对齐：长按 600ms 删除家具（未移动才触发；关联保护由数据层负责）
+      this._clearLongPress();
+      this._lpTimer = setTimeout(function () {
+        if (self._moved || !self.renderer || self.data.view !== '3d') return;
+        var idx = self._safeGL('pick', [self._sx, self._sy]);
+        if (idx !== null && idx >= 0 && self._furniture[idx]) {
+          self._lpFired = true;
+          self._doRemoveFurniture(self._furniture[idx].id);
+        }
+      }, 600);
+    }
+    else if (ts.length === 2) { this._pinch = this._dist(ts); this._moved = true; this._clearLongPress(); }
   },
+  _clearLongPress: function () { if (this._lpTimer) { clearTimeout(this._lpTimer); this._lpTimer = null; } },
   onTouchMove: function (e) {
     if (!this.renderer) return;
     var ts = e.touches;
     if (ts.length === 1 && this._sx !== undefined) {
       var dx = ts[0].x - this._sx, dy = ts[0].y - this._sy;
-      if (Math.abs(dx) + Math.abs(dy) > 5) this._moved = true;
+      if (Math.abs(dx) + Math.abs(dy) > 5) { this._moved = true; this._clearLongPress(); }
       if (this._editingModel()) {
         // 像素→世界：按相机距离近似换算，避免与视角缩放脱节
         var scale = Math.max(1, (this._room && Math.max(this._room.width, this._room.depth)) || 6) / 600;
@@ -113,12 +145,24 @@ Page({
     }
   },
   onTouchEnd: function () {
+    this._clearLongPress();
     if (!this.renderer) return;
-    if (!this._moved && this._sx !== undefined && this.data.view === '3d') {
+    if (!this._moved && !this._lpFired && this._sx !== undefined && this.data.view === '3d') {
       var idx = this._safeGL('pick', [this._sx, this._sy]);
-      if (idx !== null && idx >= 0) this.selectIndex(idx);
+      if (idx !== null && idx >= 0 && this._furniture[idx]) {
+        // demo 对齐：短按家具进入添加物品，并预选该家具对应的收纳节点
+        this.addItemAtFurniture(this._furniture[idx].id);
+      }
     }
-    this._sx = this._sy = undefined; this._pinch = null;
+    this._sx = this._sy = undefined; this._pinch = null; this._lpFired = false;
+  },
+  // demo 对齐：短按家具 → 新建物品档案，并预选家具下的首要收纳节点
+  addItemAtFurniture: function (furnitureId) {
+    var nodes = store.listNodes(this.data.roomId).filter(function (n) {
+      return n.furnitureId === furnitureId && !n.parentId;
+    });
+    var nodeId = nodes.length ? nodes[0].id : '';
+    wx.navigateTo({ url: '/pages/item-edit/item-edit?nodeId=' + nodeId });
   },
   // 变换后：_raw 指向 store 内存对象，updateFurniture 已落盘；这里刷新列表展示值
   _syncSelectedRaw: function () {
@@ -139,7 +183,7 @@ Page({
     if (!sel) return;
     for (var i = 0; i < this._furniture.length; i++) if (this._furniture[i].id === sel.id) { row = this._furniture[i]; break; }
     if (row) this.setData({ selected: {
-      id: row.id, name: row.name, px: row.px, pz: row.pz, rot: row.rot, status: row.status
+      id: row.id, name: row.name, px: row.px, pz: row.pz, rot: row.rot, sz: row.sz, status: row.status
     }, furniture: this._furniture });
   },
   rotateSelected: function (e) {
@@ -147,6 +191,50 @@ Page({
     var deg = Number(e.currentTarget.dataset.deg) || 15;
     store.transformFurniture(this.data.selected.id, { type: 'rotate', dr: deg * Math.PI / 180 });
     this._syncSelectedRaw(); this._refreshSelectedCard(); this._safeRender();
+  },
+  // demo 对齐：编辑模式 移动 / 旋转 / 缩放（越界由数据层钳制）
+  xf: function (e) {
+    if (!this.data.selected) return;
+    var op = e.currentTarget.dataset.op;
+    var arg = {};
+    if (op === 'move') arg = { type: 'move', dx: 0.3 };
+    else if (op === 'rotate') arg = { type: 'rotate', dr: Math.PI / 4 };
+    else if (op === 'scale') arg = { type: 'scale', factor: 0.1 };
+    else return;
+    var r = store.transformFurniture(this.data.selected.id, arg);
+    if (!r.ok) { wx.showToast({ title: '变换失败：' + r.error, icon: 'none' }); return; }
+    this._syncSelectedRaw(); this._refreshSelectedCard(); this._safeRender();
+  },
+  // demo 对齐：模型库点选即加（占位家具，可再编辑）
+  toggleLib: function () { this.setData({ showLib: !this.data.showLib }); },
+  addFromLib: function (e) {
+    var cat = e.currentTarget.dataset.cat;
+    if (!cat) return;
+    var r = store.addFurniture(this.data.roomId, { category: cat, name: cat });
+    if (!r.ok) { wx.showToast({ title: '添加失败：' + r.error, icon: 'none' }); return; }
+    wx.showToast({ title: '已添加，可在编辑模式调整', icon: 'success' });
+    this.setData({ showLib: false });
+    this.loadData();
+  },
+  // demo 对齐：删除家具（BR-008 关联保护，与家具建档页同口径）
+  _doRemoveFurniture: function (id) {
+    var r = store.removeFurniture(id);
+    if (!r.ok) {
+      if (r.error === 'HAS_LINKS') {
+        wx.showModal({ title: '无法删除', content: '家具下还有 ' + r.childNodes + ' 个节点 / ' + r.items
+          + ' 件物品关联，须先迁移或归档。', showCancel: false });
+      } else wx.showToast({ title: '删除失败：' + r.error, icon: 'none' });
+      return;
+    }
+    wx.showToast({ title: '家具已删除', icon: 'success' });
+    if (this.data.selected && this.data.selected.id === id) this.setData({ selected: null, bindings: null });
+    this.loadData();
+  },
+  removeSelected: function () {
+    if (!this.data.selected) return;
+    var id = this.data.selected.id, self = this;
+    wx.showModal({ title: '删除家具', content: '删除后不可恢复；有关联节点或物品时会被阻断。确认删除？',
+      success: function (res) { if (res.confirm) self._doRemoveFurniture(id); } });
   },
   _dist: function (ts) {
     var dx = ts[0].x - ts[1].x, dy = ts[0].y - ts[1].y;
@@ -158,7 +246,7 @@ Page({
     if (!f) return;
     this._safeGL('setSelected', [idx]);
     this.setData({
-      selected: { id: f.id, name: f.name, px: f.px, pz: f.pz, rot: f.rot, status: f.status },
+      selected: { id: f.id, name: f.name, px: f.px, pz: f.pz, rot: f.rot, sz: f.sz, status: f.status },
       // CR-001 F-03：点选模型即展示其关联物品（沿 nodes.furnitureId + items.currentNodeId 单源）
       bindings: store.bindingsOfFurniture(f.id)
     });

@@ -70,7 +70,7 @@
     <view class="quick-grid">
       <view class="quick" bindtap="goRooms"><view class="q-icon">▦</view><text>房间</text></view>
       <view class="quick" bindtap="goAddItem"><view class="q-icon">＋</view><text>加物品</text></view>
-      <view class="quick" bindtap="goRooms"><view class="q-icon">◈</view><text>三维</text></view>
+      <view class="quick" bindtap="go3d"><view class="q-icon">◈</view><text>三维</text></view>
       <view class="quick" bindtap="goInventory"><view class="q-icon">☰</view><text>库存</text></view>
     </view>
   </view>

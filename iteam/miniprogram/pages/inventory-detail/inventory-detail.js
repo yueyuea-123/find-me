@@ -4,7 +4,7 @@ var C = require('../../utils/constants.js');
 
 Page({
   data: {
-    name: '', balance: 0, unit: '个', threshold: 0, low: false,
+    name: '', balance: 0, unit: '个', threshold: 0, low: false, progress: 0,
     units: C.UNITS, unitIndex: 0,
     txTypes: C.INVENTORY_TX_TYPES, txType: 'in',
     amount: '', txNote: '', txs: []
@@ -17,6 +17,7 @@ Page({
     this.setData({
       name: it ? it.name : '', balance: iv.balance, unit: iv.unit,
       threshold: iv.threshold, low: iv.threshold > 0 && iv.balance <= iv.threshold,
+      progress: Math.min(100, Math.max(0, Math.round(iv.balance / Math.max(1, (iv.threshold || 0) * 2) * 100))),
       unitIndex: Math.max(0, C.UNITS.indexOf(iv.unit)),
       txs: this.mapTx()
     });
@@ -34,6 +35,11 @@ Page({
     });
   },
   chooseType: function (e) { this.setData({ txType: e.currentTarget.dataset.key }); },
+  // demo 对齐：入库 / 消耗 / 调整 三个直接动作
+  quickTx: function (e) {
+    var self = this;
+    this.setData({ txType: e.currentTarget.dataset.key }, function () { self.submitTx(); });
+  },
   onAmount: function (e) { this.setData({ amount: e.detail.value }); },
   onTxNote: function (e) { this.setData({ txNote: e.detail.value }); },
   onThreshold: function (e) { this.setData({ threshold: e.detail.value }); },

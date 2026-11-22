@@ -1,7 +1,7 @@
 <view class="page">
   <view class="card">
     <view class="card-t">{{editing?'编辑物品':(continuous?'连续添加':'添加物品')}}</view>
-    <view class="card-s">只填名称即可保存，分类/照片/位置可后续完善（BR-001）。连续添加每件独立建档（BR-002）。</view>
+    <view class="card-s">只需名称即可保存；分类、照片、位置可后续补充（渐进式建档）。连续添加每件独立建档。</view>
   </view>
 
   <view class="card">
@@ -68,7 +68,7 @@
     </view>
 
     <view class="row">
-      <button class="btn primary grow" bindtap="save">保存</button>
+      <button class="btn primary grow" bindtap="save">{{editing?'保存':'建档'}}</button>
       <button class="btn grow" wx:if="{{!editing}}" bindtap="saveContinue">保存并继续</button>
     </view>
   </view>

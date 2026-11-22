@@ -15,3 +15,11 @@
 .seg-i.on { background: #fff; color: #7E5330; }
 .listview { position: absolute; left: 0; right: 0; top: 170rpx; bottom: 120rpx; overflow-y: auto; padding: 0 24rpx; }
 .empty-line { text-align: center; color: #C9B79B; font-size: 26rpx; padding: 60rpx 0; }
+/* demo 对齐：画布交互提示 */
+.canvas-hint { position: absolute; left: 0; right: 0; bottom: 200rpx; text-align: center; color: #E9E0D2; font-size: 22rpx; text-shadow: 0 2rpx 6rpx rgba(0,0,0,0.6); pointer-events: none; }
+/* demo 对齐：页内家具模型库 */
+.libpanel { position: absolute; left: 24rpx; right: 24rpx; bottom: 110rpx; max-height: 46vh; overflow-y: auto; background: rgba(255,255,255,0.97); border-radius: 18rpx; padding: 24rpx; box-shadow: 0 8rpx 30rpx rgba(0,0,0,0.2); }
+.libgrid { display: flex; flex-wrap: wrap; }
+.libitem { width: 20%; box-sizing: border-box; padding: 12rpx 4rpx; text-align: center; }
+.libico { width: 72rpx; height: 72rpx; line-height: 72rpx; margin: 0 auto; border-radius: 20rpx; background: #F6EDDC; font-size: 38rpx; }
+.libname { font-size: 20rpx; color: #6B5D4D; margin-top: 6rpx; }
