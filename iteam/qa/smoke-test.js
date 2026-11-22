@@ -321,6 +321,14 @@ check('F-07/T9 应用模板批量写家具并按房间尺寸钳制，房间记 s
 });
 expectFail('F-07/T9 模板缺失时返回错误（供降级空白房间）',
   () => store.applyRoomTemplate(room.id, '__not_exist__'), 'TEMPLATE_NOT_FOUND');
+check('模板重复应用幂等：同一房间不重复追加家具（防10/345件家具脏数据）', () => {
+  const r = store.addRoom(sp.id, '模板幂等断言房间', { width: 3, depth: 4, height: 4 });
+  store.applyRoomTemplate(r.data.id, 'bedroom');
+  const first = store.listFurniture(r.data.id).length;
+  const again = store.applyRoomTemplate(r.data.id, 'bedroom');
+  const after = store.listFurniture(r.data.id).length;
+  return !!(first === 5 && after === first && again.ok && again.data.applied === false);
+});
 
 // ---------------------------------------------------------------- B3. 已确认规则增补断言（TBD-002/003/005/007/008）
 // 依据：业务规则说明书 V1.1 增补 A~E / PRD V1.1 增补章节；关闭审计发现的规则落地缺口。

@@ -447,6 +447,12 @@ function applyRoomTemplate(roomId, templateKey) {
   if (!rm) return { ok: false, error: 'ROOM_NOT_FOUND' };
   var tpl = (C.ROOM_TEMPLATES || {})[templateKey];
   if (!tpl || !Array.isArray(tpl.furniture) || tpl.furniture.length === 0) return { ok: false, error: 'TEMPLATE_NOT_FOUND' };
+  // 幂等保护：同一房间已应用过该模板则直接返回，避免重复点保存/模板导致家具成倍累积
+  // 用来源标记(template)判定而非 rm.templateKey——种子房间也带 templateKey，但其家具无 template 标记
+  var existing = d.furniture.filter(function (f) { return f.roomId === roomId && f.template === templateKey; });
+  if (existing.length) {
+    return { ok: true, data: { roomId: roomId, templateKey: templateKey, furnitureIds: [], applied: false } };
+  }
   var halfW = (rm.width || 4) / 2, halfD = (rm.depth || 4) / 2;
   var created = [];
   tpl.furniture.forEach(function (item) {
