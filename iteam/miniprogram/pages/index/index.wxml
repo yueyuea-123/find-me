@@ -55,8 +55,8 @@
     </view>
   </view>
 
-  <!-- 库存提醒 -->
-  <view class="card remind-card" wx:if="{{alerts.length>0}}" bindtap="goAlerts">
+  <!-- 库存提醒（对齐 demo .remind：整卡 alert-soft 背景） -->
+  <view class="remind" wx:if="{{alerts.length>0}}" bindtap="goAlerts">
     <view class="ri-icon">🔔</view>
     <view class="ri-body">
       <view class="ri-title">{{alerts.length}} 项库存提醒</view>

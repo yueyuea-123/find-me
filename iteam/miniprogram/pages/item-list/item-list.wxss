@@ -1,4 +1,5 @@
-/* pages/item-list/item-list.wxss */
+/* pages/item-list/item-list.wxss —— 对齐 demo pItemList 的 accent-soft 图标块 */
+.list-icon { width: 72rpx; height: 72rpx; font-size: 36rpx; border-radius: 22rpx; }
 .search-card { position: sticky; top: 0; z-index: 5; }
 .filter-row { display: flex; flex-wrap: wrap; margin-top: 16rpx; }
 .filter-pill { font-size: 24rpx; color: #6B5D4D; background: #F3EDE2; padding: 10rpx 18rpx; border-radius: 999rpx; margin: 0 12rpx 12rpx 0; }

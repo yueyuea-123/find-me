@@ -56,6 +56,33 @@ has('pages/alerts/alerts.wxml', '去处理', '提醒操作文案');
 has('pages/alerts/alerts.wxml', '暂无待处理提醒', '提醒空态文案');
 has('pages/profile/profile.wxml', '康女士', '个人中心称谓对齐 demo');
 
+// ===== 视觉细节对齐（2026-11-22 第二轮：向 demo 渲染结果对齐） =====
+// 首页：提醒整卡 alert-soft + 快捷图标 surface-2 + 问候语小字
+has('pages/index/index.wxml', 'class="remind"', '首页提醒卡对齐 demo .remind（整卡陶红浅底）');
+hasNot('pages/index/index.wxml', 'class="card remind-card"', '首页提醒卡不再是白底嵌套卡');
+has('pages/index/index.wxss', 'background: #F3EDE2; color: #9C6B3F', '首页快捷图标底色对齐 demo --surface-2');
+has('pages/index/index.wxss', '.hm-greet { font-size: 22rpx', '首页问候语对齐 demo 小字');
+// 物品详情：serif 名称 + 图标块 + 竖列 ops（保留全部操作入口）
+has('pages/item-detail/item-detail.wxml', 'class="icon-box hero-icon"', '物品详情头部图标块');
+has('pages/item-detail/item-detail.wxml', 'class="ops"', '物品详情操作区改竖列 ops');
+has('pages/item-detail/item-detail.wxml', 'bindtap="goHistory"', '位置历史入口保留');
+has('pages/item-detail/item-detail.wxml', 'bindtap="endManage"', '结束管理入口保留');
+has('pages/item-detail/item-detail.wxss', 'font-family: "Songti SC", "STSong", serif', '物品名 serif 对齐 demo');
+// 全局 ops / note-inline / icon-box
+has('app.wxss', '.op + .op { border-top: 1rpx solid #E9E0D2; }', '全局竖列操作分隔线对齐 demo');
+has('app.wxss', '.note-inline { font-size: 24rpx; color: #6B5D4D; background: #F3EDE2', 'note-inline 底色对齐 demo --surface-2');
+has('app.wxss', '.icon-box { background: #EFE2D1', '全局图标块令牌对齐 demo --accent-soft');
+// 空间 / 库存 / 提醒 / 物品列表：图标块与当前空间边框
+has('pages/space/space.wxml', 'class="icon-box space-icon"', '空间卡图标块对齐 demo');
+has('pages/space/space.wxss', '.space-current { border: 3rpx solid #9C6B3F; }', '当前空间 accent 边框对齐 demo');
+has('pages/space/space.wxml', '个房间 · 个人空间', '空间卡说明文案对齐 demo');
+has('pages/inventory/inventory.wxml', 'class="icon-box inv-icon"', '库存卡图标块对齐 demo');
+has('pages/alerts/alerts.wxml', 'class="alert-icon"', '提醒卡铃铛图标块对齐 demo');
+has('pages/item-list/item-list.wxml', 'class="icon-box list-icon"', '物品列表卡图标块对齐 demo');
+// 我的：tint 头像 + chips
+has('pages/profile/profile.wxml', '● 本地可用', '个人中心本地可用 chip 对齐 demo');
+has('pages/profile/profile.wxss', '.avatar { width: 88rpx; height: 88rpx; border-radius: 50%; background: #EFE2D1', '头像对齐 demo tint 风格');
+
 let failed = 0;
 checks.forEach(c => {
   if (!c.ok) failed++;

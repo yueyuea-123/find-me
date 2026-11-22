@@ -1,9 +1,10 @@
 <view class="page">
-  <view class="card" wx:for="{{spaces}}" wx:key="id">
+  <view class="card space-card {{item.id===activeId?'space-current':''}}" wx:for="{{spaces}}" wx:key="id">
     <view class="row between" bindtap="choose" data-id="{{item.id}}">
-      <view class="grow">
+      <view class="icon-box space-icon">⌂</view>
+      <view class="grow" style="margin-left:20rpx">
         <view class="card-t">{{item.name}} <text class="tag blue" wx:if="{{item.id===activeId}}">当前</text></view>
-        <view class="card-s">{{item.roomCount}} 个房间 · 创建于 {{item.time}}</view>
+        <view class="card-s">{{item.roomCount}} 个房间 · 个人空间</view>
       </view>
       <text class="muted">▸</text>
     </view>

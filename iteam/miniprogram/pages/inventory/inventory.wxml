@@ -9,9 +9,10 @@
 
   <view class="card item-card" wx:for="{{list}}" wx:key="id" bindtap="openDetail" data-id="{{item.itemId}}">
     <view class="row between">
-      <view class="grow">
-        <view class="strong" style="font-size:30rpx">{{item.name}} <text class="tag {{item.low?'red':'green'}}">{{item.low?'低库存':'正常'}}</text></view>
-        <view class="small muted" style="margin-top:8rpx">{{item.category || '未分类'}}</view>
+      <view class="icon-box inv-icon">▣</view>
+      <view class="grow" style="margin-left:20rpx">
+        <view class="card-t">{{item.name}} <text class="tag {{item.low?'red':'green'}}">{{item.low?'低库存':'正常'}}</text></view>
+        <view class="small muted">阈值 {{item.threshold}} {{item.unit}} · {{item.category || '易耗品'}}</view>
       </view>
       <view class="right">
         <view class="bal {{item.low?'warn':''}}">{{item.balance}}<text class="unit">{{item.unit}}</text></view>

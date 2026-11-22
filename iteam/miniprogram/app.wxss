@@ -80,8 +80,19 @@ button::after { border: none; }
 
 /* 选中态 / 提示条 / 内联说明（与 demo 的 chip.on / note-inline 一致） */
 .chip.on, .chip.sel, .seg-i.on, .mode.on { background: #9C6B3F; color: #fff; }
-.note-inline { font-size: 24rpx; color: #6B5D4D; background: #F6EDDC; border-radius: 16rpx; padding: 16rpx 20rpx; margin-top: 16rpx; line-height: 1.7; }
+/* note-inline 底色对齐 demo 的 --surface-2 (#F3EDE2) */
+.note-inline { font-size: 24rpx; color: #6B5D4D; background: #F3EDE2; border-radius: 16rpx; padding: 16rpx 20rpx; margin-top: 16rpx; line-height: 1.7; }
 .timeline-dot { width: 16rpx; height: 16rpx; border-radius: 50%; background: #9C6B3F; }
+
+/* demo 对齐组件：竖列操作列表（pItemDetail / pProfile 的 .ops） */
+.ops { display: flex; flex-direction: column; }
+.op { display: flex; align-items: center; gap: 20rpx; padding: 18rpx 0; font-size: 24rpx; }
+.op + .op { border-top: 1rpx solid #E9E0D2; }
+.op .oi { color: #6B5D4D; margin-right: 6rpx; width: 36rpx; text-align: center; }
+.op .chev { margin-left: auto; color: #A29481; font-size: 32rpx; }
+.op.danger, .op.danger .oi { color: #BE5F44; }
+/* demo 对齐组件：方形图标块（accent-soft 底 + accent 图标，圆角 24rpx） */
+.icon-box { background: #EFE2D1; color: #9C6B3F; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-radius: 24rpx; }
 
 /* 加载骨架屏（弱网/云拉取时的占位反馈，避免空白闪屏） */
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }

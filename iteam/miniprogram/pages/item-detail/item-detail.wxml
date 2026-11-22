@@ -1,16 +1,18 @@
 <view class="page" wx:if="{{item}}">
-  <view class="card">
-    <view class="row between">
-      <view class="card-t" style="font-size:36rpx">{{item.name}}</view>
+  <!-- 头部：对齐 demo pItemDetail 的图标块 + serif 名称 + 档案进度 -->
+  <view class="card hero-item">
+    <view class="row">
+      <view class="icon-box hero-icon">▣</view>
+      <view class="grow" style="margin-left:24rpx">
+        <view class="hero-name">{{item.name}}</view>
+        <view class="card-s">{{item.catText}} · {{item.modeText}}</view>
+      </view>
       <text class="tag {{item.mgmtClass}}">{{item.mgmtText}}</text>
     </view>
-    <view class="card-s">{{item.catText}} · {{item.modeText}}</view>
-    <view class="divider"></view>
-    <view class="row between small">
-      <text class="muted">档案完善度</text><text>{{item.completed}}%</text>
+    <view class="row between small" style="margin-top:20rpx">
+      <text class="muted">档案完善度</text><text>档案 {{item.completed}}%</text>
     </view>
     <view class="bar"><view style="width:{{item.completed}}%"></view></view>
-    <view class="small muted" style="margin-top:10rpx">渐进式档案：分类、照片、位置可随时补充</view>
   </view>
 
   <view class="card" wx:if="{{justCreated}}">
@@ -54,16 +56,21 @@
     </view>
   </view>
 
+  <!-- 操作：对齐 demo pItemDetail 的竖列 .ops（图标 + 文字 + 箭头） -->
   <view class="card">
     <view class="card-t">操作</view>
-    <view class="row wrap">
+    <view class="ops">
       <block wx:if="{{item.mgmt==='active'}}">
-        <button class="btn sm primary" bindtap="editItem">编辑档案</button>
-        <button class="btn sm" bindtap="moveItem">移动物品</button>
-        <button class="btn sm danger" bindtap="endManage">结束管理</button>
+        <view class="op" bindtap="editItem"><text class="oi">✎</text>编辑档案<text class="chev">›</text></view>
+        <view class="op" bindtap="moveItem"><text class="oi">✥</text>移动物品<text class="chev">›</text></view>
+        <view class="op" wx:if="{{item.trackingMode!=='location' && inv}}" bindtap="goInventory"><text class="oi">▣</text>记一笔库存<text class="chev">›</text></view>
+        <view class="op" bindtap="goHistory"><text class="oi">◷</text>位置历史<text class="chev">›</text></view>
+        <view class="op danger" bindtap="endManage"><text class="oi">⚠</text>结束管理<text class="chev">›</text></view>
       </block>
-      <button class="btn sm" bindtap="goHistory">位置历史</button>
-      <button class="btn sm" wx:if="{{item.mgmt==='ended'}}" bindtap="restore">恢复日常管理</button>
+      <block wx:else>
+        <view class="op" bindtap="goHistory"><text class="oi">◷</text>位置历史<text class="chev">›</text></view>
+        <view class="op" bindtap="restore"><text class="oi">↺</text>恢复日常管理<text class="chev">›</text></view>
+      </block>
     </view>
     <view class="small muted" wx:if="{{item.mgmt==='ended'}}" style="margin-top:12rpx">已结束管理物品默认只读：可查看档案与历史，不可移动或进行库存交易。</view>
   </view>

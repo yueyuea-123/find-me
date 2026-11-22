@@ -7,15 +7,12 @@
     </view>
   </view>
 
-  <view class="card" wx:for="{{alerts}}" wx:key="id">
-    <view class="row between">
-      <view class="grow">
-        <view class="strong" style="font-size:30rpx">{{item.name}}</view>
-        <view class="small muted" style="margin-top:8rpx">剩余 {{item.balance}}{{item.unit}} · 阈值 {{item.threshold}}{{item.unit}}</view>
-        <view class="small" style="margin-top:6rpx">
-          <text class="tag {{item.status==='ignored'?'gray':(item.status==='recovered'?'green':'orange')}}">{{item.status==='ignored'?'已忽略':(item.status==='recovered'?'已恢复':'待处理')}}</text>
-          <text class="muted">{{item.time}}</text>
-        </view>
+  <view class="card alert-card" wx:for="{{alerts}}" wx:key="id">
+    <view class="row">
+      <view class="alert-icon">🔔</view>
+      <view class="grow" style="margin-left:20rpx">
+        <view class="card-t">{{item.name}}</view>
+        <view class="small muted">当前 {{item.balance}} {{item.unit}} · 阈值 {{item.threshold}} · {{item.status==='ignored'?'已忽略':(item.status==='recovered'?'已恢复':'待处理')}}</view>
       </view>
     </view>
     <view class="divider"></view>

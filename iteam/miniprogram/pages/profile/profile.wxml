@@ -1,9 +1,16 @@
 <view class="page">
-  <view class="card profile-card">
-    <view class="avatar">康</view>
-    <view class="grow">
-      <view class="strong" style="font-size:34rpx">康女士</view>
-      <view class="small muted">个人单用户 · 本机数据优先，云端同步可选</view>
+  <!-- 对齐 demo pProfile：accent-soft tint 头像 + 康女士 + 单用户说明 + chips -->
+  <view class="card">
+    <view class="row">
+      <view class="avatar">康</view>
+      <view class="grow" style="margin-left:24rpx">
+        <view class="card-t" style="font-size:34rpx">康女士</view>
+        <view class="small muted">个人单用户 · 本地演示模式</view>
+      </view>
+    </view>
+    <view class="chips4" style="margin-top:20rpx">
+      <text class="tag green">● 本地可用</text>
+      <text class="tag">待同步标记由真实后端处理</text>
     </view>
   </view>
 

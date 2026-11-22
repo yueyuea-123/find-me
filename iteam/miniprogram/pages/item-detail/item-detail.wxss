@@ -1,5 +1,8 @@
 /* pages/item-detail/item-detail.wxss */
-.kv { display: flex; justify-content: space-between; align-items: flex-start; padding: 14rpx 0; font-size: 27rpx; border-bottom: 1rpx solid #f2f4f6; }
-.thumb { width: 120rpx; height: 120rpx; border-radius: 10rpx; }
+/* 头部：对齐 demo pItemDetail 的 52px 图标块 + serif 19px 名称 */
+.hero-icon { width: 104rpx; height: 104rpx; font-size: 48rpx; border-radius: 26rpx; }
+.hero-name { font-family: "Songti SC", "STSong", serif; font-size: 38rpx; font-weight: 600; color: #3B3229; }
+.kv { display: flex; justify-content: space-between; align-items: flex-start; padding: 14rpx 0; font-size: 27rpx; border-bottom: 1rpx solid #E9E0D2; }
+.thumb { width: 120rpx; height: 120rpx; border-radius: 20rpx; }
 .chips4 { display: flex; flex-wrap: wrap; margin: 12rpx 0 6rpx; }
 .chips4 .tag { margin-right: 12rpx; }

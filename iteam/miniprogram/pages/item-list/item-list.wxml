@@ -28,12 +28,14 @@
 
   <view class="card item-card" wx:for="{{items}}" wx:key="id" bindtap="openItem" data-id="{{item.id}}">
     <view class="row between">
-      <view class="grow">
-        <view class="strong" style="font-size:30rpx">{{item.name}} <text class="tag {{item.mgmtClass}}">{{item.mgmtText}}</text> <text class="tag {{item.locClass}}">{{item.locText}}</text></view>
-        <view class="small muted" style="margin-top:8rpx">{{item.catText}} · {{item.modeText}} · 完善度 {{item.completed}}%</view>
-        <view class="small muted" style="margin-top:6rpx">位置：{{item.locPath}}</view>
+      <view class="icon-box list-icon">▣</view>
+      <view class="grow" style="margin-left:20rpx">
+        <view class="card-t">{{item.name}} <text class="tag {{item.mgmtClass}}">{{item.mgmtText}}</text></view>
+        <view class="small muted">{{item.locPath}}</view>
+        <view class="small muted" style="margin-top:6rpx">{{item.catText}} · {{item.modeText}} · 完善度 {{item.completed}}%</view>
         <view class="small" style="margin-top:6rpx;color:#8A94A0" wx:if="{{item.disposalText}}">处置：{{item.disposalText}}</view>
       </view>
+      <text class="tag {{item.locClass}}">{{item.locText}}</text>
       <text class="muted">▸</text>
     </view>
   </view>
