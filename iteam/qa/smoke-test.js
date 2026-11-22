@@ -170,6 +170,17 @@ check('云同步状态默认未登录且不影响本地可用', () => {
   const s = Sync.getState();
   return typeof s.loggedIn === 'boolean' && typeof s.enabled === 'boolean';
 });
+check('清空数据为全部业务记录写墓碑，避免重新载入后云端数据叠加（多主卧回归）', () => {
+  store.clearTombstones();
+  const before = store.exportSnapshot();
+  const expected = ['spaces','rooms','furniture','nodes','items','movements','inventory','transactions','alerts']
+    .reduce((n, k) => n + (before[k] || []).length, 0);
+  store.clearAll();
+  const tombs = store.getTombstones();
+  const ok = tombs.length === expected && tombs.every(t => t.collection && t.id);
+  store.seedDemo(); // 恢复供后续断言使用
+  return ok;
+});
 
 // 重置演示数据到干净状态（云快照断言改动过）
 store.clearAll();

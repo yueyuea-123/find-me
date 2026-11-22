@@ -1089,6 +1089,13 @@ function seedDemo() {
   return r.ok ? { ok: true, seeded: true } : r;
 }
 function clearAll() {
+  var d = load();
+  // 清空前为所有业务记录写删除墓碑（BR：清空/重建必须与云端一致）
+  // 否则云端旧记录不删，重新载入演示数据后 pull 会把新旧两套数据叠加，出现多个同名房间
+  var cols = ['spaces','rooms','furniture','nodes','items','movements','inventory','transactions','alerts'];
+  cols.forEach(function (col) {
+    (d[col] || []).forEach(function (row) { if (row && row.id) tombstone(col, row.id); });
+  });
   _cache = blank();
   var r = commit();
   return r;
