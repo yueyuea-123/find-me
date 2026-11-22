@@ -132,12 +132,9 @@ body{
 .screen{
   position:relative;border-radius:38px;overflow:hidden;
   background:var(--bg);color:var(--ink);
-  min-height:720px;display:flex;flex-direction:column;
+  min-height:660px;display:flex;flex-direction:column;
   font-size:13px;
 }
-#home .screen{min-height:820px}
-#room .screen{min-height:760px}
-#item .screen{min-height:720px}
 .notch{
   position:absolute;top:9px;left:50%;transform:translateX(-50%);
   width:104px;height:26px;background:#0C0A09;border-radius:var(--r-pill);z-index:20;
@@ -214,7 +211,6 @@ body{
 .chip.good{background:var(--good-soft);color:var(--good)}
 .chip.alert{background:var(--alert-soft);color:var(--alert)}
 .chip.neutral{background:var(--surface-2);color:var(--ink-2)}
-.chip.accent{background:var(--accent-soft);color:var(--accent)}
 .chip .cdot{width:6px;height:6px;border-radius:50%;background:currentColor}
 
 /* tabbar */
@@ -226,26 +222,6 @@ body{
 .tabbar .tb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--ink-3);font-size:10px}
 .tabbar .tb.on{color:var(--accent)}
 .tabbar .tb.on b{font-weight:700}
-
-/* ---------- 首页户型总览（对齐 demo，示意布局不承诺测量精度） ---------- */
-.fp-card .card-t{display:flex;align-items:baseline;justify-content:space-between;gap:6px;flex-wrap:wrap}
-.fp-meta{font-size:10.5px;color:var(--accent);font-weight:600;white-space:nowrap;margin-left:auto}
-.fp-actions{display:flex;gap:6px;font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap}
-.fp-actions span{padding:2px 8px;border-radius:var(--r-pill);border:1px solid var(--line);color:var(--ink-2)}
-.fp-hint{font-size:10px;color:var(--ink-3);margin:4px 0 8px;line-height:1.5}
-.fp-grid{display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(5,32px);gap:3px;background:#E7DDCB;padding:5px;border-radius:var(--r-ctl)}
-.fp-room{position:relative;border:2px solid #C9B79B;border-radius:6px;overflow:hidden;min-width:0;min-height:0}
-.fp-room.br{background:#F6EDDC}.fp-room.lr{background:#EDF1E5}.fp-room.br2{background:#DCEAEC}
-.fp-hd{position:relative;z-index:2;display:flex;align-items:baseline;justify-content:space-between;gap:3px;padding:3px 5px 0;font-size:9.5px;font-weight:700;color:var(--ink);line-height:1.2}
-.fp-hd em{font-style:normal;font-size:8px;color:var(--ink-3);font-weight:400;white-space:nowrap}
-.fp-body{position:absolute;left:3px;right:3px;top:15px;bottom:3px}
-.fp-furn{position:absolute;transform:translate(-50%,-50%);border-radius:3px;background:#C7A67B;border:1px solid #AC8759;display:flex;align-items:center;justify-content:center;font-size:10px;line-height:1;overflow:hidden}
-.fp-badge{position:absolute;right:3px;bottom:2px;z-index:3;background:var(--accent);color:#fff;font-size:8px;line-height:13px;font-weight:700;border-radius:999px;padding:0 4px;min-width:13px;text-align:center}
-.fp-legend{display:flex;align-items:center;gap:10px;margin-top:7px;font-size:9px;color:var(--ink-3)}
-.fp-legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:3px;vertical-align:-1px}
-.fp-legend .lg-f{background:#C7A67B;border:1px solid #AC8759}
-.fp-legend .lg-i{background:var(--accent);border-radius:999px}
-.fp-legend .fp-tip{margin-left:auto}
 
 /* ---------- 三维房间画布 ---------- */
 .segbar{display:inline-flex;background:var(--surface-2);border-radius:var(--r-pill);padding:3px}
@@ -269,21 +245,17 @@ body{
   position:absolute;border-radius:9px;background:var(--surface);
   border:1.5px solid var(--line);box-shadow:0 6px 14px rgba(60,42,26,.16);
 }
-.furn.bed{left:18%;top:28%;width:34%;height:20%}
-.furn.cab{left:61%;top:33%;width:16%;height:16%;border-color:var(--accent);border-width:2px;box-shadow:0 0 0 4px var(--accent-soft),0 8px 18px rgba(60,42,26,.2)}
-.furn.curtain{left:26%;top:62%;width:48%;height:7%}
+.furn.sofa{left:20%;top:30%;width:31%;height:20%;border-color:var(--accent);border-width:2px;box-shadow:0 0 0 4px var(--accent-soft),0 8px 18px rgba(60,42,26,.2)}
+.furn.table{left:58%;top:46%;width:20%;height:14%}
+.furn.tv{left:24%;top:62%;width:38%;height:7%}
 .furn .cap{position:absolute;bottom:-17px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--accent);white-space:nowrap;font-weight:600}
 .handle{position:absolute;width:7px;height:7px;background:var(--accent);border:1.5px solid #fff;border-radius:50%}
-.handle.h1{left:61%;top:33%}.handle.h2{left:77%;top:33%}.handle.h3{left:61%;top:49%}.handle.h4{left:77%;top:49%}
+.handle.h1{left:20%;top:30%}.handle.h2{left:51%;top:30%}.handle.h3{left:20%;top:50%}.handle.h4{left:51%;top:50%}
 .canvas-hint{
   position:absolute;left:12px;bottom:12px;background:var(--surface);
   border-radius:var(--r-pill);padding:5px 11px;font-size:10.5px;color:var(--ink-2);
   box-shadow:var(--shadow);
 }
-.library{display:flex;gap:6px;overflow-x:auto;padding:2px 0 4px}
-.lib-item{flex:none;width:50px;text-align:center;font-size:9px;color:var(--ink-2)}
-.lib-item .li{width:40px;height:34px;margin:0 auto 4px;border-radius:var(--r-ctl);background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:16px;border:1px solid var(--line)}
-.note-inline{font-size:10px;color:var(--ink-2);background:var(--surface-2);border-radius:8px;padding:7px 9px;margin-top:8px;line-height:1.6}
 
 .field-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
 .field .fl{font-size:10.5px;color:var(--ink-3);margin-bottom:4px}
@@ -312,7 +284,6 @@ body{
 .hero .hi{flex:1}
 .hero .hi .nm{font-family:var(--font-head);font-weight:var(--head-w);letter-spacing:var(--head-sp);font-size:20px;color:var(--ink)}
 .hero .hi .meta{font-size:11px;color:var(--ink-3);margin-top:4px}
-.empty{text-align:center;color:var(--ink-3);font-size:10.5px;padding:18px 8px}
 .progress{height:6px;border-radius:var(--r-pill);background:var(--surface-2);margin-top:12px;overflow:hidden}
 .progress i{display:block;height:100%;width:75%;background:var(--accent);border-radius:var(--r-pill)}
 
@@ -392,7 +363,7 @@ body{
   <header class="masthead">
     <div class="mh-kicker">视觉方案对比 · Visual Direction Study</div>
     <h1 class="mh-title">居所收纳 · 温暖家居感</h1>
-    <p class="mh-sub">同一套产品，两种温暖的表达。基于已确认的 demo 原型（15 页讲解口径），选取「首页概览 / 三维房间核心功能 / 物品详情操作」三个代表页，用真实信息结构并排呈现，便于逐组件对比取舍。两方案均属温暖家居气质，差异在圆角、字体气质、主色与质感处理。</p>
+    <p class="mh-sub">同一套产品，两种温暖的表达。基于已确认的 21 页功能原型，选取「首页概览 / 三维房间核心功能 / 物品详情操作」三个代表页，用真实信息结构并排呈现，便于逐组件对比取舍。两方案均属温暖家居气质，差异在圆角、字体气质、主色与质感处理。</p>
     <div class="legend">
       <div class="lg-card lg-a">
         <span class="lg-dot"></span>
@@ -455,42 +426,14 @@ body{
               <div class="card">
                 <div class="stat-grid">
                   <div class="stat"><div class="n">3</div><div class="l">房间</div></div>
-                  <div class="stat"><div class="n">5</div><div class="l">物品</div></div>
-                  <div class="stat"><div class="n">2</div><div class="l">库存</div></div>
-                  <div class="stat alert-n"><div class="n">1</div><div class="l">提醒</div></div>
+                  <div class="stat"><div class="n">28</div><div class="l">物品</div></div>
+                  <div class="stat"><div class="n">6</div><div class="l">库存</div></div>
+                  <div class="stat alert-n"><div class="n">2</div><div class="l">提醒</div></div>
                 </div>
-              </div>
-              <div class="card fp-card" style="margin-top:12px">
-                <div class="card-t">户型总览 <span class="fp-meta">3 间 · 约 40.1 ㎡</span>
-                  <span class="fp-actions"><span>编辑布局</span></span></div>
-                <div class="fp-hint">点击房间查看三维 · 可「编辑布局」调整房间排布</div>
-                <div class="fp-grid">
-                  <div class="fp-room br" style="grid-column:1/4;grid-row:1/4">
-                    <div class="fp-hd"><span>主卧</span><em>4.6×4.2m</em></div>
-                    <div class="fp-body">
-                      <div class="fp-furn" title="双人床" style="left:34%;top:58%;width:38%;height:26%">🛏️</div>
-                      <div class="fp-furn" title="床头柜" style="left:15%;top:30%;width:20%;height:18%">🗄️</div>
-                      <div class="fp-furn" title="落地窗" style="left:62%;top:14%;width:34%;height:8%">🪟</div>
-                    </div><div class="fp-badge" title="房间内物品数">2</div>
-                  </div>
-                  <div class="fp-room lr" style="grid-column:4/7;grid-row:1/5">
-                    <div class="fp-hd"><span>客厅</span><em>4.2×3.8m</em></div>
-                    <div class="fp-body">
-                      <div class="fp-furn" title="三人沙发" style="left:54%;top:72%;width:40%;height:20%">🛋️</div>
-                      <div class="fp-furn" title="茶几" style="left:52%;top:45%;width:24%;height:16%">🪑</div>
-                      <div class="fp-furn" title="电视柜" style="left:50%;top:18%;width:38%;height:10%">📺</div>
-                    </div>
-                  </div>
-                  <div class="fp-room br2" style="grid-column:1/4;grid-row:4/6">
-                    <div class="fp-hd"><span>卫生间</span><em>2.4×2m</em></div>
-                    <div class="fp-body"><div class="fp-furn" title="浴室收纳盒" style="left:36%;top:52%;width:24%;height:30%">📦</div></div>
-                  </div>
-                </div>
-                <div class="fp-legend"><span><i class="lg-f"></i>家具</span><span><i class="lg-i"></i>物品数</span><span class="fp-tip">墙线为示意，不承诺测量精度</span></div>
               </div>
               <div class="remind" style="margin-top:12px">
                 <div class="ri"><svg width="18" height="18"><use href="#i-bell"/></svg></div>
-                <div class="rt"><b>1 项库存提醒</b><span>洗发水剩 1 瓶</span></div>
+                <div class="rt"><b>2 项库存提醒</b><span>洗衣液仅剩 1 瓶 · 垃圾袋 3 卷</span></div>
                 <div class="go">查看</div>
               </div>
               <div class="card" style="margin-top:12px">
@@ -503,7 +446,16 @@ body{
               </div>
               <div class="card" style="margin-top:12px">
                 <div class="card-t" style="margin-bottom:2px">最近变动</div>
-                <div class="empty">暂无变动，去建一份档案吧</div>
+                <div class="row">
+                  <div class="dot"><svg width="15" height="15"><use href="#i-move"/></svg></div>
+                  <div class="rt"><b>身份证 移动到 床头柜</b><span>客厅·电视柜 → 卧室·床头柜</span></div>
+                  <div class="tm">09:12</div>
+                </div>
+                <div class="row">
+                  <div class="dot"><svg width="15" height="15"><use href="#i-plus"/></svg></div>
+                  <div class="rt"><b>洗衣液 入库 +2</b><span>库存余额更新为 3 瓶</span></div>
+                  <div class="tm">昨天</div>
+                </div>
               </div>
             </div>
             <div class="tabbar">
@@ -543,42 +495,14 @@ body{
               <div class="card">
                 <div class="stat-grid">
                   <div class="stat"><div class="n">3</div><div class="l">房间</div></div>
-                  <div class="stat"><div class="n">5</div><div class="l">物品</div></div>
-                  <div class="stat"><div class="n">2</div><div class="l">库存</div></div>
-                  <div class="stat alert-n"><div class="n">1</div><div class="l">提醒</div></div>
+                  <div class="stat"><div class="n">28</div><div class="l">物品</div></div>
+                  <div class="stat"><div class="n">6</div><div class="l">库存</div></div>
+                  <div class="stat alert-n"><div class="n">2</div><div class="l">提醒</div></div>
                 </div>
-              </div>
-              <div class="card fp-card" style="margin-top:12px;border-radius:var(--r-ctl)">
-                <div class="card-t">户型总览 <span class="fp-meta">3 间 · 约 40.1 ㎡</span>
-                  <span class="fp-actions"><span style="border-radius:var(--r-ctl)">编辑布局</span></span></div>
-                <div class="fp-hint">点击房间查看三维 · 可「编辑布局」调整房间排布</div>
-                <div class="fp-grid" style="border-radius:var(--r-ctl)">
-                  <div class="fp-room br" style="grid-column:1/4;grid-row:1/4;border-radius:6px">
-                    <div class="fp-hd"><span>主卧</span><em>4.6×4.2m</em></div>
-                    <div class="fp-body">
-                      <div class="fp-furn" title="双人床" style="left:34%;top:58%;width:38%;height:26%">🛏️</div>
-                      <div class="fp-furn" title="床头柜" style="left:15%;top:30%;width:20%;height:18%">🗄️</div>
-                      <div class="fp-furn" title="落地窗" style="left:62%;top:14%;width:34%;height:8%">🪟</div>
-                    </div><div class="fp-badge" title="房间内物品数">2</div>
-                  </div>
-                  <div class="fp-room lr" style="grid-column:4/7;grid-row:1/5;border-radius:6px">
-                    <div class="fp-hd"><span>客厅</span><em>4.2×3.8m</em></div>
-                    <div class="fp-body">
-                      <div class="fp-furn" title="三人沙发" style="left:54%;top:72%;width:40%;height:20%">🛋️</div>
-                      <div class="fp-furn" title="茶几" style="left:52%;top:45%;width:24%;height:16%">🪑</div>
-                      <div class="fp-furn" title="电视柜" style="left:50%;top:18%;width:38%;height:10%">📺</div>
-                    </div>
-                  </div>
-                  <div class="fp-room br2" style="grid-column:1/4;grid-row:4/6;border-radius:6px">
-                    <div class="fp-hd"><span>卫生间</span><em>2.4×2m</em></div>
-                    <div class="fp-body"><div class="fp-furn" title="浴室收纳盒" style="left:36%;top:52%;width:24%;height:30%">📦</div></div>
-                  </div>
-                </div>
-                <div class="fp-legend"><span><i class="lg-f"></i>家具</span><span><i class="lg-i"></i>物品数</span><span class="fp-tip">墙线为示意，不承诺测量精度</span></div>
               </div>
               <div class="remind" style="margin-top:12px;border-left:3px solid var(--alert);border-radius:var(--r-ctl)">
                 <div class="ri" style="border-radius:var(--r-ctl)"><svg width="18" height="18"><use href="#i-bell"/></svg></div>
-                <div class="rt"><b>1 项库存提醒</b><span>洗发水剩 1 瓶</span></div>
+                <div class="rt"><b>2 项库存提醒</b><span>洗衣液仅剩 1 瓶 · 垃圾袋 3 卷</span></div>
                 <div class="go">查看</div>
               </div>
               <div class="card" style="margin-top:12px">
@@ -591,7 +515,16 @@ body{
               </div>
               <div class="card" style="margin-top:12px">
                 <div class="card-t" style="margin-bottom:2px">最近变动</div>
-                <div class="empty">暂无变动，去建一份档案吧</div>
+                <div class="row">
+                  <div class="dot" style="border-radius:8px"><svg width="15" height="15"><use href="#i-move"/></svg></div>
+                  <div class="rt"><b>身份证 移动到 床头柜</b><span>客厅·电视柜 → 卧室·床头柜</span></div>
+                  <div class="tm">09:12</div>
+                </div>
+                <div class="row">
+                  <div class="dot" style="border-radius:8px"><svg width="15" height="15"><use href="#i-plus"/></svg></div>
+                  <div class="rt"><b>洗衣液 入库 +2</b><span>库存余额更新为 3 瓶</span></div>
+                  <div class="tm">昨天</div>
+                </div>
               </div>
             </div>
             <div class="tabbar">
@@ -632,49 +565,38 @@ body{
             </div>
             <div class="appbar">
               <div class="icon-btn plain"><svg width="18" height="18"><use href="#i-back"/></svg></div>
-              <div class="ab-title">三维房间</div>
+              <div class="ab-title">客厅 · 三维</div>
               <div class="grow"></div>
-              <div class="icon-btn plain" title="切换列表视图"><svg width="18" height="18"><use href="#i-list"/></svg></div>
+              <div class="icon-btn plain"><svg width="18" height="18"><use href="#i-edit"/></svg></div>
             </div>
             <div class="scroll">
               <div class="segbar"><span class="s on">浏览</span><span class="s">编辑</span><span class="s">收纳</span></div>
               <div class="canvas3d" style="margin-top:12px">
                 <div class="floor"></div>
-                <div class="furn bed"><span class="cap">双人床</span></div>
-                <div class="furn cab"></div>
-                <div class="furn curtain"></div>
+                <div class="furn sofa"><span class="cap">三人沙发</span></div>
+                <div class="furn table"></div>
+                <div class="furn tv"></div>
                 <span class="handle h1"></span><span class="handle h2"></span><span class="handle h3"></span><span class="handle h4"></span>
-                <div class="canvas-hint">拖动摆放 · 长按删除 · 点击进入添加物品</div>
+                <div class="canvas-hint">点选模型可查看与编辑</div>
               </div>
               <div class="card" style="margin-top:12px">
                 <div style="display:flex;align-items:center;gap:8px">
-                  <div class="card-t">床头柜</div>
+                  <div class="card-t">三人沙发</div>
                   <span class="chip good" style="margin-left:auto"><span class="cdot"></span>已保存</span>
                 </div>
                 <div class="field-row">
-                  <div class="field"><div class="fl">位置 X / Z</div><div class="fv">-2 / -0.4</div></div>
-                  <div class="field"><div class="fl">旋转</div><div class="fv">0°</div></div>
-                  <div class="field"><div class="fl">宽×深×高</div><div class="fv">0.55×0.42×0.48</div></div>
+                  <div class="field"><div class="fl">位置 X / Z</div><div class="fv">1.2 / 0.8</div></div>
+                  <div class="field"><div class="fl">旋转</div><div class="fv">90°</div></div>
+                  <div class="field"><div class="fl">宽×深×高</div><div class="fv">2.1×0.9×0.8</div></div>
                 </div>
                 <div class="bind">
                   <div class="bi"><svg width="17" height="17"><use href="#i-link"/></svg></div>
-                  <div class="bt"><b>已绑定物品</b><span>身份证</span></div>
+                  <div class="bt"><b>已绑定收纳节点</b><span>客厅 / 沙发 / 坐垫下储物格 · 2 件物品</span></div>
                   <svg width="14" height="14" style="color:var(--good)"><use href="#i-chev"/></svg>
                 </div>
                 <div class="btn-row">
-                  <div class="btn tiny">移动</div><div class="btn tiny">旋转</div><div class="btn tiny">缩放</div>
-                </div>
-                <div class="note-inline">越界自动钳制到房间范围与合理尺寸上下限，不产生非法布局。</div>
-              </div>
-              <div class="card" style="margin-top:12px">
-                <div class="card-t" style="margin-bottom:6px">家具模型库</div>
-                <div class="library">
-                  <div class="lib-item"><div class="li">🛏️</div>床</div>
-                  <div class="lib-item"><div class="li">🗄️</div>床头柜</div>
-                  <div class="lib-item"><div class="li">💡</div>台灯</div>
-                  <div class="lib-item"><div class="li">🪟</div>窗帘</div>
-                  <div class="lib-item"><div class="li">🛋️</div>沙发</div>
-                  <div class="lib-item"><div class="li">📦</div>收纳盒</div>
+                  <div class="btn primary">保存变换</div>
+                  <div class="btn danger" style="flex:0 0 34%">删除模型</div>
                 </div>
               </div>
             </div>
@@ -705,49 +627,38 @@ body{
             </div>
             <div class="appbar">
               <div class="icon-btn plain"><svg width="18" height="18"><use href="#i-back"/></svg></div>
-              <div class="ab-title">三维房间</div>
+              <div class="ab-title">客厅 · 三维</div>
               <div class="grow"></div>
-              <div class="icon-btn plain" title="切换列表视图"><svg width="18" height="18"><use href="#i-list"/></svg></div>
+              <div class="icon-btn plain"><svg width="18" height="18"><use href="#i-edit"/></svg></div>
             </div>
             <div class="scroll">
               <div class="segbar"><span class="s on">浏览</span><span class="s">编辑</span><span class="s">收纳</span></div>
               <div class="canvas3d" style="margin-top:12px;border-radius:var(--r-ctl)">
                 <div class="floor"></div>
-                <div class="furn bed" style="border-radius:6px"><span class="cap">双人床</span></div>
-                <div class="furn cab" style="border-radius:6px"></div>
-                <div class="furn curtain" style="border-radius:4px"></div>
+                <div class="furn sofa" style="border-radius:6px"><span class="cap">三人沙发</span></div>
+                <div class="furn table" style="border-radius:6px"></div>
+                <div class="furn tv" style="border-radius:4px"></div>
                 <span class="handle h1" style="border-radius:1px"></span><span class="handle h2" style="border-radius:1px"></span><span class="handle h3" style="border-radius:1px"></span><span class="handle h4" style="border-radius:1px"></span>
-                <div class="canvas-hint" style="border-radius:var(--r-ctl)">拖动摆放 · 长按删除 · 点击进入添加物品</div>
+                <div class="canvas-hint" style="border-radius:var(--r-ctl)">点选模型可查看与编辑</div>
               </div>
               <div class="card" style="margin-top:12px">
                 <div style="display:flex;align-items:center;gap:8px">
-                  <div class="card-t">床头柜</div>
+                  <div class="card-t">三人沙发</div>
                   <span class="chip good" style="margin-left:auto;border-radius:var(--r-ctl)"><span class="cdot"></span>已保存</span>
                 </div>
                 <div class="field-row">
-                  <div class="field"><div class="fl">位置 X / Z</div><div class="fv">-2 / -0.4</div></div>
-                  <div class="field"><div class="fl">旋转</div><div class="fv">0°</div></div>
-                  <div class="field"><div class="fl">宽×深×高</div><div class="fv">0.55×0.42×0.48</div></div>
+                  <div class="field"><div class="fl">位置 X / Z</div><div class="fv">1.2 / 0.8</div></div>
+                  <div class="field"><div class="fl">旋转</div><div class="fv">90°</div></div>
+                  <div class="field"><div class="fl">宽×深×高</div><div class="fv">2.1×0.9×0.8</div></div>
                 </div>
                 <div class="bind" style="border-radius:var(--r-ctl)">
                   <div class="bi"><svg width="17" height="17"><use href="#i-link"/></svg></div>
-                  <div class="bt"><b>已绑定物品</b><span>身份证</span></div>
+                  <div class="bt"><b>已绑定收纳节点</b><span>客厅 / 沙发 / 坐垫下储物格 · 2 件物品</span></div>
                   <svg width="14" height="14" style="color:var(--good)"><use href="#i-chev"/></svg>
                 </div>
                 <div class="btn-row">
-                  <div class="btn tiny">移动</div><div class="btn tiny">旋转</div><div class="btn tiny">缩放</div>
-                </div>
-                <div class="note-inline">越界自动钳制到房间范围与合理尺寸上下限，不产生非法布局。</div>
-              </div>
-              <div class="card" style="margin-top:12px">
-                <div class="card-t" style="margin-bottom:6px">家具模型库</div>
-                <div class="library">
-                  <div class="lib-item"><div class="li" style="border-radius:6px">🛏️</div>床</div>
-                  <div class="lib-item"><div class="li" style="border-radius:6px">🗄️</div>床头柜</div>
-                  <div class="lib-item"><div class="li" style="border-radius:6px">💡</div>台灯</div>
-                  <div class="lib-item"><div class="li" style="border-radius:6px">🪟</div>窗帘</div>
-                  <div class="lib-item"><div class="li" style="border-radius:6px">🛋️</div>沙发</div>
-                  <div class="lib-item"><div class="li" style="border-radius:6px">📦</div>收纳盒</div>
+                  <div class="btn primary">保存变换</div>
+                  <div class="btn danger" style="flex:0 0 34%">删除模型</div>
                 </div>
               </div>
             </div>
@@ -791,25 +702,25 @@ body{
               <div class="icon-btn plain"><svg width="18" height="18"><use href="#i-back"/></svg></div>
               <div class="ab-title">物品详情</div>
               <div class="grow"></div>
-              <div class="icon-btn plain" title="编辑档案"><svg width="18" height="18"><use href="#i-edit"/></svg></div>
+              <div class="icon-btn plain">•••</div>
             </div>
             <div class="scroll">
               <div class="card">
                 <div class="hero">
                   <div class="thumb"><svg width="26" height="26"><use href="#i-box"/></svg></div>
-                  <div class="hi"><div class="nm">身份证</div><div class="meta">证件卡片 · 只记位置</div></div>
+                  <div class="hi"><div class="nm">身份证</div><div class="meta">证件 · 正常在管</div></div>
                   <span class="chip neutral">档案 75%</span>
                 </div>
                 <div class="progress"><i></i></div>
               </div>
               <div class="card">
                 <div class="status-line"><span class="chip good"><span class="cdot"></span>已定位</span></div>
-                <div class="path">床头柜<span class="sep">/</span>上层抽屉</div>
-                <div class="muted">最近更新：今天 09:12</div>
+                <div class="path">客厅<span class="sep">/</span>电视柜<span class="sep">/</span>抽屉</div>
+                <div class="muted">最近确认：今天 09:12</div>
                 <div class="chips4">
-                  <span class="chip accent">在家</span>
-                  <span class="chip neutral">位置未知</span>
-                  <span class="chip neutral">外出携带</span>
+                  <span class="chip good">已定位</span>
+                  <span class="chip neutral">未知</span>
+                  <span class="chip neutral">外出</span>
                   <span class="chip neutral">借出</span>
                 </div>
               </div>
@@ -819,11 +730,12 @@ body{
                   <div class="op"><svg class="oi" width="16" height="16"><use href="#i-edit"/></svg>编辑档案<svg class="chev" width="13" height="13"><use href="#i-chev"/></svg></div>
                   <div class="op"><svg class="oi" width="16" height="16"><use href="#i-move"/></svg>移动物品<svg class="chev" width="13" height="13"><use href="#i-chev"/></svg></div>
                   <div class="op"><svg class="oi" width="16" height="16"><use href="#i-clock"/></svg>位置历史<svg class="chev" width="13" height="13"><use href="#i-chev"/></svg></div>
+                  <div class="op"><svg class="oi" width="16" height="16"><use href="#i-list"/></svg>库存<svg class="chev" width="13" height="13"><use href="#i-chev"/></svg></div>
                   <div class="op danger"><svg class="oi" width="16" height="16"><use href="#i-warn"/></svg>结束管理<svg class="chev" width="13" height="13"><use href="#i-chev"/></svg></div>
                 </div>
               </div>
             </div>
-            <div class="bottom-cta"><div class="btn primary">返回物品列表</div></div>
+            <div class="bottom-cta"><div class="btn primary">移动物品</div></div>
           </div>
         </div>
       </div>
@@ -846,25 +758,25 @@ body{
               <div class="icon-btn plain"><svg width="18" height="18"><use href="#i-back"/></svg></div>
               <div class="ab-title">物品详情</div>
               <div class="grow"></div>
-              <div class="icon-btn plain" title="编辑档案"><svg width="18" height="18"><use href="#i-edit"/></svg></div>
+              <div class="icon-btn plain">•••</div>
             </div>
             <div class="scroll">
               <div class="card">
                 <div class="hero">
                   <div class="thumb" style="border-radius:var(--r-ctl)"><svg width="26" height="26"><use href="#i-box"/></svg></div>
-                  <div class="hi"><div class="nm">身份证</div><div class="meta">证件卡片 · 只记位置</div></div>
+                  <div class="hi"><div class="nm">身份证</div><div class="meta">证件 · 正常在管</div></div>
                   <span class="chip neutral" style="border-radius:var(--r-ctl)">档案 75%</span>
                 </div>
                 <div class="progress" style="border-radius:2px"><i style="border-radius:2px"></i></div>
               </div>
               <div class="card">
                 <div class="status-line"><span class="chip good" style="border-radius:var(--r-ctl)"><span class="cdot"></span>已定位</span></div>
-                <div class="path">床头柜<span class="sep">/</span>上层抽屉</div>
-                <div class="muted">最近更新：今天 09:12</div>
+                <div class="path">客厅<span class="sep">/</span>电视柜<span class="sep">/</span>抽屉</div>
+                <div class="muted">最近确认：今天 09:12</div>
                 <div class="chips4">
-                  <span class="chip accent" style="border-radius:var(--r-ctl)">在家</span>
-                  <span class="chip neutral" style="border-radius:var(--r-ctl)">位置未知</span>
-                  <span class="chip neutral" style="border-radius:var(--r-ctl)">外出携带</span>
+                  <span class="chip good" style="border-radius:var(--r-ctl)">已定位</span>
+                  <span class="chip neutral" style="border-radius:var(--r-ctl)">未知</span>
+                  <span class="chip neutral" style="border-radius:var(--r-ctl)">外出</span>
                   <span class="chip neutral" style="border-radius:var(--r-ctl)">借出</span>
                 </div>
               </div>
@@ -874,11 +786,12 @@ body{
                   <div class="op"><svg class="oi" width="16" height="16"><use href="#i-edit"/></svg>编辑档案<svg class="chev" width="13" height="13"><use href="#i-chev"/></svg></div>
                   <div class="op"><svg class="oi" width="16" height="16"><use href="#i-move"/></svg>移动物品<svg class="chev" width="13" height="13"><use href="#i-chev"/></svg></div>
                   <div class="op"><svg class="oi" width="16" height="16"><use href="#i-clock"/></svg>位置历史<svg class="chev" width="13" height="13"><use href="#i-chev"/></svg></div>
+                  <div class="op"><svg class="oi" width="16" height="16"><use href="#i-list"/></svg>库存<svg class="chev" width="13" height="13"><use href="#i-chev"/></svg></div>
                   <div class="op danger"><svg class="oi" width="16" height="16"><use href="#i-warn"/></svg>结束管理<svg class="chev" width="13" height="13"><use href="#i-chev"/></svg></div>
                 </div>
               </div>
             </div>
-            <div class="bottom-cta"><div class="btn primary">返回物品列表</div></div>
+            <div class="bottom-cta"><div class="btn primary">移动物品</div></div>
           </div>
         </div>
       </div>
@@ -922,7 +835,7 @@ body{
     </div>
 
     <div class="footnote">
-      说明：两方案基于已确认的 demo 原型（15 页讲解口径），页面结构、信息项与交互路径一致，仅视觉语言不同；此页用于二选一或融合决策。色值与字体令牌见同目录 <b>design-tokens.css</b>，方案清单见 <b>_ds_manifest.json</b>。demo 为演示用途，未写入真实家庭数据；完整 MVP 的 21 页交付范围以小程序为准。
+      说明：两方案基于已冻结的 21 页功能原型，页面结构、信息项与交互路径完全一致，仅视觉语言不同；此页用于二选一或融合决策。色值与字体令牌见同目录 <b>design-tokens.css</b>，方案清单见 <b>_ds_manifest.json</b>。原型为演示用途，未写入真实家庭数据。
     </div>
   </section>
 
