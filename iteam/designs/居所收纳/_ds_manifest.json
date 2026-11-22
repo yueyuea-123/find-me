@@ -2,7 +2,7 @@
   "project": "居所收纳 · 三维室内空间与家庭物品管理",
   "artifact": "温暖家居感 · 双方案视觉对比",
   "created": "2026-11-19",
-  "source_of_truth": "prototype/index.html（21 页线稿,V1.2 CR-001）",
+  "source_of_truth": "iteam/demo（15 页讲解口径，方案A原木日常；MVP 演示子集）",
   "deliverable": {
     "file": "index.html",
     "type": "关键页并列对比（自包含单文件）",
@@ -35,5 +35,5 @@
     "spacing": "4pt 栅格；卡片内边距 16；间距靠 flex/grid gap",
     "icon": "内联线性 SVG，无 emoji、无外链字体"
   },
-  "status": "待用户评审二选一或融合"
+  "status": "已按 demo 原型口径对齐内容/布局/交互，待用户评审二选一或融合"
 }
