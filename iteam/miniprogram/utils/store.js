@@ -262,6 +262,10 @@ function addRoom(spaceId, name, dims) {
   if (!findById(d.spaces, spaceId)) return { ok: false, error: 'SPACE_NOT_FOUND' };
   name = (name || '').trim();
   if (!name) return { ok: false, error: 'INVALID_NAME' };
+  // 同一空间内房间名唯一；已归档房间不占名，避免误伤归档后重建
+  if (d.rooms.some(function (x) { return !x.archived && x.spaceId === spaceId && x.name === name; })) {
+    return { ok: false, error: 'ROOM_NAME_DUPLICATE' };
+  }
   dims = dims || {};
   var r0 = {
     id: uid('rm'), spaceId: spaceId, name: name,
@@ -281,6 +285,10 @@ function updateRoom(id, patch) {
   if (patch.name !== undefined) {
     patch.name = (patch.name || '').trim();
     if (!patch.name) return { ok: false, error: 'INVALID_NAME' };
+    // 改名同样受同空间唯一约束，排除自身；已归档房间不占名
+    if (d.rooms.some(function (x) {
+      return !x.archived && x.id !== id && x.spaceId === rm.spaceId && x.name === patch.name;
+    })) return { ok: false, error: 'ROOM_NAME_DUPLICATE' };
   }
   ['width', 'depth', 'height'].forEach(function (k) { if (patch[k] !== undefined) rm[k] = Number(patch[k]) || 0; });
   if (patch.name !== undefined) rm.name = patch.name;

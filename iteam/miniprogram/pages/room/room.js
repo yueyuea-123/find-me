@@ -89,7 +89,11 @@ Page({
       }
       r = store.addRoom(sp.id, f.formName, dims);
     }
-    if (!r.ok) { this.setData({ formError: '保存失败：' + r.error }); return; }
+    if (!r.ok) {
+      this.setData({ formError: r.error === 'ROOM_NAME_DUPLICATE'
+        ? '当前空间已有同名房间，请换一个名称' : '保存失败：' + r.error });
+      return;
+    }
     // CR-001 F-07：新建且选了模板时应用预置家具；模板缺失则降级空白房间，不阻断建房
     if (!f.editing && f.startTemplate) {
       var tr = store.applyRoomTemplate(r.data.id, f.startTemplate);

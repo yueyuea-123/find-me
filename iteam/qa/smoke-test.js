@@ -273,6 +273,30 @@ check('F-01/T7 新建房间带 manual 源、空 templateKey 与合法 layout', (
     rm.layout && rm.layout.floor && rm.layout.floor.w === 4 &&
     Array.isArray(rm.layout.walls) && rm.layout.walls.length === 4 && rm.layout.camera);
 });
+// 房间重名限制：截图"多个主卧"回归（同空间唯一；跨空间与归档后不占名）
+expectFail('F-01/T7+ 同空间重名新建被拒',
+  () => store.addRoom(sp.id, 'V1.2断言房间', {}), 'ROOM_NAME_DUPLICATE');
+check('F-01/T7+ 改名重名被拒且原名不变', () => {
+  const u = '重名断言房间_改名';
+  const a = store.addRoom(sp.id, u, {});
+  if (!a.ok) return false;
+  const r = store.updateRoom(a.data.id, { name: 'V1.2断言房间' });
+  const kept = store.getRoom(a.data.id).name;
+  store.deleteRoom(a.data.id);
+  return r.error === 'ROOM_NAME_DUPLICATE' && kept === u;
+});
+check('F-01/T7+ 跨空间同名允许、归档房间不占名', () => {
+  const u = '重名断言房间_跨空间';
+  const a = store.addRoom(sp.id, u, {});
+  const s2 = store.addSpace('重名断言空间');
+  const cross = s2.ok && store.addRoom(s2.data.id, u, {});
+  const arch = a.ok && store.archiveRoom(a.data.id);
+  const rebuilt = store.addRoom(sp.id, u, {});
+  if (cross && cross.ok) store.deleteRoom(cross.data.id);
+  if (rebuilt && rebuilt.ok) store.deleteRoom(rebuilt.data.id);
+  if (a && a.ok) store.deleteRoom(a.data.id);
+  return !!(a.ok && cross.ok && arch.ok && rebuilt.ok);
+});
 check('F-01/T7 历史房间缺字段时读取懒兜底（不改存储）', () => {
   // 构造一个不带新字段的历史房间对象，经 ensureRoomFields 路径补默认
   const legacy = { id: 'rm_legacy_test', roomId: 'rm_legacy_test', name: '老房间', width: 4, depth: 4, height: 2.8 };
