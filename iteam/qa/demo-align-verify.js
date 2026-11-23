@@ -83,6 +83,39 @@ has('pages/item-list/item-list.wxml', 'class="icon-box list-icon"', '物品列�
 has('pages/profile/profile.wxml', '● 本地可用', '个人中心本地可用 chip 对齐 demo');
 has('pages/profile/profile.wxss', '.avatar { width: 88rpx; height: 88rpx; border-radius: 50%; background: #EFE2D1', '头像对齐 demo tint 风格');
 
+// ===== 界面与交互说明 V1.0 复核（2026-11-22 第三轮） =====
+has('pages/item-detail/item-detail.js', '补充位置，初始存放信息不记为一次移动', '建档引导：去定位文案');
+has('pages/item-detail/item-detail.js', '记录初始库存，后续变更走库存交易', '建档引导：去入库文案');
+has('pages/item-detail/item-detail.js', '继续完善分类、备注等信息', '建档引导：去完善文案');
+has('pages/item-detail/item-detail.wxml', '下一步：{{nextHint}}', '建档引导卡渲染下一步');
+has('pages/item-list/item-list.js', "name: '低库存'", '物品页低库存快捷筛选');
+has('pages/item-list/item-list.wxml', '{{count}} 件', '搜索框结果数');
+has('pages/room/room.wxml', '创建空白房间', '房间弹层：创建空白房间');
+has('pages/room/room.wxml', '用卧室模板', '房间弹层：用卧室模板');
+has('pages/space/space.wxml', '支持多个空间，首版仅个人使用', '空间弹层说明');
+has('pages/space/space.wxml', '{{editing?\'保存\':\'创建\'}}', '空间弹层创建按钮');
+has('pages/furniture-detail/furniture-detail.js', "'收纳盒'", '家具根下新增节点类型为收纳盒');
+has('pages/node/node.js', "'抽屉/隔层'", '节点下新增类型为抽屉/隔层');
+has('pages/node/node.wxml', '用户确认事实', '节点页用户确认事实标签');
+has('pages/room3d/room3d.wxml', '家具列表（三维降级）', '三维降级列表标题');
+has('pages/profile/profile.wxml', '全部位置历史', '我的页全部位置历史入口');
+has('pages/profile/profile.wxml', '重置演示数据', '我的页重置演示数据入口');
+has('pages/inventory-detail/inventory-detail.js', '数量必须为正数', '库存数量校验文案');
+has('pages/inventory-detail/inventory-detail.js', '纠错请走「调整」', '超额消耗提示文案');
+has('pages/move/move.js', '已确认：', '移动确认 toast 口径');
+has('utils/constants.js', "'收纳盒', '抽屉'", '模型库 11 类口径');
+has('utils/store.js', '初始库存属于建档初始状态，不生成交易流水', '数据层初始库存无流水');
+
+// ===== 三维场景：等距娃娃屋软装（2026-11-23） =====
+has('package3d/renderer.js', 'function buildPlanks', '木纹拼板地板');
+has('package3d/renderer.js', 'function buildWall', '带窗洞的墙面与窗框');
+has('package3d/renderer.js', 'function addSunPatch', '窗光地面柔影');
+has('package3d/renderer.js', 'function addPlant', '绿植程序化造型');
+has('package3d/renderer.js', 'function buildDecor', '软装随房间尺寸重建');
+has('package3d/renderer.js', 'convertSRGBToLinear', 'gammaOutput 颜色空间修正');
+has('package3d/renderer.js', 'pitch: Math.PI / 5.5', '等距俯视角');
+has('pages/room3d/room3d.wxss', 'height: 520rpx', '三维窗口加高适配娃娃屋比例');
+
 let failed = 0;
 checks.forEach(c => {
   if (!c.ok) failed++;

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>小程序 Three.js 分包渲染器 · mock 环境验证</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, "PingFang SC", sans-serif; background: #F5EFE3; }
+  #c { display: block; width: 1100px; height: 760px; }
+  #log { position: fixed; right: 10px; top: 10px; width: 300px; max-height: 96vh; overflow: auto;
+         background: rgba(255,255,255,.92); border: 1px solid #ddd; border-radius: 8px;
+         padding: 10px; font: 11px/1.5 monospace; color: #5A5148; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1100" height="760"></canvas>
+<div id="log">初始化…</div>
+<script>
+// ---- mock 微信小程序运行时（仅渲染器实际用到的 API）----
+window.__buf = {};
+window.__manifest = '';
+window.wx = {
+  getSystemInfoSync: function () { return { pixelRatio: 1, windowWidth: 1100, windowHeight: 760 }; },
+  getFileSystemManager: function () {
+    return {
+      readFileSync: function (path, enc) {
+        var name = String(path).split('/').pop();
+        if (name === 'manifest.json') return window.__manifest;
+        return window.__buf[name] || null;
+      }
+    };
+  },
+  loadSubpackage: function () {},
+  showToast: function () {},
+  showModal: function () {}
+};
+</script>
+<script type="module">
+const log = document.getElementById('log');
+const say = (s) => { log.textContent += '\n' + s; console.log('[VERIFY]', s); };
+try {
+  const srcs = await Promise.all([
+    fetch('./vendor/threejs-miniprogram.js').then(r => r.text()),
+    fetch('./vendor/gltf-loader.js').then(r => r.text()),
+    fetch('./renderer.js').then(r => r.text()),
+    fetch('../assets/furniture/manifest.json').then(r => r.text())
+  ]);
+  const [threeSrc, loaderSrc, rendererSrc] = srcs;
+  window.__manifest = srcs[3];
+  const manifest = JSON.parse(srcs[3]);
+  for (const it of manifest.items) {
+    window.__buf[it.file] = await fetch('../assets/furniture/' + it.file).then(r => r.arrayBuffer());
+  }
+  say('资源就绪: ' + manifest.items.length + ' 个 GLB');
+
+  function loadCJS(source, requireMap) {
+    const mod = { exports: {} };
+    const req = function (p) { return (requireMap && requireMap[p]) || {}; };
+    new Function('exports', 'module', 'require', 'self', 'wx', source)(
+      mod.exports, mod, req, window, window.wx
+    );
+    return mod.exports;
+  }
+  const threeExp = loadCJS(threeSrc);
+  say('Three 适配版导出: ' + Object.keys(threeExp).join(', '));
+  const loaderExp = loadCJS(loaderSrc);
+  say('GLTFLoader 导出: ' + Object.keys(loaderExp).join(', '));
+  const rendererExp = loadCJS(rendererSrc, {
+    './vendor/threejs-miniprogram.js': threeExp,
+    './vendor/gltf-loader.js': loaderExp
+  });
+  say('渲染器导出: ' + Object.keys(rendererExp).join(', '));
+
+  const canvas = document.getElementById('c');
+  const scene = {
+    room: { width: 6, depth: 6, height: 3 },
+    furniture: [
+      { id: 'f1', category: '沙发', position: { x: -1.2, z: -0.8 }, rotation: 0, size: { w: 2.0, h: 0.9, d: 0.95 } },
+      { id: 'f2', category: '床', position: { x: 1.6, z: -0.6 }, rotation: 0, size: { w: 1.7, h: 0.6, d: 2.0 } },
+      { id: 'f3', category: '衣柜', position: { x: -1.8, z: 1.6 }, rotation: 0, size: { w: 1.2, h: 2.0, d: 0.55 } },
+      { id: 'f4', category: '书架', position: { x: 1.8, z: 1.8 }, rotation: 0, size: { w: 0.9, h: 1.8, d: 0.35 } }
+    ]
+  };
+  const r = rendererExp.createRoomRenderer(canvas, () => scene);
+  say('createRoomRenderer: ' + JSON.stringify({ ok: r.ok, error: r.error, message: r.message }));
+  if (!r.ok) throw new Error('renderer init failed');
+  r.resize(canvas.width, canvas.height);
+  r.render();
+  r.setSelected(0);
+  r.render();
+  setTimeout(() => {
+    r.render();
+    const pts = [[420,260],[400,300],[520,280],[420,320],[330,270],[500,330]];
+    for (const pt of pts) say('pick(' + pt + '): ' + r.pick(pt[0], pt[1]));
+    say('延迟重绘完成');
+    window.__ready = true;
+  }, 1400);
+} catch (e) {
+  say('ERROR: ' + (e && e.stack || e));
+  window.__error = String(e && e.message || e);
+}
+</script>
+</body>
+</html>

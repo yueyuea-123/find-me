@@ -1,0 +1,160 @@
+{
+  "version": "2.0",
+  "unit": "meter",
+  "up": "Y",
+  "note": "Blender 5.3 程序化建模；尺寸顺序 [宽, 深, 高]；锚点为底面中心",
+  "items": [
+    {
+      "key": "sofa",
+      "name": "沙发",
+      "file": "sofa.glb",
+      "size": [
+        2.0,
+        0.9,
+        0.8
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 528,
+      "bytes": 36116,
+      "version": "2.0",
+      "source": "Blender 5.3 procedural"
+    },
+    {
+      "key": "bed",
+      "name": "床",
+      "file": "bed.glb",
+      "size": [
+        1.5,
+        2.0,
+        0.5
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 264,
+      "bytes": 19356,
+      "version": "2.0",
+      "source": "Blender 5.3 procedural"
+    },
+    {
+      "key": "chair",
+      "name": "椅子",
+      "file": "chair.glb",
+      "size": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 308,
+      "bytes": 21744,
+      "version": "2.0",
+      "source": "Blender 5.3 procedural"
+    },
+    {
+      "key": "table",
+      "name": "桌",
+      "file": "table.glb",
+      "size": [
+        1.4,
+        0.8,
+        0.75
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 264,
+      "bytes": 18392,
+      "version": "2.0",
+      "source": "Blender 5.3 procedural"
+    },
+    {
+      "key": "coffee",
+      "name": "茶几",
+      "file": "coffee.glb",
+      "size": [
+        1.0,
+        0.6,
+        0.4
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 308,
+      "bytes": 22284,
+      "version": "2.0",
+      "source": "Blender 5.3 procedural"
+    },
+    {
+      "key": "wardrobe",
+      "name": "衣柜",
+      "file": "wardrobe.glb",
+      "size": [
+        1.2,
+        0.6,
+        2.0
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 204,
+      "bytes": 14640,
+      "version": "2.0",
+      "source": "Blender 5.3 procedural"
+    },
+    {
+      "key": "cabinet",
+      "name": "斗柜",
+      "file": "cabinet.glb",
+      "size": [
+        1.0,
+        0.45,
+        0.9
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 284,
+      "bytes": 20000,
+      "version": "2.0",
+      "source": "Blender 5.3 procedural"
+    },
+    {
+      "key": "shelf",
+      "name": "书柜",
+      "file": "shelf.glb",
+      "size": [
+        0.9,
+        0.35,
+        1.8
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 1056,
+      "bytes": 62548,
+      "version": "2.0",
+      "source": "Blender 5.3 procedural"
+    }
+  ]
+}
