@@ -61,29 +61,27 @@ function record(id, name, ok, detail) {
     });
     record('AC-13b', '列表降级视图可切换', listView === 'list', `view=${listView}`);
 
-    // --- AC-02/03：编辑模式与变换按钮入口（来源：F-02 T8） ---
-    const edit = await mp.evaluate(() => {
+    // --- AC-02/03：单一主视图与选中卡变换入口（规范 V1.0） ---
+    const single = await mp.evaluate(() => {
       const p = getCurrentPages().slice(-1)[0];
-      p.setMode({ currentTarget: { dataset: { m: 'edit' } } });
-      return p.data.mode;
+      return { noMode: p.data.mode === undefined, hint: p.data.hint || '' };
     });
-    record('AC-02', '编辑模式可切换', edit === 'edit', `mode=${edit}`);
+    record('AC-02', '单一主视图（无三模式）', single.noMode, `mode字段=${single.noMode}`);
+    record('AC-02b', '固定视角提示口径', !/旋转视角|平移视角/.test(single.hint), `hint=${single.hint}`);
 
     // 注入一件临时家具（仅页面 data，不落库），验证选中卡与旋转按钮入口
     const rot = await mp.evaluate(() => {
       const p = getCurrentPages().slice(-1)[0];
-      const f = { id: '__probe__', name: '探针家具', px: 1, pz: 1, rot: 0, status: 'confirmed' };
+      const f = { id: '__probe__', name: '探针家具', px: 1, pz: 1, rot: 0, status: 'confirmed', bindCount: 0 };
       p.setData({ furniture: [f], selected: {
-        id: f.id, name: f.name, px: f.px, pz: f.pz, rot: f.rot, status: f.status
+        id: f.id, name: f.name, px: f.px, pz: f.pz, rot: f.rot, status: f.status, bindCount: 0
       }, bindings: { nodeCount: 0, items: [] } });
-      if (typeof p.rotateSelected === 'function') {
-        p.rotateSelected({ currentTarget: { dataset: { deg: 15 } } });
-      }
-      return { rot: (p.data.selected && p.data.selected.rot), hasBind: !!p.data.bindings };
+      return { rot: (p.data.selected && p.data.selected.rot), hasBind: !!p.data.bindings,
+               hasCount: typeof (p.data.selected && p.data.selected.bindCount) === 'number',
+               rotateFn: typeof p.rotateFurniture === 'function' };
     });
-    // 旋转按钮可能只改渲染对象不改 data（取决于实现），故只断言未报错、结构完整
-    record('AC-03', '选中卡与旋转交互无异常', rot.hasBind && typeof rot.rot !== 'undefined',
-      `selected.rot=${rot.rot}, bindings=${rot.hasBind}`);
+    record('AC-03', '选中卡绑定数量与旋转入口完整', rot.hasBind && rot.hasCount && rot.rotateFn,
+      `selected.rot=${rot.rot}, count=${rot.hasCount}, rotate=${rot.rotateFn}`);
 
     // --- AC-04/05：绑定卡渲染（来源：F-03 T10） ---
     const bind = await mp.evaluate(() => {

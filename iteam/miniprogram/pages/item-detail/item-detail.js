@@ -35,23 +35,33 @@ Page({
       nextHint: next.hint, nextBtn: next.btn, nextPage: next.page,
       item: {
         id: it.id, name: it.name, completed: it.completed,
-        catText: it.category || '未分类', modeText: modeMap[it.trackingMode] || '',
+        catText: it.category || '未分类', tags: it.tags || [], modeText: modeMap[it.trackingMode] || '',
         locationKey: it.locationStatus, updatedText: updated,
         locText: it.locationStatus === 'at_home' && it.currentNodeId ? '已定位' : (stMap[it.locationStatus] || it.locationStatus),
         locClass: it.locationStatus === 'at_home' ? 'green' : 'orange',
         locPath: it.currentNodeId ? store.nodePath(it.currentNodeId).join(' / ') : (stMap[it.locationStatus] || '未设置'),
+        // P1-4 常驻位置：外出/借出时 currentNodeId 为空，但仍在家里有固定位置
+        homePath: it.homeNodeId ? store.nodePath(it.homeNodeId).join(' / ') : '',
         note: it.note, photo: it.photoPath,
         trackingMode: it.trackingMode,
         mgmt: it.managementStatus,
         mgmtText: it.managementStatus === 'ended' ? '已结束管理' : '日常管理',
         mgmtClass: it.managementStatus === 'ended' ? 'gray' : 'green',
         disposalText: it.disposalType ? (dMap[it.disposalType] || it.disposalType) : '',
+        favorite: !!it.favorite,
         borrowTo: it.borrowTo || '', dueDate: it.dueDate || ''
       },
       inv: inv
     });
   },
 
+  // 收藏星标切换（交互说明书 V1.2 §5）
+  toggleFavorite: function () {
+    var r = store.toggleFavorite(this._id);
+    if (!r.ok) { wx.showToast({ title: '操作失败', icon: 'none' }); return; }
+    this.setData({ 'item.favorite': r.data.favorite });
+    wx.showToast({ title: r.data.favorite ? '已收藏' : '已取消收藏', icon: 'none' });
+  },
   editItem: function () { wx.navigateTo({ url: '/pages/item-edit/item-edit?id=' + this._id }); },
   moveItem: function () { wx.navigateTo({ url: '/pages/move/move?id=' + this._id }); },
   goHistory: function () { wx.navigateTo({ url: '/pages/history/history?id=' + this._id }); },

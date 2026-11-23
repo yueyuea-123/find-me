@@ -79,6 +79,28 @@ function uid(prefix) {
 
 function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
+// P1-5 标签规整：去空白、去重、限长，兼容旧数据（tags 缺失/非数组时返回空数组）
+function normalizeTags(tags) {
+  if (!Array.isArray(tags)) return [];
+  var seen = {}, out = [];
+  tags.forEach(function (t) {
+    var s = String(t == null ? '' : t).trim().slice(0, 12);
+    if (s && !seen[s]) { seen[s] = 1; out.push(s); }
+  });
+  return out.slice(0, 8);
+}
+// 汇总全库在用标签（含主分类），供建档页与筛选页生成候选项，无需额外存储
+function allTags() {
+  var d = load(), seen = {}, out = [];
+  d.items.forEach(function (it) {
+    C.ITEM_CATEGORIES.forEach(function (c) { if (!seen[c]) { seen[c] = 1; out.push(c); } });
+    (it.tags || []).forEach(function (t) { if (!seen[t]) { seen[t] = 1; out.push(t); } });
+  });
+  // 即使还没有物品，也把预置分类作为候选带出
+  if (!out.length) return C.ITEM_CATEGORIES.slice();
+  return out;
+}
+
 function findById(list, id) {
   for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
   return null;
@@ -588,6 +610,17 @@ function nodePath(nodeId) {
   }
   return path;
 }
+// P1-6 由节点反查其所属空间：节点 → 房间 → 空间。用于校准物品档案归属，
+// 避免建档/跨空间移动时 spaceId 与实际存放位置矛盾。取不到时返回空串，由调用方保留原值。
+function spaceIdOfNode(nodeId) {
+  if (!nodeId) return '';
+  var d = load(), node = findById(d.nodes, nodeId);
+  if (!node) return '';
+  var room = findById(d.rooms, node.roomId);
+  if (!room) return '';
+  var sp = findById(d.spaces, room.spaceId);
+  return sp ? sp.id : '';
+}
 function childrenOf(nodeId) {
   var d = load();
   return d.nodes.filter(function (n) { return n.parentId === nodeId; })
@@ -687,9 +720,21 @@ function listItems(filters) {
   if (filters.spaceId) list = list.filter(function (it) { return it.spaceId === filters.spaceId; });
   if (filters.keyword) {
     var kw = String(filters.keyword).trim().toLowerCase();
-    list = list.filter(function (it) { return (it.name || '').toLowerCase().indexOf(kw) >= 0 || (it.category || '').toLowerCase().indexOf(kw) >= 0; });
+    list = list.filter(function (it) {
+      if ((it.name || '').toLowerCase().indexOf(kw) >= 0) return true;
+      if ((it.category || '').toLowerCase().indexOf(kw) >= 0) return true;
+      if ((it.tags || []).some(function (t) { return String(t).toLowerCase().indexOf(kw) >= 0; })) return true;
+      if ((it.note || '').toLowerCase().indexOf(kw) >= 0) return true;
+      // P0-1 位置反查：按存放路径中的任一层级名（房间 / 收纳节点）匹配，便于"找东西"
+      if (it.currentNodeId) {
+        var segs = nodePath(it.currentNodeId);
+        if (segs.some(function (s) { return String(s).toLowerCase().indexOf(kw) >= 0; })) return true;
+      }
+      return false;
+    });
   }
   if (filters.category) list = list.filter(function (it) { return it.category === filters.category; });
+  if (filters.tag) list = list.filter(function (it) { return (it.tags || []).indexOf(filters.tag) >= 0; });
   if (filters.locationStatus) list = list.filter(function (it) { return it.locationStatus === filters.locationStatus; });
   if (filters.managementStatus) list = list.filter(function (it) { return it.managementStatus === filters.managementStatus; });
   if (filters.trackingMode) list = list.filter(function (it) { return it.trackingMode === filters.trackingMode; });
@@ -706,16 +751,23 @@ function addItem(opts) {
   opts = opts || {};
   var name = (opts.name || '').trim();
   if (!name) return { ok: false, error: 'INVALID_NAME' }; // BR-001 只填名称即可
-  var spaceId = opts.spaceId || (getActiveSpace() || {}).id || '';
-  var track = C.TRACK_MODES.some(function (m) { return m.key === opts.trackingMode; }) ? opts.trackingMode : 'location';
   var nodeId = opts.currentNodeId || '';
+  // P1-6 建档归属以实际位置为准：指定了收纳节点时，空间取节点所属空间
+  var nodeSpaceId = spaceIdOfNode(nodeId);
+  var spaceId = nodeSpaceId || opts.spaceId || (getActiveSpace() || {}).id || '';
+  var track = C.TRACK_MODES.some(function (m) { return m.key === opts.trackingMode; }) ? opts.trackingMode : 'location';
   var hasInitialPos = !!nodeId;
   var st = opts.locationStatus || (hasInitialPos ? 'at_home' : 'unknown');
   var it = {
     id: uid('it'), spaceId: spaceId, name: name,
-    category: opts.category || '', note: opts.note || '', photoPath: opts.photoPath || '',
+    category: opts.category || '', tags: normalizeTags(opts.tags), note: opts.note || '', photoPath: opts.photoPath || '',
     trackingMode: track, currentNodeId: hasInitialPos ? nodeId : '',
+    // P1-4 常驻位置：物品"家"里的固定节点。外出/借出只清空 currentNodeId，
+    // 不丢这个锚点；归还未指定新节点时据此自动回填。
+    homeNodeId: hasInitialPos ? nodeId : '',
     locationStatus: st, managementStatus: 'active',
+    // 收藏星标（交互说明书 V1.2 §5）：物品自身属性，随主数据持久化与云同步
+    favorite: false,
     completed: 0, createdAt: now(), updatedAt: now()
   };
   it.completed = calcCompletion(it);
@@ -753,10 +805,20 @@ function updateItem(id, patch) {
     if (!patch.name) return { ok: false, error: 'INVALID_NAME' };
     it.name = patch.name;
   }
-  ['category', 'note', 'photoPath', 'locationStatus'].forEach(function (k) { if (patch[k] !== undefined) it[k] = patch[k]; });
+  ['category', 'note', 'photoPath', 'locationStatus', 'favorite'].forEach(function (k) { if (patch[k] !== undefined) it[k] = patch[k]; });
+  if (patch.tags !== undefined) it.tags = normalizeTags(patch.tags);
   it.updatedAt = now();
   it.completed = calcCompletion(it);
   var r = commit(); return r.ok ? { ok: true, data: clone(it) } : r;
+}
+// 收藏星标切换（交互说明书 V1.2 §5）。收藏是用户标记，已结束管理物品也允许收藏。
+function toggleFavorite(id) {
+  var d = load(), it = findById(d.items, id);
+  if (!it) return { ok: false, error: 'NOT_FOUND' };
+  it.favorite = !it.favorite;
+  it.updatedAt = now();
+  var r = commit();
+  return r.ok ? { ok: true, data: { favorite: !!it.favorite } } : r;
 }
 function setItemTrackingMode(id, mode) {
   var d = load(), it = findById(d.items, id);
@@ -778,7 +840,10 @@ function moveItem(id, opts) {
   opts = opts || {};
   var newStatus = opts.locationStatus || it.locationStatus;
   var newPos = opts.currentNodeId !== undefined ? opts.currentNodeId : it.currentNodeId;
-  if (!newPos && newStatus === 'at_home') return { ok: false, error: 'NO_TARGET' };
+  // P1-4 归还未给节点但有有效常驻位置时放行，交给下方回填逻辑处理
+  var canAutoBack = (it.locationStatus === 'out' || it.locationStatus === 'borrowed') &&
+    (newStatus === 'at_home') && !newPos && it.homeNodeId && findById(d.nodes, it.homeNodeId);
+  if (!newPos && newStatus === 'at_home' && !canAutoBack) return { ok: false, error: 'NO_TARGET' };
 
   var wasUnknown = it.locationStatus === 'unknown' || !it.currentNodeId;
   var goingOut = (newStatus === 'out' || newStatus === 'borrowed') && it.locationStatus === 'at_home';
@@ -799,8 +864,21 @@ function moveItem(id, opts) {
   else type = 'move';
 
   var from = it.currentNodeId, fromStatus = it.locationStatus;
+  // P1-4 常驻位置维护：
+  // a) 确认"在家 + 具体节点"时，该节点视为常驻位置（用户主动把家搬到此处）。
+  // b) 从在家转出/借出时，先把原节点记为常驻位置，再清空 currentNodeId —— 位置不再丢失。
+  if (newStatus === 'at_home' && newPos) it.homeNodeId = newPos;
+  else if (goingOut && !it.homeNodeId && from) it.homeNodeId = from;
+  // c) 归还未指定节点：回填常驻位置（仅当它仍然有效），省去重新定位。
+  var autoBack = false;
+  if (returning && (newStatus === 'at_home' || newStatus === 'unknown') && !newPos && it.homeNodeId) {
+    if (findById(d.nodes, it.homeNodeId)) { newPos = it.homeNodeId; autoBack = true; }
+  }
   it.currentNodeId = newPos || '';
   it.locationStatus = newStatus;
+  // P1-6 跨空间移动时同步档案归属；外出/借出无具体节点则保留原归属不误改
+  var movedSpaceId = spaceIdOfNode(newPos);
+  if (movedSpaceId) it.spaceId = movedSpaceId;
   // TBD-002 可选字段：借出对象、预计归还时间（仅 borrowed 状态写入，其余清空）
   if (newStatus === 'borrowed') {
     it.borrowTo = opts.borrowTo || '';
@@ -818,7 +896,7 @@ function moveItem(id, opts) {
     borrowTo: it.borrowTo, dueDate: it.dueDate,
     note: opts.note || '', requestId: opts.requestId || '', createdAt: now()
   });
-  var r = commit(); return r.ok ? { ok: true, data: clone(it), eventType: type } : r;
+  var r = commit(); return r.ok ? { ok: true, data: clone(it), eventType: type, autoBack: autoBack } : r;
 }
 function listMovements(itemId) {
   var d = load();
@@ -1142,8 +1220,10 @@ module.exports = {
   itemsOfFurniture: itemsOfFurniture, bindingsOfFurniture: bindingsOfFurniture,
   // 物品
   listItems: listItems, getItem: getItem, addItem: addItem, updateItem: updateItem,
+  toggleFavorite: toggleFavorite,
   setItemTrackingMode: setItemTrackingMode, moveItem: moveItem, listMovements: listMovements,
   endManagement: endManagement, restoreItem: restoreItem, calcCompletion: calcCompletion,
+  allTags: allTags, normalizeTags: normalizeTags, spaceIdOfNode: spaceIdOfNode,
   // 库存
   findInventoryByItem: findInventoryByItem, listInventory: listInventory, updateInventory: updateInventory,
   inventoryTx: inventoryTx, listTransactions: listTransactions,

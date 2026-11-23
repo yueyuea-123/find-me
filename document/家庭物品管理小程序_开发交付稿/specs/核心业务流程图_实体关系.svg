@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="660" viewBox="0 0 900 660" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <rect x="0" y="0" width="900" height="660" fill="#F7F5F1"/>
+  <text x="40" y="46" font-size="24" font-weight="700" fill="#252824">家庭物品管理 · 核心实体关系图</text>
+  <text x="40" y="72" font-size="14" fill="#8B8E87">空间 → 房间 → 家具 → 收纳位置 → 物品（五层）　｜　数据模型 spaces → rooms → furniture → nodes → items</text>
+
+  <!-- 空间 -->
+  <g>
+    <rect x="60" y="100" width="220" height="72" rx="14" fill="#6F8966"/>
+    <text x="78" y="130" font-size="18" font-weight="700" fill="#FFFFFF">空间 space</text>
+    <text x="78" y="154" font-size="13" fill="#EAF0E7">温馨的家 · 3室2厅</text>
+  </g>
+  <line x1="170" y1="172" x2="170" y2="212" stroke="#6F8966" stroke-width="2.5"/>
+  <text x="182" y="196" font-size="12" fill="#58734F">room.spaceId → space.id</text>
+
+  <!-- 房间 -->
+  <g>
+    <rect x="60" y="212" width="220" height="72" rx="14" fill="#FFFFFF" stroke="#6F8966" stroke-width="2"/>
+    <text x="78" y="242" font-size="18" font-weight="700" fill="#252824">房间 room</text>
+    <text x="78" y="266" font-size="13" fill="#8B8E87">客厅 · 4.6×4.2×2.8m</text>
+  </g>
+  <line x1="170" y1="284" x2="170" y2="324" stroke="#6F8966" stroke-width="2.5"/>
+  <text x="182" y="308" font-size="12" fill="#58734F">furniture.roomId → room.id</text>
+
+  <!-- 家具 -->
+  <g>
+    <rect x="60" y="324" width="220" height="72" rx="14" fill="#FFFFFF" stroke="#6F8966" stroke-width="2"/>
+    <text x="78" y="354" font-size="18" font-weight="700" fill="#252824">家具 furniture</text>
+    <text x="78" y="378" font-size="13" fill="#8B8E87">电视柜 · 三维模型+尺寸</text>
+  </g>
+  <line x1="170" y1="396" x2="170" y2="436" stroke="#6F8966" stroke-width="2.5"/>
+  <text x="182" y="420" font-size="12" fill="#58734F">node.furnitureId → furniture.id</text>
+
+  <!-- 收纳位置 -->
+  <g>
+    <rect x="60" y="436" width="220" height="88" rx="14" fill="#FFFFFF" stroke="#6F8966" stroke-width="2"/>
+    <text x="78" y="466" font-size="18" font-weight="700" fill="#252824">收纳位置 node</text>
+    <text x="78" y="488" font-size="13" fill="#8B8E87">根节点(type=家具)+抽屉/隔板</text>
+    <text x="78" y="508" font-size="12" fill="#8B8E87">node.parentId → node.id（多级）</text>
+  </g>
+  <line x1="170" y1="524" x2="170" y2="564" stroke="#6F8966" stroke-width="2.5"/>
+  <text x="182" y="548" font-size="12" fill="#58734F">item.currentNodeId → node.id</text>
+
+  <!-- 物品 -->
+  <g>
+    <rect x="60" y="564" width="220" height="72" rx="14" fill="#D89A3D"/>
+    <text x="78" y="594" font-size="18" font-weight="700" fill="#FFFFFF">物品 item</text>
+    <text x="78" y="618" font-size="13" fill="#FFF6E8">马克杯 · 数量/备注/图片</text>
+  </g>
+
+  <!-- 右侧：家具与物品解耦说明 -->
+  <g>
+    <rect x="400" y="100" width="450" height="180" rx="16" fill="#FFFFFF" stroke="#ECE9E3" stroke-width="1.5"/>
+    <text x="424" y="132" font-size="16" font-weight="700" fill="#252824">关键规则 ① 家具—物品解耦（BR-009）</text>
+    <text x="424" y="162" font-size="14" fill="#252824">家具与物品不作直接绑定，沿以下单源聚合：</text>
+    <text x="440" y="190" font-size="14" fill="#58734F">nodes.furnitureId  +  items.currentNodeId</text>
+    <text x="424" y="220" font-size="14" fill="#252824">换外观模型不破坏节点与物品关联；</text>
+    <text x="424" y="246" font-size="14" fill="#252824">不维护第二绑定源（如 furniture.bindings）。</text>
+  </g>
+
+  <g>
+    <rect x="400" y="300" width="450" height="150" rx="16" fill="#FFFFFF" stroke="#ECE9E3" stroke-width="1.5"/>
+    <text x="424" y="332" font-size="16" font-weight="700" fill="#252824">关键规则 ② 位置唯一 · 历史可追溯</text>
+    <text x="424" y="362" font-size="14" fill="#252824">· 物品同一时刻仅一个 currentNodeId；</text>
+    <text x="424" y="388" font-size="14" fill="#252824">· 多位置数量拆分为后续扩展，首版不支持；</text>
+    <text x="424" y="414" font-size="14" fill="#252824">· 每次位置变更写 movements（from→to）。</text>
+  </g>
+
+  <g>
+    <rect x="400" y="470" width="450" height="166" rx="16" fill="#FFFFFF" stroke="#ECE9E3" stroke-width="1.5"/>
+    <text x="424" y="502" font-size="16" font-weight="700" fill="#252824">关键规则 ③ 删除与归属约束</text>
+    <text x="424" y="532" font-size="14" fill="#252824">· 每个收纳位置必须属于一件家具；</text>
+    <text x="424" y="558" font-size="14" fill="#252824">· 删除含物品的位置前先迁移/清空；</text>
+    <text x="424" y="584" font-size="14" fill="#252824">· item.spaceId 随节点所属空间校准；</text>
+    <text x="424" y="610" font-size="14" fill="#252824">· 删房间/家具需级联处理其下数据。</text>
+  </g>
+</svg>

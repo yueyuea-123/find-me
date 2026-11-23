@@ -8,6 +8,7 @@ Page({
     statusOptions: [{ key: '', name: '全部状态' }, { key: 'active', name: '日常管理' }, { key: 'ended', name: '已结束管理' }],
     stIndex: 0,
     catOptions: ['全部分类'].concat(C.ITEM_CATEGORIES), catIndex: 0,
+    tagOptions: ['全部标签'], tagIndex: 0,
     quickOptions: [{ key: 'all', name: '全部' }, { key: 'unknown', name: '位置未知' }, { key: 'low', name: '低库存' }],
     locOptions: [{ key: '', name: '全部位置' }].concat(C.LOCATION_STATUS), locIndex: 0,
     spaceOptions: [], spaceIndex: 0,
@@ -34,7 +35,9 @@ Page({
     store.listItems({ includeEnded: true }).forEach(function (it) {
       if (it.category && cats.indexOf(it.category) < 0) cats.push(it.category);
     });
-    this.setData({ spaceOptions: spaces, roomOptions: rooms, nodeOptions: nodes, catOptions: cats });
+    // P1-5 标签筛选项：全库在用标签
+    var tags = ['全部标签'].concat(store.allTags());
+    this.setData({ spaceOptions: spaces, roomOptions: rooms, nodeOptions: nodes, catOptions: cats, tagOptions: tags });
   },
 
   load: function () {
@@ -44,6 +47,7 @@ Page({
     var st = d.statusOptions[d.stIndex].key;
     if (st) filters.managementStatus = st;
     if (d.catIndex > 0) filters.category = d.catOptions[d.catIndex];
+    if (d.tagIndex > 0) filters.tag = d.tagOptions[d.tagIndex];
     var loc = d.locOptions[d.locIndex].key;
     if (loc) filters.locationStatus = loc;
     var sp = d.spaceOptions[d.spaceIndex];
@@ -52,7 +56,7 @@ Page({
     if (rm && rm.id) filters.roomId = rm.id;
     var nd = d.nodeOptions[d.nodeIndex];
     if (nd && nd.id) filters.currentNodeId = nd.id;
-    var hasFilter = !!(d.keyword || d.quickFilter !== 'all' || st || d.catIndex > 0 || loc || d.includeEnded ||
+    var hasFilter = !!(d.keyword || d.quickFilter !== 'all' || st || d.catIndex > 0 || d.tagIndex > 0 || loc || d.includeEnded ||
       (sp && sp.id) || (rm && rm.id) || (nd && nd.id));
 
     var list = store.listItems(filters);
@@ -68,7 +72,7 @@ Page({
       var path = it.currentNodeId ? store.nodePath(it.currentNodeId).join(' / ') : (stMap[it.locationStatus] || '未设置');
       return {
         id: it.id, name: it.name, completed: it.completed,
-        catText: it.category || '未分类', modeText: modeMap[it.trackingMode] || '',
+        catText: it.category || '未分类', tags: it.tags || [], modeText: modeMap[it.trackingMode] || '',
         locText: stMap[it.locationStatus] || it.locationStatus,
         locClass: it.locationStatus === 'at_home' ? 'green' : 'orange',
         mgmtText: it.managementStatus === 'ended' ? '已结束' : '',
@@ -80,10 +84,18 @@ Page({
     this.setData({ items: list, count: list.length, hasFilter: hasFilter, loading: false });
   },
 
+  // 清空全部筛选条件并重载（交互说明书 V1.2 §4：搜索无结果可清空重搜）
+  clearFilters: function () {
+    this.setData({
+      keyword: '', quickFilter: 'all', stIndex: 0, catIndex: 0, tagIndex: 0, locIndex: 0,
+      spaceIndex: 0, roomIndex: 0, nodeIndex: 0, includeEnded: false
+    }, this.load);
+  },
   onQuickFilter: function (e) { this.setData({ quickFilter: e.currentTarget.dataset.key || 'all' }, this.load); },
   onKeyword: function (e) { this.setData({ keyword: e.detail.value }, this.load); },
   onStatus: function (e) { this.setData({ stIndex: Number(e.detail.value) }, this.load); },
   onCat: function (e) { this.setData({ catIndex: Number(e.detail.value) }, this.load); },
+  onTag: function (e) { this.setData({ tagIndex: Number(e.detail.value) }, this.load); },
   onLoc: function (e) { this.setData({ locIndex: Number(e.detail.value) }, this.load); },
   onSpace: function (e) { this.setData({ spaceIndex: Number(e.detail.value), roomIndex: 0, roomOptions: this._roomsFor(this.data.spaceOptions[Number(e.detail.value)].id) }, this.load); },
   _roomsFor: function (spaceId) {

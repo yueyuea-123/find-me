@@ -27,7 +27,7 @@
       </view>
     </view>
     <view class="fp-hint">{{editing?'编辑中：拖动房间移动、拖任意边/角把手调整宽高；越界自动钳制，重叠不可保存':'点击房间查看三维 · 可「编辑布局」调整房间排布'}}</view>
-    <view class="floorplan {{editing?'fp-grid-on':''}}" style="height:{{overview.rows*96}}rpx">
+    <view class="floorplan {{editing?'fp-grid-on':''}}" wx:if="{{!noRooms}}" style="height:{{overview.rows*96}}rpx">
       <view
         wx:for="{{overview.rooms}}"
         wx:key="id"
@@ -49,7 +49,12 @@
           class="fp-handle fh-{{h}}" data-id="{{item.id}}" data-handle="{{h}}" catchtouchstart="onRoomTouchStart" catchtouchmove="onRoomTouchMove" catchtouchend="onRoomTouchEnd"></view>
       </view>
     </view>
-    <view class="fp-legend">
+    <view class="fp-empty" wx:if="{{noRooms}}">
+      <view class="fpe-icon">▦</view>
+      <view class="fpe-title">还没有房间</view>
+      <view class="small muted">点上方「房间」或「编辑布局」创建第一个房间，再放入家具</view>
+    </view>
+    <view class="fp-legend" wx:if="{{!noRooms}}">
       <text class="lg-item"><text class="lg-f"></text>家具</text>
       <text class="lg-item"><text class="lg-i"></text>物品数</text>
       <text class="fp-tip">墙线为示意，不承诺测量精度</text>

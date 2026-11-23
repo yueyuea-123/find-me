@@ -5,11 +5,14 @@ var C = require('../../utils/constants.js');
 Page({
   data: {
     editing: false, id: '', continuous: false, formError: '', nameError: false,
+    saving: false, dirty: false,
     formName: '', categories: ['未分类'].concat(C.ITEM_CATEGORIES), catIndex: 0,
     modes: C.TRACK_MODES, modeIndex: 0, needInventory: false,
     balance: '', units: C.UNITS, unitIndex: 0, threshold: '',
     nodeOptions: [{ id: '', label: '位置未知 / 暂不指定' }], nodeIndex: 0, hasNode: false,
-    locStatus: C.LOCATION_STATUS, locIndex: 1, note: '', photoPath: ''
+    locStatus: C.LOCATION_STATUS, locIndex: 1, note: '', photoPath: '',
+    // P1-5 标签：候选来自全库在用标签 + 预置分类，.selected 标记是否已选中
+    tagChoices: [], selectedTags: [], customTag: ''
   },
 
   onLoad: function (q) {
@@ -24,7 +27,9 @@ Page({
         });
       });
     });
-    this.setData({ nodeOptions: opts });
+    // P1-5 标签候选：全库在用标签并入当前档案已选标签（编辑态在下方补齐）
+    var choices = store.allTags().slice();
+    this.setData({ nodeOptions: opts, tagChoices: choices });
 
     var nodeId = q.nodeId || '';
     if (nodeId) {
@@ -46,44 +51,77 @@ Page({
       var nI = 0, hasN = !!it.currentNodeId;
       if (hasN) for (var j = 0; j < opts.length; j++) if (opts[j].id === it.currentNodeId) { nI = j; break; }
       var need = it.trackingMode === 'inventory' || it.trackingMode === 'hybrid';
+      // P1-5 已选标签并入候选
+      var selected = (it.tags || []).slice();
+      selected.forEach(function (t) { if (choices.indexOf(t) < 0) choices.push(t); });
       this.setData({
         editing: true, id: q.id, formName: it.name, categories: categories, catIndex: catI,
         modeIndex: modeI, needInventory: need,
         balance: iv.balance !== undefined ? String(iv.balance) : '',
         units: units, unitIndex: unitI, threshold: iv.threshold ? String(iv.threshold) : '',
         nodeIndex: nI, hasNode: hasN, locIndex: locI, note: it.note || '',
-        photoPath: it.photoPath || ''
+        photoPath: it.photoPath || '',
+        tagChoices: choices, selectedTags: selected
       });
+    }
+    // 记录进入时的表单快照，用于返回时判断是否存在未保存修改
+    this._initial = this._snap();
+  },
+
+  // 表单关键字段快照（用于 dirty 判定）
+  _snap: function () {
+    var d = this.data;
+    return [d.formName, d.catIndex, d.modeIndex, d.balance, d.unitIndex, d.threshold,
+      d.nodeIndex, d.locIndex, d.note, d.photoPath, (d.selectedTags || []).join(',')].join('\u0001');
+  },
+  _markDirty: function () {
+    if (!this.data.dirty && this._initial !== undefined && this._snap() !== this._initial) {
+      this.setData({ dirty: true });
     }
   },
 
-  onName: function (e) { this.setData({ formName: e.detail.value, formError: '', nameError: false }); },
-  onCat: function (e) { this.setData({ catIndex: Number(e.detail.value) }); },
+  onName: function (e) { this.setData({ formName: e.detail.value, formError: '', nameError: false }, this._markDirty); },
+  onCat: function (e) { this.setData({ catIndex: Number(e.detail.value) }, this._markDirty); },
   onMode: function (e) {
     var i = Number(e.detail.value);
     var key = C.TRACK_MODES[i].key;
-    this.setData({ modeIndex: i, needInventory: key === 'inventory' || key === 'hybrid' });
+    this.setData({ modeIndex: i, needInventory: key === 'inventory' || key === 'hybrid' }, this._markDirty);
   },
-  onBalance: function (e) { this.setData({ balance: e.detail.value }); },
-  onUnit: function (e) { this.setData({ unitIndex: Number(e.detail.value) }); },
-  onThreshold: function (e) { this.setData({ threshold: e.detail.value }); },
+  onBalance: function (e) { this.setData({ balance: e.detail.value }, this._markDirty); },
+  onUnit: function (e) { this.setData({ unitIndex: Number(e.detail.value) }, this._markDirty); },
+  onThreshold: function (e) { this.setData({ threshold: e.detail.value }, this._markDirty); },
   onNode: function (e) {
     var i = Number(e.detail.value);
-    this.setData({ nodeIndex: i, hasNode: !!this.data.nodeOptions[i].id });
+    this.setData({ nodeIndex: i, hasNode: !!this.data.nodeOptions[i].id }, this._markDirty);
   },
-  onLoc: function (e) { this.setData({ locIndex: Number(e.detail.value) }); },
-  onNote: function (e) { this.setData({ note: e.detail.value }); },
+  onLoc: function (e) { this.setData({ locIndex: Number(e.detail.value) }, this._markDirty); },
+  onNote: function (e) { this.setData({ note: e.detail.value }, this._markDirty); },
+  // P1-5 标签交互
+  toggleTag: function (e) {
+    var t = e.currentTarget.dataset.tag, sel = this.data.selectedTags.slice(), i = sel.indexOf(t);
+    if (i >= 0) sel.splice(i, 1);
+    else { if (sel.length >= 8) { wx.showToast({ title: '最多 8 个标签', icon: 'none' }); return; } sel.push(t); }
+    this.setData({ selectedTags: sel }, this._markDirty);
+  },
+  onCustomTag: function (e) { this.setData({ customTag: e.detail.value }); },
+  addCustomTag: function () {
+    var t = (this.data.customTag || '').trim().slice(0, 12), sel = this.data.selectedTags.slice(), choices = this.data.tagChoices.slice();
+    if (!t) return;
+    if (choices.indexOf(t) < 0) choices.push(t);
+    if (sel.indexOf(t) < 0) { if (sel.length >= 8) { wx.showToast({ title: '最多 8 个标签', icon: 'none' }); return; } sel.push(t); }
+    this.setData({ tagChoices: choices, selectedTags: sel, customTag: '' }, this._markDirty);
+  },
   choosePhoto: function () {
     var self = this;
     wx.chooseMedia({
       count: 1, mediaType: ['image'], sourceType: ['album', 'camera'],
       success: function (res) {
         var f = res && res.tempFiles && res.tempFiles[0];
-        if (f && f.tempFilePath) self.setData({ photoPath: f.tempFilePath });
+        if (f && f.tempFilePath) self.setData({ photoPath: f.tempFilePath }, self._markDirty);
       }
     });
   },
-  clearPhoto: function () { this.setData({ photoPath: '' }); },
+  clearPhoto: function () { this.setData({ photoPath: '' }, this._markDirty); },
 
   buildOpts: function () {
     var d = this.data;
@@ -91,6 +129,7 @@ Page({
     var opts = {
       name: (d.formName || '').trim(),
       category: d.categories[d.catIndex] === '未分类' ? '' : d.categories[d.catIndex],
+      tags: d.selectedTags.slice(),
       note: d.note, photoPath: d.photoPath,
       trackingMode: C.TRACK_MODES[d.modeIndex].key,
       currentNodeId: nodeId,
@@ -116,13 +155,29 @@ Page({
   save: function () { if (this.validate()) this.doSave(false); },
   saveContinue: function () { if (this.validate()) this.doSave(true); },
 
+  // 返回：存在未保存修改时二次确认（交互说明书 V1.2 §3）
+  onBack: function () {
+    var self = this;
+    if (this.data.dirty) {
+      wx.showModal({
+        title: '放弃修改', content: '当前修改尚未保存，确定放弃并返回吗？',
+        confirmText: '放弃修改', cancelText: '继续编辑', confirmColor: '#D65A50',
+        success: function (res) { if (res.confirm) wx.navigateBack(); }
+      });
+    } else {
+      wx.navigateBack();
+    }
+  },
+
   doSave: function (cont) {
+    if (this.data.saving) return; // 防重复提交
+    this.setData({ saving: true });
     var opts = this.buildOpts(), self = this;
     var r;
     if (this.data.editing) {
       // 编辑：只更新基础字段；跟踪模式/库存单独处理
       r = store.updateItem(this.data.id, {
-        name: opts.name, category: opts.category, note: opts.note,
+        name: opts.name, category: opts.category, tags: opts.tags, note: opts.note,
         photoPath: opts.photoPath, locationStatus: opts.locationStatus
       });
       if (r.ok && this.data.needInventory) {
@@ -134,18 +189,20 @@ Page({
         store.setItemTrackingMode(r.data.id, opts.trackingMode);
       }
     }
-    if (!r.ok) { this.setData({ formError: '保存失败：' + r.error }); return; }
-    if (cont) this.setData({ continuous: true }); // UI-011 连续添加态标识
-    wx.showToast({ title: cont ? '已保存，继续添加' : '已保存', icon: 'success' });
+    if (!r.ok) { this.setData({ formError: '保存失败：' + r.error, saving: false }); return; }
     if (cont) {
-      this.setData({ formName: '', note: '', formError: '' });
+      // 连续添加：重置表单与 dirty，恢复可提交
+      this.setData({ continuous: true, formName: '', note: '', formError: '', selectedTags: [], customTag: '', saving: false, dirty: false });
+      this._initial = this._snap();
+      wx.showToast({ title: '已保存，继续添加', icon: 'success' });
     } else {
-      // demo 对齐：建档后进入详情页，并给出「档案已建立」引导
-      var self = this;
+      // 建档后进入详情页，并给出「档案已建立」引导；保留 saving 直到跳走，避免重复提交
+      this.setData({ dirty: false });
       var targetId = this.data.editing ? this.data.id : (r.data && r.data.id);
       var url = targetId
         ? ('/pages/item-detail/item-detail?id=' + targetId + (this.data.editing ? '' : '&justCreated=1'))
         : '/pages/item-list/item-list';
+      wx.showToast({ title: '已保存', icon: 'success' });
       setTimeout(function () { wx.navigateTo({ url: url }); }, 500);
     }
   }

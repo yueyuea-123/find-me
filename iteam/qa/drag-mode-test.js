@@ -1,13 +1,12 @@
 /**
- * 三维房间触摸模式回归（纯 Node，不依赖微信开发者工具）
- * 背景：真机反馈"只能旋转，拖不动家具"——浏览模式原仅旋转视角，
- * 而提示语承诺"可拖动摆放"。现改为浏览模式按住家具直接拖动并自动切编辑模式。
- *
- * 覆盖：
- *   1. 浏览模式拖家具 → 位置落盘变化 + 自动切编辑模式
- *   2. 浏览模式拖空白 → 仍为 orbit 旋转，家具不动
- *   3. 收纳模式拖家具 → 不移动（模式分权保留）
- *   4. canvas 使用 catchtouch* 阻止页面滚动抢手势
+ * 三维房间交互回归（纯 Node，不依赖微信开发者工具）
+ * 基准：《三维空间视图与模型管理交互设计规范 V1.0》的通用部分 +《客厅三维空间交互与开发设计规范 V1.3》A 方案。
+ *   V1.3 已确认变更（详见 qa/v13-state-machine-test.js）：
+ *   - 默认不直接拖动家具；改为点选后 MOVE 方向按钮 5cm 步进
+ *   - 空白单指拖动改为旋转相机（原 V1.0 固定视角不再适用）
+ *   - 家具旋转改为 ROTATE 子模式按钮 15°/90°（原直接旋转 90° 不再适用）
+ *   本文件保留跨版本通用的断言（选中/双指缩放尺寸不变/添加物品/删除保护/家具库/画布拦截），
+ *   交互状态机的完整验证以 v13-state-machine-test.js 为准。
  *
  * 用法: node qa/drag-mode-test.js
  */
@@ -17,17 +16,18 @@ const MP = path.join(__dirname, '..', 'miniprogram');
 
 // ---------------------------------------------------------------- 运行时 mock
 const storage = {};
-let currentRoute = '';
 const pageDefs = {};
+let currentRoute = '';
 global.wx = {
   getStorageSync: k => storage[k],
   setStorageSync: (k, v) => { storage[k] = JSON.parse(JSON.stringify(v)); },
   removeStorageSync: k => { delete storage[k]; },
   getStorageInfoSync: () => ({ keys: Object.keys(storage), currentSize: 0, limitSize: 10240 }),
-  showToast: () => {}, showLoading: () => {}, hideLoading: () => {},
+  showToast: o => { global.__toasts = global.__toasts || []; global.__toasts.push(o && o.title); },
+  showLoading: () => {}, hideLoading: () => {},
   showModal: o => { if (o && o.success) o.success({ confirm: true }); },
-  showActionSheet: o => { if (o && o.success) o.success({ tapIndex: 0 }); },
-  navigateTo: () => {}, switchTab: () => {}, redirectTo: () => {}, reLaunch: () => {}, navigateBack: () => {},
+  showActionSheet: o => { global.__lastSheet = o && o.itemList; if (o && o.success) o.success({ tapIndex: global.__sheetIndex || 0 }); },
+  navigateTo: o => { global.__lastNav = o && o.url; }, switchTab: () => {}, redirectTo: () => {}, reLaunch: () => {}, navigateBack: () => {},
   chooseMedia: () => {}, previewImage: () => {},
   createSelectorQuery: () => ({
     in() { return this; }, select() { return this; }, fields() { return this; },
@@ -74,23 +74,22 @@ const roomFurniture = store.listFurniture(roomId);
 if (!roomFurniture.length) { console.error('演示家具未初始化'); process.exit(1); }
 const fid = roomFurniture[0].id;
 
-function makePage(mode, hitIndex) {
+function makePage(hitIndex) {
   const p = Object.assign({}, def);
-  p.data = Object.assign({}, def.data, { view: '3d', mode, glError: '' });
+  p.data = Object.assign({}, def.data, { view: '3d', mode: undefined, glError: '' });
   p.setData = function (o) { Object.assign(this.data, o); };
   p.onLoad({ id: roomId });
   p.loadData();
-  // 打桩渲染器：命中第 hitIndex 件（传 -1 表示空白）
-  const orbits = [];
+  const calls = { orbit: 0, pan: 0, zoom: 0, previewMove: 0 };
   p._glRenderer = {
     pick: () => hitIndex,
     dragDelta: () => ({ dx: 0.6, dz: 0.4 }),
-    previewMove: (idx, x, z) => ({ x: Math.round(x * 100) / 100, z: Math.round(z * 100) / 100 }),
+    previewMove: (idx, x, z) => { calls.previewMove++; return { x: Math.round(x * 100) / 100, z: Math.round(z * 100) / 100 }; },
     setSelected: () => {}, render: () => {},
-    orbit: (dx, dy) => orbits.push([dx, dy]),
-    resize: () => {}
+    orbit: () => { calls.orbit++; }, pan: () => { calls.pan++; }, zoom: () => { calls.zoom++; },
+    reset: () => {}, resize: () => {}
   };
-  p._orbits = orbits;
+  p._calls = calls;
   return p;
 }
 function drag(p) {
@@ -98,70 +97,112 @@ function drag(p) {
   const b = { x: 160, y: 140, clientX: 160, clientY: 140 };
   p.onTouchStart({ touches: [a], changedTouches: [a] });
   p.onTouchMove({ touches: [b], changedTouches: [b] });
-  const mid = { mode: p.data.mode, px: p.data.selected && p.data.selected.px };
+  const mid = { px: p.data.selected && p.data.selected.px };
   p.onTouchEnd({ touches: [], changedTouches: [b] });
   p.loadData();
   return mid;
 }
+function tap(p) {
+  global.__lastNav = '';
+  const t = { x: 100, y: 100, clientX: 100, clientY: 100 };
+  p.onTouchStart({ touches: [t], changedTouches: [t] });
+  p.onTouchEnd({ touches: [], changedTouches: [t] });
+  return global.__lastNav || '';
+}
 
-// 1. 浏览模式拖家具
-const before = JSON.parse(JSON.stringify(store.getFurniture(fid).position));
-const p1 = makePage('browse', 0);
-const m1 = drag(p1);
-const after = store.getFurniture(fid).position;
-ok('浏览-拖家具位置落盘变化', Math.abs(after.x - before.x) > 0.01 || Math.abs(after.z - before.z) > 0.01,
-  before.x + '/' + before.z + ' -> ' + after.x + '/' + after.z);
-ok('浏览-拖家具自动切编辑模式', m1.mode === 'edit', 'mode=' + m1.mode);
+// ---- 1. V1.3：拖空白旋转相机，不移动家具、不平移场景 ----
+const pBlank = makePage(-1);
+const posBefore = JSON.parse(JSON.stringify(store.getFurniture(fid).position));
+drag(pBlank);
+const posAfter = store.getFurniture(fid).position;
+ok('V1.3 拖空白调用 orbit 转视角', pBlank._calls.orbit > 0, 'orbit=' + pBlank._calls.orbit);
+ok('V1.3 拖空白不调用 pan', pBlank._calls.pan === 0, 'pan=' + pBlank._calls.pan);
+ok('V1.3 拖空白不移动家具', posBefore.x === posAfter.x && posBefore.z === posAfter.z);
 
-// 2. 浏览模式拖空白仍旋转
-const p2 = makePage('browse', -1);
-const pos2 = JSON.parse(JSON.stringify(store.getFurniture(fid).position));
-const m2 = drag(p2);
-const pos2After = store.getFurniture(fid).position;
-ok('浏览-拖空白仍旋转视角', p2._orbits.length > 0, 'orbit次数=' + p2._orbits.length);
-ok('浏览-拖空白不移动家具', pos2.x === pos2After.x && pos2.z === pos2After.z, m2.mode);
-ok('浏览-拖空白不切模式', m2.mode === 'browse', 'mode=' + m2.mode);
+// ---- 2. V1.3：默认不直接拖动家具（A 方案简化操作）----
+const pDrag = makePage(0);
+const dBefore = JSON.parse(JSON.stringify(store.getFurniture(fid).position));
+drag(pDrag);
+const dAfter = store.getFurniture(fid).position;
+ok('V1.3 家具上拖动不移动家具', Math.abs(dAfter.x - dBefore.x) < 0.001 && Math.abs(dAfter.z - dBefore.z) < 0.001,
+  dBefore.x + '/' + dBefore.z + ' -> ' + dAfter.x + '/' + dAfter.z);
+ok('V1.3 家具上拖动不转成相机拖动', pDrag._calls.orbit === 0, 'orbit=' + pDrag._calls.orbit);
+ok('V1.3 状态机使用 sceneMode 字段', def.data.sceneMode === 'loading');
 
-// 3. 收纳模式拖家具不移动
-const p3 = makePage('store', 0);
-const pos3 = JSON.parse(JSON.stringify(store.getFurniture(fid).position));
-drag(p3);
-const pos3After = store.getFurniture(fid).position;
-ok('收纳-拖家具不移动', pos3.x === pos3After.x && pos3.z === pos3After.z);
+// ---- 3. 短按家具=选中，不跳建档（规范 §5.2 由卡片发起添加） ----
+const pTap = makePage(0);
+const tapNav = tap(pTap);
+ok('短按家具仅选中不跳页', tapNav === '' && !!pTap.data.selected, 'nav=' + (tapNav || '无') + ' sel=' + (pTap.data.selected || {}).name);
+ok('选中卡展示已绑定数量', typeof pTap.data.selected.bindCount === 'number', 'bindCount=' + pTap.data.selected.bindCount);
+ok('选中卡关联汇总可读', !!(pTap.data.bindings && Array.isArray(pTap.data.bindings.items)));
 
-// 4. canvas 阻止页面滚动抢手势
-const wxml = fs.readFileSync(path.join(MP, 'pages/room3d/room3d.wxml'), 'utf8');
-ok('canvas 使用 catchtouchmove 阻止页面滚动', /catchtouchmove\s*=\s*"onTouchMove"/.test(wxml));
-ok('canvas 使用 catchtouchstart', /catchtouchstart\s*=\s*"onTouchStart"/.test(wxml));
-
-// 5. 点击按钮旋转：每次90°、可逆，双指扭转状态已移除
-const p5 = makePage('browse', 0);
-const rot0 = Number(p5.data.selected.rot) || 0;
-p5.rotateFurniture({ currentTarget: { dataset: { dir: 1 } } });
-const rot1 = Number(p5.data.selected.rot);
-p5.rotateFurniture({ currentTarget: { dataset: { dir: -1 } } });
-const rot2 = Number(p5.data.selected.rot);
-ok('点击按钮顺时针旋转90°', ((rot1 - rot0) + 360) % 360 === 90, rot0 + '° -> ' + rot1 + '°');
-ok('点击按钮逆时针旋转可逆', rot2 === rot0, rot1 + '° -> ' + rot2 + '°');
-ok('旋转由按钮提供（浏览模式可见）', /data-dir="-1" bindtap="rotateFurniture"/.test(wxml));
-const jsSrc = fs.readFileSync(path.join(MP, 'pages/room3d/room3d.js'), 'utf8');
-ok('双指扭转已移除（无 previewRotate 调用）', !/safeGL\('previewRotate'/.test(jsSrc));
-ok('提示文案不再宣称扭转旋转', !/扭转旋转/.test(jsSrc) && !/扭转旋转/.test(wxml));
-
-// 6. 双指缩放方向：张开变大、捏合变小
-const p6 = makePage('edit', 0);
-const w0 = parseFloat(p6.data.selected.sz.split('×')[0]);
+// ---- 4. 双指只缩放视图，不改家具尺寸 ----
+const pPinch = makePage(0);
+const sz0 = pPinch.data.selected.sz;
 const V = (x, y) => ({ x, y, clientX: x, clientY: y });
-p6.onTouchStart({ touches: [V(150, 100), V(250, 100)], changedTouches: [] });
-p6.onTouchMove({ touches: [V(80, 100), V(320, 100)], changedTouches: [] });
-const wOpen = parseFloat(p6.data.selected.sz.split('×')[0]);
-p6.onTouchEnd({ touches: [], changedTouches: [] });
-p6.onTouchStart({ touches: [V(80, 100), V(320, 100)], changedTouches: [] });
-p6.onTouchMove({ touches: [V(150, 100), V(250, 100)], changedTouches: [] });
-const wPinch = parseFloat(p6.data.selected.sz.split('×')[0]);
-p6.onTouchEnd({ touches: [], changedTouches: [] });
-ok('双指张开家具变大', wOpen > w0, w0 + ' -> ' + wOpen);
-ok('双指捏合家具变小', wPinch < wOpen, wOpen + ' -> ' + wPinch);
+pPinch.onTouchStart({ touches: [V(150, 100), V(250, 100)], changedTouches: [] });
+pPinch.onTouchMove({ touches: [V(80, 100), V(320, 100)], changedTouches: [] });
+pPinch.onTouchEnd({ touches: [], changedTouches: [] });
+ok('双指张开缩放视图', pPinch._calls.zoom > 0, 'zoom=' + pPinch._calls.zoom);
+ok('双指不改变家具尺寸规格', pPinch.data.selected.sz === sz0, sz0 + ' -> ' + pPinch.data.selected.sz);
+
+// ---- 5. V1.3：ROTATE 子模式按钮 15° / 90° 快捷 ----
+const pRot = makePage(0);
+tap(pRot); // 进入 SELECTED
+pRot.enterRotate();
+const r0 = Number(pRot.data.selected.rot) || 0;
+pRot.rotateStep({ currentTarget: { dataset: { dir: 1 } } });
+const r1 = Number(pRot.data.selected.rot);
+pRot.rotateStep({ currentTarget: { dataset: { dir: -1, quick: 1 } } });
+const r2 = Number(pRot.data.selected.rot);
+ok('ROTATE 顺时针 15°', ((r1 - r0) + 360) % 360 === 15, r0 + '° -> ' + r1 + '°');
+ok('ROTATE 逆时针快捷 90°', ((r2 - r1) + 360) % 360 === 270, r1 + '° -> ' + r2 + '°');
+pRot.cancelEdit();
+
+// ---- 6. 添加物品两条路径（规范 §5.2） ----
+const pAdd = makePage(0);
+global.__sheetIndex = 0; pAdd.chooseAddItem();
+ok('添加物品入口给出两条路径', JSON.stringify(global.__lastSheet) === JSON.stringify(['从已有物品中选择', '新建物品']), JSON.stringify(global.__lastSheet));
+ok('选「已有物品」打开绑定面板', pAdd.data.showBindPicker === true && pAdd.data.bindableItems.length > 0,
+  'items=' + pAdd.data.bindableItems.length);
+// 绑定到当前家具
+const bindItem = pAdd.data.bindableItems[0];
+pAdd.bindExistingItem({ currentTarget: { dataset: { id: bindItem.id } } });
+const bound = store.getItem(bindItem.id);
+const root = store.listNodes(roomId).filter(n => n.furnitureId === pAdd.data.selected.id && !n.parentId)[0];
+ok('从已有物品选择写入存放关系', !!bound && !!root && bound.currentNodeId === root.id && bound.locationStatus === 'at_home',
+  (bound && bound.currentNodeId || '') + ' / root=' + (root && root.id || ''));
+ok('绑定后面板关闭', pAdd.data.showBindPicker === false);
+// 新建物品路径
+const pNew = makePage(0);
+global.__lastNav = ''; global.__sheetIndex = 1; pNew.chooseAddItem();
+ok('选「新建物品」进入建档页并预选节点', /^\/pages\/item-edit\/item-edit\?nodeId=/.test(global.__lastNav), global.__lastNav || '(无跳转)');
+
+// ---- 7. 删除保护：提示物品归属、不静默丢记录 ----
+const pDel = makePage(0);
+const linkedFurniture = store.listFurniture(roomId).filter(f => store.bindingsOfFurniture(f.id).items.length > 0)[0];
+if (linkedFurniture) {
+  const linkedIds = store.bindingsOfFurniture(linkedFurniture.id).items.map(i => i.id);
+  pDel._doRemoveFurniture(linkedFurniture.id);
+  const stillThere = linkedIds.every(id => !!store.getItem(id));
+  ok('删除有关联家具不丢失物品记录', stillThere && !!store.getFurniture(linkedFurniture.id));
+}
+
+// ---- 8. 家具库按需展开 ----
+const pLib = makePage(0);
+ok('家具库默认收起', pLib.data.showLib === false);
+pLib.toggleLib();
+ok('点「＋ 家具」展开库', pLib.data.showLib === true);
+pLib.toggleLib();
+ok('再次点按收起库', pLib.data.showLib === false);
+
+// ---- 9. 静态口径：canvas 手势拦截 + V1.3 相机/状态机入口 ----
+const wxml = fs.readFileSync(path.join(MP, 'pages/room3d/room3d.wxml'), 'utf8');
+const jsSrc = fs.readFileSync(path.join(MP, 'pages/room3d/room3d.js'), 'utf8');
+ok('canvas 使用 catchtouchstart/move/end', /catchtouchstart="onTouchStart"/.test(wxml) && /catchtouchmove="onTouchMove"/.test(wxml) && /catchtouchend="onTouchEnd"/.test(wxml));
+ok('V1.3 提示声明空白转视角', /空白处拖动转视角/.test(jsSrc));
+ok('V1.3 页面调用 orbit 转视角、不调用 pan', /safeGL\('orbit'/.test(jsSrc) && !/safeGL\('pan'/.test(jsSrc));
+ok('WXML 含查看物品与添加物品入口', /bindtap="goNodes"/.test(wxml) && /bindtap="chooseAddItem"/.test(wxml));
 
 console.log('\n' + pass + '/' + (pass + fail) + ' passed');
 process.exit(fail ? 1 : 0);

@@ -1,5 +1,5 @@
 /* pages/backup/backup.wxss */
-.bk-item { padding: 20rpx 0; border-bottom: 1rpx solid #E9E0D2; }
+.bk-item { padding: 20rpx 0; border-bottom: 1rpx solid #ECE9E3; }
 .bk-item:last-child { border-bottom: none; }
-.empty-line { text-align: center; color: #A29481; font-size: 26rpx; padding: 40rpx 0; }
-.foot-note { text-align: center; color: #A29481; font-size: 22rpx; margin-top: 40rpx; }
+.empty-line { text-align: center; color: #8B8E87; font-size: 26rpx; padding: 40rpx 0; }
+.foot-note { text-align: center; color: #8B8E87; font-size: 22rpx; margin-top: 40rpx; }

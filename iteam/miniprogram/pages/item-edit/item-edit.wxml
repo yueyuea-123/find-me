@@ -17,6 +17,17 @@
       </picker>
     </view>
     <view class="field">
+      <text class="label">标签（可选，可多选 / 自定义）</text>
+      <view class="tag-picker">
+        <view class="tag-opt {{selectedTags.indexOf(item)>=0?'on':''}}" wx:for="{{tagChoices}}" wx:key="*this" data-tag="{{item}}" bindtap="toggleTag">{{item}}</view>
+      </view>
+      <view class="row" style="margin-top:12rpx">
+        <input class="input grow" style="margin-right:12rpx" placeholder="自定义标签（≤12字）" value="{{customTag}}" bindinput="onCustomTag" maxlength="12" confirm-type="done" bindconfirm="addCustomTag" />
+        <button class="btn sm" bindtap="addCustomTag">添加</button>
+      </view>
+      <view class="small muted" style="margin-top:8rpx">标签用于交叉归类，与上方分类不冲突；已选 {{selectedTags.length}} / 8</view>
+    </view>
+    <view class="field">
       <text class="label">跟踪模式</text>
       <picker mode="selector" range="{{modes}}" range-key="name" value="{{modeIndex}}" bindchange="onMode">
         <view class="picker">{{modes[modeIndex].name}} — {{modes[modeIndex].desc}} ▾</view>
@@ -50,6 +61,7 @@
         <button class="btn sm danger" wx:if="{{photoPath}}" bindtap="clearPhoto">移除</button>
       </view>
       <image wx:if="{{photoPath}}" class="thumb" src="{{photoPath}}" mode="aspectFill" style="margin-top:12rpx" />
+      <view wx:else class="photo-photo ph-empty" style="margin-top:12rpx">▣　暂无照片</view>
     </view>
     <view class="divider"></view>
     <view class="field">
@@ -71,8 +83,9 @@
     </view>
 
     <view class="row">
-      <button class="btn primary grow" bindtap="save">{{editing?'保存':'建档'}}</button>
-      <button class="btn grow" wx:if="{{!editing}}" bindtap="saveContinue">保存并继续</button>
+      <button class="btn primary grow" loading="{{saving}}" disabled="{{saving}}" bindtap="save">{{editing?'保存':'建档'}}</button>
+      <button class="btn grow" wx:if="{{!editing}}" loading="{{saving}}" disabled="{{saving}}" bindtap="saveContinue">保存并继续</button>
     </view>
+    <view class="edit-back" bindtap="onBack">取消 / 返回上一级<text wx:if="{{dirty}}" class="dirty-dot"> · 有未保存修改</text></view>
   </view>
 </view>

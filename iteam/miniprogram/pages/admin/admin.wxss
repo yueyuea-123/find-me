@@ -1,5 +1,5 @@
 /* pages/admin/admin.wxss */
 .seg { display: flex; flex-wrap: wrap; }
-.log-item { padding: 18rpx 0; border-bottom: 1rpx solid #E9E0D2; }
+.log-item { padding: 18rpx 0; border-bottom: 1rpx solid #ECE9E3; }
 .log-item:last-child { border-bottom: none; }
-.empty-line { text-align: center; color: #A29481; font-size: 26rpx; padding: 40rpx 0; }
+.empty-line { text-align: center; color: #8B8E87; font-size: 26rpx; padding: 40rpx 0; }

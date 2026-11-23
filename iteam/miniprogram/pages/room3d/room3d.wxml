@@ -1,104 +1,201 @@
 <view class="page room3d-page">
-  <!-- 房间信息：模式1下顶部显示房间名与尺寸 -->
-  <view class="row between room-head">
-    <view>
-      <view class="strong" style="font-size:32rpx">{{roomName}}</view>
-      <view class="muted small">{{dimText}} · {{furniture.length}} 件家具</view>
+  <!-- 顶部导航（高保真 02-客厅空间）：返回 / 房间名居中 / 右侧胶囊占位 -->
+  <view class="hifi-nav">
+    <text class="hifi-back" bindtap="onBack">‹</text>
+    <text class="hifi-title">{{roomName}}</text>
+    <view class="hifi-capsule" bindtap="roomMenu"><text>·</text><text>·</text><text>·</text><text class="hifi-dot">◉</text></view>
+  </view>
+
+  <!-- 从已有物品中选择并绑定到当前家具：独立整页，确保打开即见（规范 §5.2） -->
+  <block wx:if="{{showBindPicker}}">
+    <view class="degrade-page">
+      <view class="degrade-tip">
+        <view class="strong">绑定到「{{bindTargetName}}」</view>
+        <view class="small muted">点选物品即建立/修改存放位置；已在此处的再次点选不会重复记录。</view>
+      </view>
+      <view class="card" wx:for="{{bindableItems}}" wx:key="id" data-id="{{item.id}}" bindtap="bindExistingItem">
+        <view class="row between">
+          <view class="grow">
+            <view class="strong">{{item.name}} <text class="tag green" wx:if="{{item.here}}">已在此处</text></view>
+            <view class="small muted">{{item.locText}}</view>
+          </view>
+          <text class="muted">▸</text>
+        </view>
+      </view>
+      <view class="state" wx:if="{{bindableItems.length===0}}">
+        <text class="state-title">还没有物品档案</text>
+        <text class="state-desc">可先「新建物品」再返回绑定</text>
+      </view>
+      <view class="row" style="margin-top:24rpx">
+        <button class="btn primary" bindtap="closeBindPicker">完成</button>
+        <button class="btn" bindtap="addItemFromPicker">＋ 新建物品</button>
+      </view>
     </view>
-    <text class="room-menu" bindtap="roomMenu">≡</text>
-  </view>
+  </block>
 
-  <!-- 顶部模式切换（浏览 / 编辑 / 收纳，严格分权） -->
-  <view class="segbar">
-    <view class="s {{mode==='browse'?'on':''}}" data-m="browse" bindtap="setMode">浏览</view>
-    <view class="s {{mode==='edit'?'on':''}}" data-m="edit" bindtap="setMode">编辑</view>
-    <view class="s {{mode==='store'?'on':''}}" data-m="store" bindtap="setMode">收纳</view>
-  </view>
+  <!-- ============ 物品视图（V1.3 §8）：高保真 06-我的物品 双列卡片 ============ -->
+  <block wx:elif="{{viewTab==='item'}}">
+    <view class="hifi-itemview">
+      <view class="hifi-search">⌕&nbsp; 搜索当前空间物品 · {{spaceItems.length}} 件</view>
+      <view class="hifi-grid">
+        <view class="hifi-itemcard" wx:for="{{spaceItems}}" wx:key="id" data-id="{{item.id}}" bindtap="openSpaceItem">
+          <image class="hifi-itemimg" src="{{item.thumb}}" mode="aspectFill"/>
+          <view class="hifi-itembody">
+            <view class="hifi-itemname">{{item.name}}</view>
+            <view class="hifi-itemqty">{{item.qty || '× 1'}}</view>
+          </view>
+        </view>
+      </view>
+      <view class="state" wx:if="{{spaceItems.length===0}}">
+        <text class="state-title">该空间暂无物品</text>
+        <text class="state-desc">可在家具上建档并指定收纳位置</text>
+      </view>
+    </view>
+  </block>
 
-  <!-- WebGL 正常时的页面主体：三维视图窗口（红框）+ 家具卡 + 模型库 -->
-  <block wx:if="{{view==='3d' && !glError}}">
-    <view class="view3d">
+  <!-- ============ 家具视图：高保真 02-客厅空间 沉浸式布局 ============ -->
+  <block wx:elif="{{view==='3d' && !glError}}">
+    <view class="hifi-stage">
       <canvas type="webgl" id="gl" class="glcanvas"
         catchtouchstart="onTouchStart" catchtouchmove="onTouchMove" catchtouchend="onTouchEnd"></canvas>
-      <!-- 选中浮标：拖动时实时显示坐标，反馈留在窗口内 -->
-      <view class="view3d-badge" wx:if="{{selected}}">已选：{{selected.name}} · X {{selected.px}} / Z {{selected.pz}}</view>
-      <view class="canvas-hint">{{hint}}</view>
-      <view class="view3d-empty" wx:if="{{furniture.length===0}}">房间还是空的，从下方模型库添加第一件家具</view>
+      <!-- 左上空间胶囊 -->
+      <cover-view class="hifi-stage-tag">{{roomName}} · 3D</cover-view>
+      <!-- 右侧悬浮相机键：视角预设循环 / 复位 / 适配（对齐高保真三枚悬浮键） -->
+      <cover-view class="hifi-cam">
+        <cover-view class="hifi-cam-btn hifi-cam-text" data-preset="{{cameraPreset==='isometric'?'top':'isometric'}}" bindtap="setPreset">{{cameraPreset==='isometric'?'3D':'俯视'}}</cover-view>
+        <cover-view class="hifi-cam-btn" bindtap="resetView">◎</cover-view>
+        <cover-view class="hifi-cam-btn" bindtap="fitView">⛶</cover-view>
+      </cover-view>
+      <!-- 状态提示：选中浮标 / 手势说明 / 空房间 / dirty 标记 -->
+      <cover-view class="view3d-badge" wx:if="{{selected && sceneMode!=='view'}}">已选：{{selected.name}}</cover-view>
+      <cover-view class="canvas-hint" wx:if="{{!sheetOpen}}">{{hint}}</cover-view>
+      <cover-view class="view3d-empty" wx:if="{{furniture.length===0}}">房间还是空的，点下方「添加家具」</cover-view>
+      <cover-view class="hifi-dirty" wx:if="{{isDirty}}">● 待保存</cover-view>
+
+      <!-- 底部抽屉：选中家具后展开，三维场景保持可见（V1.3 selected 态） -->
+      <cover-view class="bsheet {{sheetOpen?'on':''}} {{sheetCollapsed?'collapsed':''}}" wx:if="{{selected && sceneMode==='selected'}}">
+        <cover-view class="bsheet-bar" bindtap="toggleSheet">
+          <cover-view class="bsheet-handle"></cover-view>
+          <cover-view class="bsheet-title">{{selected.name}} · {{bindings.items.length}} 件物品</cover-view>
+          <cover-view class="bsheet-toggle">{{sheetOpen?(sheetCollapsed?'展开':'收起'):'展开'}}</cover-view>
+        </cover-view>
+        <cover-view class="bsheet-close" bindtap="closeSheet" wx:if="{{sheetOpen}}">✕</cover-view>
+        <block wx:if="{{sheetOpen && !sheetCollapsed}}">
+          <cover-view class="bsheet-sub">收纳节点 · 点节点查看该处物品</cover-view>
+          <cover-view class="bsheet-nodes">
+            <cover-view class="bsheet-node {{activeNodeId===item.id?'on':''}}" wx:for="{{sheetNodes}}" wx:key="id"
+              style="margin-left:{{item.depth*18}}rpx" data-id="{{item.id}}" bindtap="chooseNode">
+              {{item.name}} · {{item.itemCount}}件
+            </cover-view>
+          </cover-view>
+          <cover-view class="bsheet-sub">{{activeNodePath || '该家具暂无收纳节点'}} · 直接关联 {{nodeItems.length}}{{nodeItems.length===5?'+':''}} 件</cover-view>
+          <cover-view class="bsheet-items" wx:if="{{nodeItems.length}}">
+            <cover-view class="bsheet-item" wx:for="{{nodeItems}}" wx:key="id" data-id="{{item.id}}" bindtap="openNodeItem">· {{item.name}}</cover-view>
+          </cover-view>
+          <cover-view class="bsheet-empty" wx:else>该位置暂无物品，可从下方直接建档</cover-view>
+          <cover-view class="bsheet-actions">
+            <cover-view class="bsheet-btn primary" bindtap="addItemAtActiveNode">＋ 添加物品</cover-view>
+            <cover-view class="bsheet-btn" bindtap="goNodes">查看全部</cover-view>
+            <cover-view class="bsheet-btn" bindtap="chooseAddItem">关联已有</cover-view>
+            <cover-view class="bsheet-btn" bindtap="moreFurnitureOps">更多</cover-view>
+          </cover-view>
+        </block>
+      </cover-view>
     </view>
 
-    <!-- 窗口下方工具条：视图切换 / 复位视角 / 添加家具 -->
-    <view class="viewtools">
-      <view class="seg">
-        <view class="seg-i" data-v="list" bindtap="setView">列表（降级）</view>
+    <!-- 底部悬浮坞（高保真）：家具 / 物品 分段 + 横向家具卡片 + 添加家具 -->
+    <view class="hifi-dock">
+      <view class="hifi-tabs">
+        <view class="hifi-tab {{viewTab==='furniture'?'on':''}}" data-tab="furniture" bindtap="switchViewTab">家具</view>
+        <view class="hifi-tab {{viewTab==='item'?'on':''}}" data-tab="item" bindtap="switchViewTab">物品（{{spaceItems.length}}）</view>
       </view>
-      <view class="grow"></view>
-      <button class="btn sm" bindtap="resetView">复位</button>
-      <button class="btn sm primary" bindtap="addFurniture">＋ 家具</button>
+      <scroll-view class="hifi-cards" scroll-x wx:if="{{furniture.length}}">
+        <view class="hifi-card {{selected && selected.id===item.id?'on':''}}" wx:for="{{furniture}}" wx:for-index="idx" wx:key="id"
+          data-index="{{idx}}" bindtap="selectIndex">
+          <image wx:if="{{item.thumb}}" class="hifi-card-img" src="{{item.thumb}}" mode="aspectFill"/>
+          <view wx:else class="hifi-card-icon {{selected && selected.id===item.id?'on':''}}">
+            <text class="hifi-card-emoji">{{item.icon}}</text>
+            <text class="hifi-card-model">{{item.model}}</text>
+          </view>
+          <view class="hifi-card-name">{{item.name}}</view>
+        </view>
+      </scroll-view>
+      <view class="hifi-emptycards" wx:else>房间还是空的，添加第一件家具开始布置</view>
+      <view class="hifi-add" bindtap="toggleLib">添加家具</view>
     </view>
 
-    <!-- 选中家具卡片 -->
-    <view class="card selcard" wx:if="{{selected}}">
-      <view class="row between">
-        <view class="strong selname">{{selected.name}} <text class="tag green">已保存</text> <text class="tag {{selected.status==='candidate'?'orange':'green'}}">{{selected.status==='candidate'?'AI候选':'已确认'}}</text></view>
-        <text class="muted" bindtap="clearSel">✕</text>
+    <!-- 选中操作面板（V1.3 §4 管理/移动/旋转/尺寸；不依赖双击） -->
+    <view class="selpanel" wx:if="{{selected && sceneMode==='selected' && !sheetOpen}}">
+      <view class="selpanel-title">{{selected.name}} · {{selected.rot}}° · {{selected.sz}} cm</view>
+      <view class="opgrid">
+        <button class="btn sm primary" bindtap="openManage">管理</button>
+        <button class="btn sm" bindtap="enterMove">移动</button>
+        <button class="btn sm" bindtap="enterRotate">旋转</button>
+        <button class="btn sm" bindtap="enterDimension">尺寸</button>
+        <button class="btn sm" bindtap="changeModel">换模型</button>
       </view>
-      <view class="field-row">
-        <view class="field-cell">
-          <view class="fl">位置 X / Z</view>
-          <view class="fv">{{selected.px}} / {{selected.pz}}</view>
-        </view>
-        <view class="field-cell">
-          <view class="fl">旋转</view>
-          <view class="fv">{{selected.rot}}°</view>
-        </view>
-        <view class="field-cell">
-          <view class="fl">宽×深×高</view>
-          <view class="fv fv-sm">{{selected.sz}}</view>
-        </view>
-      </view>
-      <!-- CR-001 F-03/F-04：关联物品（单源 nodes.furnitureId + items.currentNodeId） -->
-      <view class="bindbox" wx:if="{{bindings}}" bindtap="goNodes">
-        <view class="bi">🔗</view>
-        <view class="grow">
-          <view class="strong small">{{bindings.items.length>0?'已绑定物品':'未绑定物品'}}</view>
-          <view class="small muted">{{bindings.itemNames || (bindings.items.length>0?'查看详情':'从家具详情创建节点并绑定')}}</view>
-        </view>
-        <text class="muted">▸</text>
-      </view>
-
-      <!-- 浏览模式：点选模型后提供移动与旋转入口，无需切模式即可旋转 -->
-      <view class="row wrap" style="margin-top:16rpx" wx:if="{{mode==='browse'}}">
-        <button class="btn sm primary" bindtap="enterMoveMode">移动模型</button>
-        <button class="btn sm" data-dir="-1" bindtap="rotateFurniture">↶ 90°</button>
-        <button class="btn sm" data-dir="1" bindtap="rotateFurniture">90° ↷</button>
-      </view>
-
-      <!-- 编辑模式：单指拖动=移动，双指捏合=缩放，旋转走下方按钮（每次90°），长按=删除 -->
-      <view class="ops-edit" wx:if="{{mode==='edit'}}">
-        <view class="row wrap" style="margin-top:16rpx">
-          <button class="btn sm primary" bindtap="editFurniture">编辑资料</button>
-          <button class="btn sm" bindtap="addItemAtFurniture">添加物品</button>
-          <button class="btn sm danger" bindtap="removeSelected">删除家具</button>
-        </view>
-        <view class="row wrap" style="margin-top:12rpx">
-          <button class="btn sm" data-dir="-1" bindtap="rotateFurniture">↶ 逆时针 90°</button>
-          <button class="btn sm" data-dir="1" bindtap="rotateFurniture">顺时针 90° ↷</button>
-        </view>
-        <view class="note-inline">单指拖动移动 · 双指捏合缩放 · 点击按钮旋转（每次 90°）· 长按删除；越界自动钳制，不产生非法布局。</view>
-      </view>
-
-      <!-- 收纳模式：入口进入节点；候选确认 -->
-      <view class="row wrap" style="margin-top:16rpx" wx:if="{{mode==='store'}}">
-        <button class="btn sm primary" bindtap="goNodes">收纳节点</button>
-        <button class="btn sm" wx:if="{{selected.status==='candidate'}}" bindtap="confirmCandidate">确认候选</button>
+      <view class="edit-actions">
+        <button class="btn sm" bindtap="undoScene">撤销</button>
+        <button class="btn sm primary" bindtap="saveScene" disabled="{{sceneMode==='saving'}}">
+          {{sceneMode==='saving'?'保存中…':'保存'}}
+        </button>
       </view>
     </view>
-    <view class="card" wx:if="{{!selected && furniture.length===0}}">
-      <view class="empty-line">房间还是空的，从下方模型库添加第一件家具</view>
+
+    <!-- 移动模式（V1.3 §5.1）：方向按钮，每步 5cm -->
+    <view class="editpanel" wx:if="{{sceneMode==='move'}}">
+      <view class="edit-head">移动 · 每步 {{moveStepCm}} cm <text class="muted small">（地面平面，不抬起）</text></view>
+      <view class="dpad">
+        <button class="btn sm" data-dir="front" bindtap="moveStep">↑ 前</button>
+        <view class="dpad-mid">
+          <button class="btn sm" data-dir="left" bindtap="moveStep">← 左</button>
+          <button class="btn sm" data-dir="right" bindtap="moveStep">右 →</button>
+        </view>
+        <button class="btn sm" data-dir="back" bindtap="moveStep">↓ 后</button>
+      </view>
+      <view class="edit-actions">
+        <button class="btn sm" bindtap="cancelEdit">取消</button>
+        <button class="btn sm primary" bindtap="finishEdit">完成</button>
+      </view>
     </view>
 
-    <!-- 家具模型库（单行横向滚动） -->
-    <view class="card libcard">
+    <!-- 旋转模式（V1.3 §5.2）：±15°，90° 快捷 -->
+    <view class="editpanel" wx:if="{{sceneMode==='rotate'}}">
+      <view class="edit-head">旋转 · 当前 {{curAngle}}° <text class="muted small">（绕垂直轴，每步 {{rotStepDeg}}°）</text></view>
+      <view class="opgrid">
+        <button class="btn sm" data-dir="-1" bindtap="rotateStep">↶ 15°</button>
+        <button class="btn sm" data-dir="1" bindtap="rotateStep">15° ↷</button>
+        <button class="btn sm" data-dir="-1" data-quick="1" bindtap="rotateStep">↶ 90°</button>
+        <button class="btn sm" data-dir="1" data-quick="1" bindtap="rotateStep">90° ↷</button>
+      </view>
+      <view class="edit-actions">
+        <button class="btn sm" bindtap="cancelEdit">取消</button>
+        <button class="btn sm primary" bindtap="finishEdit">完成</button>
+      </view>
+    </view>
+
+    <!-- 尺寸模式（V1.3 §5.3）：长宽高输入，单位 cm -->
+    <view class="editpanel" wx:if="{{sceneMode==='dimension'}}">
+      <view class="edit-head">尺寸 · 长 / 宽 / 高（cm）<text class="muted small">（底部中心锚点不变）</text></view>
+      <view class="dimrow">
+        <view class="dimcell"><view class="muted small">长</view><input class="diminput" type="number" data-field="l" value="{{dimL}}" bindinput="onDimInput" placeholder="cm"/></view>
+        <view class="dimcell"><view class="muted small">宽</view><input class="diminput" type="number" data-field="w" value="{{dimW}}" bindinput="onDimInput" placeholder="cm"/></view>
+        <view class="dimcell"><view class="muted small">高</view><input class="diminput" type="number" data-field="h" value="{{dimH}}" bindinput="onDimInput" placeholder="cm"/></view>
+      </view>
+      <view class="edit-actions">
+        <button class="btn sm" bindtap="cancelEdit">取消</button>
+        <button class="btn sm primary" bindtap="applyDimension">应用</button>
+      </view>
+    </view>
+
+    <view class="state" wx:if="{{sceneMode==='saveError'}}">
+      <text class="state-title">保存失败，草稿已保留</text>
+      <text class="state-desc">可重试保存或继续编辑</text>
+      <button class="btn sm primary" bindtap="saveScene">重试保存</button>
+    </view>
+
+    <!-- 家具模型库：点「添加家具」才展开，不常驻占据屏幕 -->
+    <view class="card libcard" wx:if="{{showLib}}">
       <view class="card-t">家具模型库</view>
       <scroll-view class="libscroll" scroll-x>
         <view class="librow">
@@ -108,11 +205,16 @@
           </view>
         </view>
       </scroll-view>
-      <view class="small muted" style="margin-top:12rpx">点选即从模型库添加占位家具，可在「编辑」模式调整位置；详细建档请用「＋ 家具」。</view>
+      <view class="small muted" style="margin-top:12rpx">点选即从库中添加到默认位置；选中后用「移动/旋转/尺寸」按钮调整。</view>
+      <view class="row" style="margin-top:12rpx">
+        <button class="btn sm" bindtap="addFurniture">建档家具</button>
+        <button class="btn sm" bindtap="setView" data-v="list">列表模式</button>
+        <button class="btn sm" bindtap="toggleLib">收起</button>
+      </view>
     </view>
   </block>
 
-  <!-- 整页降级：WebGL 不可用或手动切列表时，整页显示列表而非窗口内小列表 -->
+  <!-- 整页降级：WebGL 不可用或手动切列表时，整页显示列表（场景隐藏） -->
   <block wx:else>
     <view class="degrade-page">
       <view class="degrade-tip">
@@ -121,7 +223,7 @@
       </view>
       <view class="card" wx:for="{{furniture}}" wx:key="id" bindtap="selectFromList" data-id="{{item.id}}">
         <view class="row">
-          <view class="room-icon">{{item.icon}}</view>
+          <image class="degrade-thumb" src="{{item.thumb}}" mode="aspectFill"/>
           <view class="grow" style="margin-left:20rpx">
             <view class="card-t">{{item.name}}</view>
             <view class="card-s">{{item.bindCount}} 件关联物品 · 位置 {{item.px}} / {{item.pz}}</view>
@@ -131,7 +233,7 @@
       </view>
       <view class="state" wx:if="{{furniture.length===0}}">
         <text class="state-title">暂无家具</text>
-        <text class="state-desc">从模型库或「＋ 家具」建档</text>
+        <text class="state-desc">点「添加家具」建档，或在三维视图中用模型库添加</text>
       </view>
       <view class="row" style="margin-top:24rpx">
         <button class="btn" wx:if="{{!glError}}" bindtap="setView" data-v="3d">返回三维</button>

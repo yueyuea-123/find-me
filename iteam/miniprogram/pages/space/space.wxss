@@ -2,5 +2,5 @@
 .card-t { font-size: 30rpx; }
 .space-card { padding: 28rpx; }
 /* demo：当前空间 1.5px accent 边框 */
-.space-current { border: 3rpx solid #9C6B3F; }
+.space-current { border: 3rpx solid #6F8966; }
 .space-icon { width: 68rpx; height: 68rpx; font-size: 36rpx; border-radius: 22rpx; }

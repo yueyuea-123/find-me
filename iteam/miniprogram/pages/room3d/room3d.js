@@ -1,34 +1,80 @@
 // pages/room3d/room3d.js —— 三维房间页 UI-006（内嵌三维视图窗口 + 列表降级）
-// 布局对齐 demo pRoom3d：segbar → 三维视图窗口（红框）→ 选中家具卡 → 家具模型库
-// 三维渲染来自 package3d 分包（Three.js r108 + GLB 资产），按需引入
+// 交互基准：《客厅三维空间交互与开发设计规范 V1.3》A 方案（简化操作）+《A 方案交互状态图》：
+//   默认不直接拖动家具；点选家具后通过明确按钮小步调整；编辑先进本地待保存状态，保存后提交。
+// 三维渲染来自 package3d 分包（Three.js r108 + GLB 资产），按需引入；业务写仍落 store。
 var store = require('../../utils/store.js');
 var C = require('../../utils/constants.js');
 var rendererFactory = null;
 function clampNum(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 // 尺寸展示：保留两位小数并去掉无意义的尾随 0，避免缩放后出现长串小数
 function fmtNum(v) { return String(Math.round((Number(v) || 0) * 100) / 100); }
+// V1.3 §5.1/§5.2：首版步长固定 5cm、旋转 15°（90° 快捷）
+var MOVE_STEP_M = 0.05;   // 5cm，米
+var ROT_STEP_DEG = 15;    // 度
+var ROT_QUICK_DEG = 90;   // 快捷旋转
+
+// 高保真资产映射：交付稿 assets/ 的缩略图与家具/物品 ID 关联（视觉规范 §6）。
+// 图片仅用于列表缩略，三维模型仍由 package3d 按 category 加载，二者不互相替代。
+var HIFI_ROOT = '/images/hifi/';
+function furnitureThumb(f) {
+  var n = (f.name || '') + ' ' + (f.category || '');
+  // 只映射确有专属单件缩略图的类别；无专属图时返回空串，由页面用 icon 占位，
+  // 不再错误回落到整屋图 home_isometric.jpg（那会让「双人床/落地窗」显示成整套房效果）。
+  if (/沙发|sofa/i.test(n)) return HIFI_ROOT + 'sofa.jpg';
+  if (/躺椅/i.test(n)) return HIFI_ROOT + 'sofa.jpg';
+  if (/电视|tv|影音/i.test(n)) return HIFI_ROOT + 'tv_console.jpg';
+  if (/茶几|coffee/i.test(n)) return HIFI_ROOT + 'living_room.jpg';
+  if (/餐桌|书桌|table/i.test(n)) return HIFI_ROOT + 'living_room.jpg';
+  if (/书架/i.test(n)) return HIFI_ROOT + 'cabinet.jpg';
+  if (/绿植|植物|plant/i.test(n)) return HIFI_ROOT + 'plant.jpg';
+  return '';
+}
+function itemThumb(it) {
+  var n = it.name || '';
+  if (/保温杯|水壶|瓶|bottle/i.test(n)) return HIFI_ROOT + 'bottle.jpg';
+  if (/马克杯|杯子|mug|cup/i.test(n)) return HIFI_ROOT + 'mug.jpg';
+  if (/耳机|headphone/i.test(n)) return HIFI_ROOT + 'headphones.jpg';
+  if (/笔记本|书|note|book/i.test(n)) return HIFI_ROOT + 'notebook.jpg';
+  if (/绿植|植物|plant/i.test(n)) return HIFI_ROOT + 'plant.jpg';
+  if (/纸巾|纸|tissue/i.test(n)) return HIFI_ROOT + 'tissue.jpg';
+  if (/洗衣液|清洁|detergent/i.test(n)) return HIFI_ROOT + 'detergent.jpg';
+  if (/电池|battery/i.test(n)) return HIFI_ROOT + 'battery.jpg';
+  return '/images/default-goods-image.png';
+}
 
 Page({
   data: {
-    roomId: '', roomName: '', dimText: '', mode: 'browse', view: '3d',
+    roomId: '', roomName: '', dimText: '', view: '3d',
     furniture: [], selected: null, glError: '',
-    bindings: null, // CR-001 F-03：当前选中模型的关联物品汇总
-    // 模式1：浏览/编辑/收纳严格分权，提示随模式切换
-    hint: '点选查看家具 · 直接拖动家具摆放 · 拖空白旋转视角 · 双指缩放',
-    // 说明：编辑模式手势见 HINTS.edit —— 单指拖动移动、双指捏合缩放、点击按钮旋转、长按删除
+    bindings: null, // 当前选中模型关联物品汇总（名称在 _decorateBindings 组装）
+    // ---- V1.3 场景状态机（sceneMode 为唯一状态源，见 §6 / 状态图）----
+    // loading/view/selected/move/rotate/dimension/saving/saveError/itemView
+    sceneMode: 'loading',
+    viewTab: 'furniture',        // furniture | item（V1.3 §8 家具视图 / 物品视图）
+    isDirty: false,              // V1.3 §7：有实际数据变化才置位
+    cameraPreset: 'isometric',   // isometric | top | front
+    // 编辑面板回显
+    moveStepCm: 5,
+    rotStepDeg: ROT_STEP_DEG,
+    curAngle: 0,                 // 当前角度（0–359，V1.3 §5.2）
+    dimL: '', dimW: '', dimH: '', // 尺寸面板长宽高输入（cm）
+    spaceItems: [],              // 物品视图列表（仅当前空间）
+    hint: '点家具选中 · 空白处拖动转视角 · 双指缩放 · 选中后按钮微调并保存',
+    showLib: false,          // 家具模型库按需展开，不常驻占据屏幕
+    showBindPicker: false,   // 「从已有物品中选择」面板
+    bindableItems: [],
+    bindTargetName: '',
+    // 物品业务规则 V1.0 §3.2：点击家具打开底部抽屉，三维场景作为背景保持可见
+    sheetOpen: false, sheetCollapsed: false,
+    sheetNodes: [], activeNodeId: '', activeNodePath: '', nodeItems: [],
     lib: (C.FURNITURE_CATEGORIES || []).map(function (k) {
       return { key: k, icon: (C.FURNITURE_LIB[k] || {}).icon || '▣' };
     })
   },
 
-  // 三种模式的窗口内提示（模式1）
-  HINTS: {
-    browse: '点选查看家具 · 直接拖动家具摆放 · 拖空白旋转视角 · 双指缩放',
-    edit: '单指拖动移动 · 双指捏合缩放 · 点按钮旋转 90° · 长按删除',
-    store: '点家具进入收纳节点，拖动空白旋转视角'
-  },
+  HINT: '点家具选中 · 空白处拖动转视角 · 双指缩放 · 选中后按钮微调并保存',
 
-  onLoad: function (q) { this.setData({ roomId: q.id || '' }); },
+  onLoad: function (q) { this.setData({ roomId: q.id || '', sceneMode: 'loading' }); },
   onShow: function () {
     this.loadData();
     // canvas 位于 wx:if 块内，onReady 时可能未挂载；onShow 后补一次初始化（带重试）
@@ -39,12 +85,140 @@ Page({
   // 分段页面可滚动：canvas 位置随滚动变化，重新取 rect 供触摸坐标换算
   onPageScroll: function () { this._syncCanvasRect(); },
 
+  // ---------- V1.3 状态机工具 ----------
+  // 编辑子模式（move/rotate/dimension）禁止相机与场景手势；只有 view/selected 可转视角。
+  _editing: function () {
+    var m = this.data.sceneMode;
+    return m === 'move' || m === 'rotate' || m === 'dimension' || m === 'saving' || m === 'saveError';
+  },
+  // 进入子模式前记录基线，供「取消」回滚本次编辑（V1.3 §5.x）
+  _beginEdit: function (mode) {
+    var sel = this.data.selected;
+    if (!sel) { wx.showToast({ title: '请先点选家具', icon: 'none' }); return; }
+    var f = store.getFurniture(sel.id);
+    if (!f) return;
+    this._editBase = {
+      id: sel.id,
+      position: JSON.parse(JSON.stringify(f.position || { x: 0, y: 0, z: 0 })),
+      rotation: f.rotation || 0,
+      size: JSON.parse(JSON.stringify(f.size || { w: 0.6, d: 0.6, h: 0.6 }))
+    };
+    this._editChanged = false; // 未实际修改不标 dirty（V1.3 §7）
+    var patch = { sceneMode: mode };
+    if (mode === 'rotate') patch.curAngle = this._normDeg(Math.round((f.rotation || 0) * 180 / Math.PI));
+    if (mode === 'dimension') {
+      var s = f.size || {};
+      patch.dimL = fmtNum((s.w || 0) * 100);
+      patch.dimW = fmtNum((s.d || 0) * 100);
+      patch.dimH = fmtNum((s.h || 0) * 100);
+    }
+    this.setData(patch);
+    this._safeGL('setSelected', [this._findIndexById(sel.id)]);
+    this._safeRender();
+  },
+  // 「取消」：回滚本次编辑到基线，回到 selected，不改 dirty 之外的历史
+  cancelEdit: function () {
+    var b = this._editBase;
+    if (b) {
+      var f = store.getFurniture(b.id);
+      if (f) {
+        store.updateFurniture(b.id, { position: b.position, rotation: b.rotation, size: b.size });
+        // 撤销栈中由本次编辑产生的记录一并丢弃
+        this._undoStack = (this._undoStack || []).filter(function (e) { return e.id !== b.id; });
+      }
+    }
+    this._editBase = null; this._editChanged = false;
+    this._syncSceneToGL(); this.loadData();
+    this.setData({ sceneMode: 'selected' });
+    this._safeRender();
+    wx.showToast({ title: '已取消本次修改', icon: 'none' });
+  },
+  // 「完成」：保留待保存改动，回到 selected（V1.3 §6 MOVE/ROTATE/DIMENSION --完成--> SELECTED）
+  finishEdit: function () {
+    if (this._editBase && this._editChanged) {
+      this._undoStack = this._undoStack || [];
+      this._undoStack.push(JSON.parse(JSON.stringify(this._editBase))); // 供「撤销」回退最近一次
+    }
+    this._editBase = null; this._editChanged = false;
+    this.setData({ sceneMode: 'selected', isDirty: (this._undoStack || []).length > 0 });
+    this._safeRender();
+  },
+  // 角度归一化到 [0,360)
+  _normDeg: function (d) { d = Math.round(d) % 360; return d < 0 ? d + 360 : d; },
+
+  _selectedCard: function (row) {
+    return {
+      id: row.id, name: row.name, px: row.px, pz: row.pz,
+      rot: row.rot, sz: row.sz, status: row.status,
+      bindCount: store.bindingsOfFurniture(row.id).items.length
+    };
+  },
+
   // 绑定汇总补展示名（store 只回 items，展示用 itemNames 在此组装，不改数据层）
   _decorateBindings: function (furnitureId) {
     if (!furnitureId) return null;
     var b = store.bindingsOfFurniture(furnitureId);
     b.itemNames = (b.items || []).map(function (it) { return it.name; }).join('、');
     return b;
+  },
+
+  // 家具下全部收纳节点（含家具根节点），按父子层级平铺；计数只统计当前有效物品
+  _sheetNodes: function (furnitureId) {
+    if (!furnitureId) return [];
+    var all = store.listNodes(this.data.roomId).filter(function (n) {
+      return n.furnitureId === furnitureId;
+    });
+    var out = [];
+    var walk = function (parentId, depth) {
+      var level = all.filter(function (n) { return (n.parentId || '') === parentId; })
+        .sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
+      level.forEach(function (n) {
+        out.push({
+          id: n.id, name: n.name, type: n.type, depth: depth,
+          path: store.nodePath(n.id).join(' / '),
+          itemCount: store.itemsInNode(n.id).length
+        });
+        walk(n.id, depth + 1);
+      });
+    };
+    walk('', 0);
+    return out;
+  },
+
+  // 抽屉内容随选中家具/节点同步；节点物品只看直接关联的物品（规则 §4.1）
+  _refreshSheet: function (furnitureId) {
+    var nodes = this._sheetNodes(furnitureId);
+    var active = this.data.activeNodeId;
+    if (!nodes.some(function (n) { return n.id === active; })) active = nodes.length ? nodes[0].id : '';
+    var items = active ? store.itemsInNode(active).slice(0, 5).map(function (it) {
+      return { id: it.id, name: it.name, locationStatus: it.locationStatus || '' };
+    }) : [];
+    this.setData({
+      sheetNodes: nodes, activeNodeId: active,
+      activeNodePath: active ? store.nodePath(active).join(' / ') : '',
+      nodeItems: items
+    });
+  },
+
+  openSheet: function () {
+    if (!this.data.selected) return;
+    this._refreshSheet(this.data.selected.id);
+    this.setData({ sheetOpen: true, sheetCollapsed: false });
+  },
+  closeSheet: function () { this.setData({ sheetOpen: false, sheetCollapsed: false }); },
+  toggleSheet: function () {
+    if (!this.data.sheetOpen) { this.openSheet(); return; }
+    this.setData({ sheetCollapsed: !this.data.sheetCollapsed });
+  },
+  chooseNode: function (e) {
+    var id = e.currentTarget.dataset.id;
+    if (!id) return;
+    this.setData({ activeNodeId: id });
+    this._refreshSheet(this.data.selected && this.data.selected.id);
+  },
+  openNodeItem: function (e) {
+    var id = e.currentTarget.dataset.id;
+    if (id) wx.navigateTo({ url: '/pages/item-detail/item-detail?id=' + id });
   },
 
   loadData: function () {
@@ -54,6 +228,7 @@ Page({
       var lib = C.FURNITURE_LIB[f.category] || {};
       return {
         id: f.id, name: f.name, category: f.category, icon: lib.icon || '▣',
+        thumb: furnitureThumb(f),
         model: f.model, status: f.status, confidence: f.confidence,
         px: (f.position.x || 0).toFixed(2), pz: (f.position.z || 0).toFixed(2),
         rot: Math.round((f.rotation || 0) * 180 / Math.PI),
@@ -64,7 +239,7 @@ Page({
     });
     this._room = room;
     this._furniture = list;
-    // 选中态默认第一件家具；短按建档后仍保持选中
+    // 选中态：优先保持当前选中；否则保持规范 V1.0 兼容（默认第一件，demo 对齐依赖此串）
     var selected = this.data.selected, selRow = null;
     if (selected) {
       for (var si = 0; si < list.length; si++) if (list[si].id === selected.id) { selRow = list[si]; break; }
@@ -73,12 +248,13 @@ Page({
     var dim = room.calibrated ? (room.width + '×' + room.depth + '×' + room.height + ' m') : '尺寸未定标（相对估算）';
     this.setData({
       roomName: room.name, dimText: dim, furniture: list,
-      selected: selRow ? {
-        id: selRow.id, name: selRow.name, px: selRow.px, pz: selRow.pz,
-        rot: selRow.rot, sz: selRow.sz, status: selRow.status
-      } : null,
+      selected: selRow ? this._selectedCard(selRow) : null,
       bindings: this._decorateBindings(selRow ? selRow.id : '')
     });
+    // 底部 dock 的「物品（N）」徽标需要实时数量；只加载数据，不切换视图/状态
+    this._loadSpaceItems();
+    // 抽屉内容跟随选中家具刷新；打开状态由用户点击控制，loadData 不擅自弹面板
+    this._refreshSheet(selRow ? selRow.id : '');
     // 同步选中态到渲染器：高亮环与卡片选中态一致
     this._syncSelectionToGL();
     this._safeRender();
@@ -86,7 +262,8 @@ Page({
 
   _syncSelectionToGL: function () {
     var sel = this.data.selected;
-    if (!sel || !this._glRenderer) return;
+    // 编辑子模式下仅保留该家具选中；VIEW 模式不主动高亮（进入 selected 才显示）
+    if (!sel || !this._glRenderer || this.data.sceneMode === 'view' || this.data.sceneMode === 'loading') return;
     for (var i = 0; i < this._furniture.length; i++) {
       if (this._furniture[i].id === sel.id) { this._safeGL('setSelected', [i]); return; }
     }
@@ -119,7 +296,6 @@ Page({
     if (this._glRenderer || this._glInitStarted) return; // 防止 onReady/onShow 双重初始化
     wx.createSelectorQuery().in(this).select('#gl').fields({ node: true, size: true }).exec(function (res) {
       if (!res || !res[0] || !res[0].node) {
-        // 节点还没渲染出来（wx:if 延迟）：短暂重试，不急着降级
         if ((retry || 0) < 10) {
           setTimeout(function () { self._initGL((retry || 0) + 1); }, 80);
           return;
@@ -168,7 +344,6 @@ Page({
     var r = rendererFactory.createRoomRenderer(canvas, getScene, {
       onAssetError: function (info) {
         if (info.code === 'ASSETS_READY') return;
-        // 资产缺失会让场景只剩地板、看似"三维空白"，必须显式告知并给出可操作路径
         self.setData({ assetError: info.code + '：' + info.detail });
         wx.showModal({
           title: '三维模型资源不可用',
@@ -185,15 +360,12 @@ Page({
     canvas.height = Math.max(1, Math.floor(sizeInfo.height));
     r.resize(canvas.width, canvas.height);
     this._glRenderer = r;
-    // 渲染器就绪后立刻取真实窗口偏移，保证首屏首次拾取/拖动也准确
     this._syncCanvasRect();
     this._syncSelectionToGL();
     this._safeRender();
   },
 
-  // 触摸点统一换算为 canvas 内坐标。
-  // 真机 canvas 事件的 x/y 已是画布内坐标，不能再减窗口偏移；只有缺少 x/y 的
-  // 环境（模拟器/旧基础库）才用视口坐标 clientX/clientY 减 rect 兜底。
+  // 触摸点统一换算为 canvas 内坐标。真机 x/y 已是画布内坐标；仅旧环境用视口坐标兜底。
   _touchPoint: function (t) {
     if (typeof t.x === 'number' && typeof t.y === 'number' && isFinite(t.x) && isFinite(t.y)) {
       return { x: t.x, y: t.y };
@@ -205,53 +377,25 @@ Page({
   },
   _canvasXY: function (touch) { return this._touchPoint(touch); },
 
-  // 模式1：浏览/编辑/收纳严格分权
-  //  浏览：点选家具=选中；按住家具拖=直接移动（自动切编辑模式）；拖空白=旋转视角；双指=缩放视角
-  //  编辑：单指拖家具=移动（跟手预览、抬手落盘）；双指捏合=缩放家具；旋转=点按钮每次90°；长按家具=删除确认
-  //  收纳：点家具=进入该家具收纳节点；拖空白=旋转视角
-  //  真机注意：canvas 用 catchtouch* 阻止页面滚动抢走手势（见 room3d.wxml）
+  // ---- V1.3 §3 浏览与选中手势 ----
+  //   VIEW/SELECTED：空白单指拖动=旋转相机；双指=缩放相机；点家具=选中；点空白=取消选中。
+  //   默认不直接拖动家具（A 方案）。编辑子模式下 canvas 手势全部禁用，只能用明确按钮。
+  //   触摸开始命中家具时锁定为「家具点击」，同一次手势不得转成相机拖动。
   onTouchStart: function (e) {
-    if (!this._glRenderer || this.data.view !== '3d' || this.data.glError) return;
+    if (!this._glRenderer || this.data.view !== '3d' || this.data.glError || this._editing()) return;
     this._syncCanvasRect();
-    var ts = e.touches, self = this;
+    var ts = e.touches;
     if (ts.length === 1) {
       var p = this._canvasXY(ts[0]);
       var idx = this._safeGL('pick', [p.x, p.y]);
-      var hit = (idx !== null && idx >= 0 && this._furniture[idx]);
       this._sx = p.x; this._sy = p.y;
-      this._moved = false; this._lpFired = false;
-      this._hitIdx = hit ? idx : -1;
-      this._dragFid = hit ? this._furniture[idx].id : '';
-      // 命中即选中（浏览/编辑）；收纳模式不强行改选中态
-      if (hit && this.data.mode !== 'store' && (!this.data.selected || this.data.selected.id !== this._dragFid)) {
-        this.selectIndex(idx);
-      }
-      // 仅编辑模式：长按家具 → 删除确认
-      this._clearLongPress();
-      if (hit && this.data.mode === 'edit') {
-        this._lpTimer = setTimeout(function () {
-          if (self._moved || !self._glRenderer || self.data.view !== '3d' || !self._dragFid) return;
-          self._lpFired = true;
-          self.confirmRemove(self._dragFid);
-        }, 600);
-      }
+      this._moved = false;
+      this._hitIdx = (idx !== null && idx >= 0 && this._furniture[idx]) ? idx : -1;
+      // 命中家具 → 锁定为家具点击，禁止本次手势转相机；空白 → 相机拖动待命
     } else if (ts.length === 2) {
-      // 编辑模式：双指捏合仅缩放选中家具（旋转已改为点击按钮，见 rotateFurniture）；其他模式缩放视角
+      // 双指仅缩放相机，不改变家具尺寸（V1.3 §3.1）
       this._pinch = this._dist(ts);
-      this._pinchStart = this._pinch;   // 起始指距：家具缩放按相对起始的比例算，避免逐帧增量累积方向错乱
-      if (this.data.mode === 'edit' && this.data.selected) {
-        var rawSel = store.getFurniture(this.data.selected.id);
-        this._scaleBase = this.data.selected;                       // 起始卡片尺寸（含 sz 文本）
-        this._sizeBase = rawSel && rawSel.size ? {
-          w: rawSel.size.w, h: rawSel.size.h, d: rawSel.size.d
-        } : null;
-        this._scaleFid = this.data.selected.id;
-        this._scaleIdx = this._findIndexById(this._scaleFid);
-      } else {
-        this._scaleBase = null; this._sizeBase = null; this._scaleFid = ''; this._scaleIdx = -1;
-      }
-      this._moved = true; this._dragFid = '';
-      this._clearLongPress();
+      this._moved = true;
     }
   },
   _clearLongPress: function () { if (this._lpTimer) { clearTimeout(this._lpTimer); this._lpTimer = null; } },
@@ -261,118 +405,234 @@ Page({
   },
 
   onTouchMove: function (e) {
-    if (!this._glRenderer || this.data.view !== '3d' || this.data.glError) return;
+    if (!this._glRenderer || this.data.view !== '3d' || this.data.glError || this._editing()) return;
     var ts = e.touches;
     if (ts.length === 1 && this._sx !== undefined) {
       var p = this._touchPoint(ts[0]);
       var dx = p.x - this._sx, dy = p.y - this._sy;
-      if (Math.abs(dx) + Math.abs(dy) > 5) { this._moved = true; this._clearLongPress(); }
-      if (this._moved && this._dragFid && this.data.mode !== 'store') {
-        // 浏览/编辑模式按住家具均可拖动；浏览模式自动切到编辑，避免"提示说可拖、实际只转视角"
-        if (this.data.mode === 'browse') {
-          this.setData({ mode: 'edit', hint: this.HINTS.edit });
-        }
-        // 拖家具：累计像素位移一次换算成地面世界位移，内存预览不落盘
-        if (!this._dragPx) this._dragPx = { x: 0, y: 0 };
-        this._dragPx.x += dx; this._dragPx.y += dy;
-        var w = this._safeGL('dragDelta', [this._dragPx.x, this._dragPx.y]);
-        var f = store.getFurniture(this._dragFid);
-        if (w && f) {
-          var target = {
-            x: (f.position.x || 0) + w.dx,
-            z: (f.position.z || 0) + w.dz
-          };
-          // previewMove 是基于 f 当前位置增量换算的，这里用世界位移直接落到目标
-          var pos = this._safeGL('previewMove', [this._hitIdx, target.x, target.z]);
-          if (pos) {
-            this._previewPos = pos;
-            // 浮标实时显示坐标（不写库）
-            this.setData({
-              selected: this.data.selected ? Object.assign({}, this.data.selected, {
-                px: pos.x.toFixed(2), pz: pos.z.toFixed(2)
-              }) : null
-            });
-          }
-        }
-      } else if (this.data.mode === 'edit' && this.data.selected) {
-        // 编辑模式拖空白：平移视角
-        this._safeGL('pan', [dx, dy]);
-      } else {
-        // 浏览/收纳：旋转视角
+      if (Math.abs(dx) + Math.abs(dy) > 5) this._moved = true;
+      // 空白拖动：仅旋转相机；家具上按下则不移动家具、也不转视角（手势已锁定）
+      if (this._moved && this._hitIdx < 0) {
         this._safeGL('orbit', [dx, dy]);
       }
       this._sx = p.x; this._sy = p.y;
       this._safeRender();
     } else if (ts.length === 2 && this._pinch) {
       var d = this._dist(ts);
-      var delta = this._pinch - d;
-      if (this.data.mode === 'edit' && this._sizeBase && this._scaleFid) {
-        // 编辑双指：按「当前指距 / 起始指距」比例缩放家具——张开变大、捏合变小，
-        // 与真机直觉一致；相对起始值计算，避免逐帧 delta 累积导致方向错乱。抬手落盘。
-        var ratio = (this._pinchStart > 0) ? (d / this._pinchStart) : 1;
-        var factor = clampNum(ratio - 1, -0.5, 0.5);
-        var size = {
-          w: clampNum(this._sizeBase.w * (1 + factor), 0.2, 4),
-          h: clampNum(this._sizeBase.h * (1 + factor), 0.2, 4),
-          d: clampNum(this._sizeBase.d * (1 + factor), 0.2, 4)
-        };
-        // 预览尺寸：直接写 group.scale，不改 _raw（signature 不变 → 不重建实例）
-        this._safeGL('previewScale', [this._scaleIdx, size]);
-        this._previewSize = size;
-        // 卡片实时反映预览尺寸
-        this.setData({ selected: Object.assign({}, this.data.selected, {
-          sz: fmtNum(size.w) + '×' + fmtNum(size.d) + '×' + fmtNum(size.h)
-        }) });
-      } else {
-        this._safeGL('zoom', [delta]);
-      }
+      // 双指张开→放大视图，捏合→缩小视图；不改变家具尺寸
+      this._safeGL('zoom', [this._pinch - d]);
       this._pinch = d;
       this._safeRender();
     }
   },
-  // 点击按钮旋转选中家具：每次固定 90°，正顺时针 / 负逆时针
-  // 旋转改用按钮而非双指扭转，避免真机上扭转角度难以精确控制（只能近似 90° 档位）
-  rotateFurniture: function (e) {
-    if (!this.data.selected) { wx.showToast({ title: '请先点选模型', icon: 'none' }); return; }
-    var dir = Number((e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.dir) || 0);
-    if (!dir) return;
-    var fid = this.data.selected.id;
-    var f = store.getFurniture(fid);
-    if (!f) return;
-    var step = Math.PI / 2;                       // 90°
-    var rot = (f.rotation || 0) + dir * step;
-    rot = rot % (Math.PI * 2); if (rot < 0) rot += Math.PI * 2; // 归一化到 [0, 2π)
-    store.updateFurniture(fid, { rotation: Math.round(rot * 10000) / 10000 });
-    this._syncSceneToGL(); this.loadData();
-    this._safeRender();
-    wx.showToast({ title: dir > 0 ? '已顺时针旋转 90°' : '已逆时针旋转 90°', icon: 'none' });
-  },
 
   onTouchEnd: function () {
-    this._clearLongPress();
-    if (!this._glRenderer || this.data.view !== '3d' || this.data.glError) return;
-    if (this._moved && this._dragFid && this.data.mode === 'edit' && this._previewPos) {
-      // 抬手一次性落盘：用预览得到的最终坐标作为绝对位置写入
-      var f = store.getFurniture(this._dragFid);
-      if (f) store.updateFurniture(this._dragFid, {
-        position: { x: this._previewPos.x, y: f.position.y || 0, z: this._previewPos.z }
-      });
-      wx.showToast({ title: '位置已保存', icon: 'none' });
-      this._syncSceneToGL(); this.loadData();
-    } else if (this._previewSize && this._scaleFid) {
-      // 双指捏合抬手：尺寸一次性落盘（旋转改由按钮单独落盘）
-      store.updateFurniture(this._scaleFid, { size: this._previewSize });
-      wx.showToast({ title: '已保存', icon: 'none' });
-      this._syncSceneToGL(); this.loadData();
-    } else if (!this._moved && !this._lpFired && this._sx !== undefined && this._hitIdx >= 0) {
-      // 短按：浏览/编辑=仅选中（已在 touchstart 完成）；收纳=进入该家具收纳节点
-      if (this.data.mode === 'store') this.goFurnitureNodes(this._furniture[this._hitIdx].id);
+    if (!this._glRenderer || this.data.view !== '3d' || this.data.glError || this._editing()) return;
+    if (!this._moved) {
+      // 短按家具：选中并打开底部抽屉（业务规则 §3.2）；短按空白：取消选中
+      if (this._hitIdx >= 0) { this.selectIndex(this._hitIdx); this.openSheet(); }
+      else this.clearSel();
     }
     this._sx = this._sy = undefined;
-    this._pinch = null; this._pinchStart = 0; this._lpFired = false; this._dragFid = '';
-    this._hitIdx = -1; this._dragPx = null; this._previewPos = null;
-    this._scaleBase = null; this._sizeBase = null;
-    this._previewSize = null; this._scaleFid = ''; this._scaleIdx = -1;
+    this._pinch = null; this._hitIdx = -1; this._moved = false;
+  },
+
+  // ---- V1.3 §5.1 移动：方向按钮，固定步长 5cm，不直接拖动 ----
+  moveStep: function (e) {
+    var sel = this.data.selected;
+    if (!sel || this.data.sceneMode !== 'move') return;
+    var dir = (e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.dir) || '';
+    var f = store.getFurniture(sel.id);
+    if (!f) return;
+    var pos = f.position || { x: 0, y: 0, z: 0 };
+    var nx = pos.x || 0, nz = pos.z || 0;
+    if (dir === 'left') nx -= MOVE_STEP_M;
+    else if (dir === 'right') nx += MOVE_STEP_M;
+    else if (dir === 'front') nz -= MOVE_STEP_M;
+    else if (dir === 'back') nz += MOVE_STEP_M;
+    else return;
+    // 地面平面移动，钳制在房间边界内（保留半个家具尺寸，规则同 transformFurniture）
+    var room = this._room || {}, halfW = (room.width || 20) / 2, halfD = (room.depth || 20) / 2;
+    var sz = f.size || {};
+    nx = clampNum(nx, -halfW + (sz.w || 0) / 2, halfW - (sz.w || 0) / 2);
+    nz = clampNum(nz, -halfD + (sz.d || 0) / 2, halfD - (sz.d || 0) / 2);
+    var r = store.updateFurniture(sel.id, {
+      position: { x: Math.round(nx * 100) / 100, y: pos.y || 0, z: Math.round(nz * 100) / 100 }
+    });
+    if (!r.ok) return;
+    this._editChanged = true;
+    this._syncSceneToGL();
+    this.loadData();
+    this._safeRender();
+  },
+
+  // ---- V1.3 §5.2 旋转：逆时针 / 顺时针按钮，15° 步长，90° 快捷 ----
+  rotateStep: function (e) {
+    var sel = this.data.selected;
+    if (!sel || this.data.sceneMode !== 'rotate') return;
+    var ds = (e && e.currentTarget && e.currentTarget.dataset) || {};
+    var dir = Number(ds.dir || 0);
+    var quick = !!ds.quick;
+    if (!dir) return;
+    var f = store.getFurniture(sel.id);
+    if (!f) return;
+    var deg = (f.rotation || 0) * 180 / Math.PI + dir * (quick ? ROT_QUICK_DEG : ROT_STEP_DEG);
+    deg = this._normDeg(deg);
+    var rad = Math.round((deg * Math.PI / 180) * 10000) / 10000;
+    var r = store.updateFurniture(sel.id, { rotation: rad });
+    if (!r.ok) return;
+    this._editChanged = true;
+    this.setData({ curAngle: deg });
+    this._syncSceneToGL();
+    this.loadData();
+    this._safeRender();
+  },
+
+  // ---- V1.3 §5.3 尺寸：长宽高输入（cm），应用后写入待保存状态 ----
+  onDimInput: function (e) {
+    var field = (e.currentTarget.dataset.field) || '';
+    var val = e.detail.value;
+    if (field === 'l' || field === 'w' || field === 'h') {
+      var p = {}; p['dim' + field.toUpperCase()] = val; this.setData(p);
+    }
+  },
+  applyDimension: function () {
+    var sel = this.data.selected;
+    if (!sel || this.data.sceneMode !== 'dimension') return;
+    var l = Number(this.data.dimL), w = Number(this.data.dimW), h = Number(this.data.dimH);
+    if (!(l > 0 && w > 0 && h > 0)) {
+      wx.showToast({ title: '长宽高须大于 0', icon: 'none' }); return;
+    }
+    // 产品/技术配置边界：0.1m ~ 12m（与 store.js SIZE_MIN/SIZE_MAX 一致），避免静默变形
+    var maxCm = 1200, minCm = 10;
+    if (Math.max(l, w, h) > maxCm || Math.min(l, w, h) < minCm) {
+      wx.showToast({ title: '尺寸须在 10–1200 cm', icon: 'none' }); return;
+    }
+    var f = store.getFurniture(sel.id);
+    if (!f) return;
+    var pos = f.position || { x: 0, y: 0, z: 0 };
+    // 底部中心锚点不变：只改 size，position 保持（V1.3 §5.3）
+    var r = store.updateFurniture(sel.id, {
+      size: {
+        w: Math.round(l) / 100, d: Math.round(w) / 100, h: Math.round(h) / 100
+      }
+    });
+    if (!r.ok) return;
+    this._editChanged = true;
+    this._syncSceneToGL();
+    this.loadData();
+    this.finishEdit(); // 尺寸「应用」即完成编辑，进入待保存（状态图 DIMENSION --应用尺寸--> 保存/撤销）
+    wx.showToast({ title: '尺寸已更新，待保存', icon: 'none' });
+  },
+
+  // ---- V1.3 §7 保存 / 撤销 / 离开 ----
+  saveScene: function () {
+    var self = this;
+    if (!this.data.isDirty) { wx.showToast({ title: '暂无待保存修改', icon: 'none' }); return; }
+    this.setData({ sceneMode: 'saving' });
+    try {
+      // 场景编辑已在 store 内存生效；提交即触发落盘（store.updateFurniture 每次改动已 commit，
+      // 此处以一次显式保存动作清空 dirty 并更新版本号口径）。
+      var ok = true;
+      (this._undoStack || []).forEach(function (e) {
+        var f = store.getFurniture(e.id);
+        if (!f) return;
+        var rr = store.updateFurniture(e.id, { position: f.position, rotation: f.rotation, size: f.size });
+        if (!rr.ok) ok = false;
+      });
+      if (!ok) throw new Error('PERSIST_FAILED');
+      this._undoStack = [];
+      this.setData({ sceneMode: 'selected', isDirty: false });
+      this.loadData();
+      wx.showToast({ title: '已保存', icon: 'success' });
+    } catch (err) {
+      // 保存失败保留本地草稿，进入 SAVE_ERROR，可重试（V1.3 §7）
+      this.setData({ sceneMode: 'saveError' });
+      wx.showModal({ title: '保存失败', content: '本地修改已保留，可重试保存或继续编辑。', showCancel: false });
+    }
+    self._safeRender();
+  },
+  // 撤销最近一次已完成的家具变更（V1.3 §7：仅撤销最近一次，不做多级时间线）
+  undoScene: function () {
+    var st = this._undoStack || [];
+    if (!st.length) { wx.showToast({ title: '没有可撤销的修改', icon: 'none' }); return; }
+    var last = st[st.length - 1];
+    var f = store.getFurniture(last.id);
+    if (f) store.updateFurniture(last.id, { position: last.position, rotation: last.rotation, size: last.size });
+    st.pop();
+    this._undoStack = st;
+    this._syncSceneToGL(); this.loadData();
+    this.setData({ isDirty: st.length > 0 });
+    this._safeRender();
+    wx.showToast({ title: '已撤销上一次修改', icon: 'none' });
+  },
+  // dirty 状态离开页面二次确认（V1.3 §7）
+  // 由页面导航/返回入口调用；onUnload 无法拦截系统返回，故在离开入口与 onHide 兜底提示。
+  onBack: function () {
+    var self = this;
+    if (!this.data.isDirty) { wx.navigateBack(); return; }
+    wx.showModal({
+      title: '有未保存的修改', content: '是否保存本次场景修改？',
+      confirmText: '保存并离开', cancelText: '放弃修改',
+      success: function (res) {
+        if (res.confirm) {
+          self._undoStack = [];
+          self.setData({ isDirty: false });
+          wx.navigateBack();
+        } else {
+          var st = self._undoStack || [];
+          if (st.length) {
+            var first = st[0], f = store.getFurniture(first.id);
+            if (f) store.updateFurniture(first.id, { position: first.position, rotation: first.rotation, size: first.size });
+          }
+          self._undoStack = [];
+          self.setData({ isDirty: false });
+          wx.navigateBack();
+        }
+      }
+    });
+  },
+
+  // ---- V1.3 §3.1 相机：复位 / 适配 / 视角预设；相机变化不标 dirty ----
+  resetView: function () { this._safeGL('reset'); this.setData({ cameraPreset: 'isometric' }); this._safeRender(); },
+  fitView: function () { this._safeGL('fit'); this._safeRender(); },
+  setPreset: function (e) {
+    var name = (e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.preset) || 'isometric';
+    this._safeGL('setPreset', [name]);
+    this.setData({ cameraPreset: name });
+    this._safeRender();
+  },
+  // ---- V1.3 §8 家具视图 / 物品视图切换（不改变数据）----
+  switchViewTab: function (e) {
+    var tab = (e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.tab) || 'furniture';
+    if (tab === this.data.viewTab) return;
+    if (tab === 'item') {
+      this._loadSpaceItems();
+      this.setData({ viewTab: 'item', sceneMode: 'itemView' });
+    } else {
+      this.setData({ viewTab: 'furniture', sceneMode: 'view' }, this._initGL.bind(this));
+    }
+  },
+  _loadSpaceItems: function () {
+    var room = this._room;
+    var sid = room && room.spaceId;
+    var list = store.listItems({ spaceId: sid }).map(function (it) {
+      var node = it.currentNodeId ? store.getNode(it.currentNodeId) : null;
+      var owner = node && node.furnitureId ? store.getFurniture(node.furnitureId) : null;
+      var iv = store.findInventoryByItem(it.id);
+      return {
+        id: it.id, name: it.name, photoPath: it.photoPath || '', category: it.category || '',
+        thumb: it.photoPath || itemThumb(it),
+        qty: iv ? fmtNum(iv.balance) + (iv.unit || '') : '',
+        furnitureName: owner ? owner.name : '',
+        locText: node ? store.nodePath(it.currentNodeId).join(' / ') : '未设置位置'
+      };
+    });
+    this.setData({ spaceItems: list });
+  },
+  openSpaceItem: function (e) {
+    var id = e.currentTarget.dataset.id;
+    if (id) wx.navigateTo({ url: '/pages/item-detail/item-detail?id=' + id });
   },
 
   // 拖动后把最新 raw 同步给渲染器（getData 返回 _raw 引用，updateFurniture 已落盘）
@@ -383,41 +643,99 @@ Page({
     }
   },
 
-  // 为当前选中家具建档物品：bindtap 传的是事件对象，家具以选中态为准，避免误用事件对象当 id
-  addItemAtFurniture: function (furnitureId) {
-    // 兼容短按旧调用传入的家具 id；按钮 bindtap 传事件对象，此时回退到选中家具
-    var fid = (typeof furnitureId === 'string' && furnitureId) || (this.data.selected && this.data.selected.id);
-    if (!fid) { wx.showToast({ title: '请先选中家具', icon: 'none' }); return; }
-    if (!fid) { wx.showToast({ title: '请先选中家具', icon: 'none' }); return; }
+  // 家具根收纳节点：物品绑定到家具即写入该节点（规范 §5.1 家具作为存放位置入口）
+  _rootNodeId: function (fid) {
     var nodes = store.listNodes(this.data.roomId).filter(function (n) {
       return n.furnitureId === fid && !n.parentId;
     });
-    var nodeId = nodes.length ? nodes[0].id : '';
-    wx.navigateTo({ url: '/pages/item-edit/item-edit?nodeId=' + nodeId });
+    return nodes.length ? nodes[0].id : '';
   },
 
-  _syncSelectedRaw: function () {
+  // 添加物品入口：从已有物品中选择 / 新建物品（规范 §5.2）
+  chooseAddItem: function () {
+    if (!this.data.selected) { wx.showToast({ title: '请先点选家具', icon: 'none' }); return; }
+    var self = this;
+    wx.showActionSheet({
+      itemList: ['从已有物品中选择', '新建物品'],
+      success: function (res) {
+        if (res.tapIndex === 0) self.openBindPicker();
+        else if (res.tapIndex === 1) self.addItemAtFurniture(self.data.selected.id, self.data.activeNodeId);
+      }
+    });
+  },
+
+  // 新建物品：进入建档页并预选当前家具/当前收纳节点（规则 §3.2、§3.3）
+  addItemAtFurniture: function (furnitureId, nodeId) {
+    // 兼容旧调用传入的家具 id；按钮 bindtap 传事件对象，此时回退到选中家具
+    var fid = (typeof furnitureId === 'string' && furnitureId) || (this.data.selected && this.data.selected.id);
+    if (!fid) { wx.showToast({ title: '请先选中家具', icon: 'none' }); return; }
+    var target = (typeof nodeId === 'string' && nodeId)
+      || this.data.activeNodeId
+      || this._rootNodeId(fid);
+    wx.navigateTo({ url: '/pages/item-edit/item-edit?nodeId=' + target });
+  },
+  // 抽屉「添加物品」按钮：默认继承当前选中节点
+  addItemAtActiveNode: function () {
+    this.addItemAtFurniture('', this.data.activeNodeId);
+  },
+
+  // 当前家具下的有效目标节点：抽屉里选中了节点则用它，否则回退家具根节点
+  _targetNodeId: function (fid) {
+    var active = this.data.activeNodeId;
+    var nodes = store.listNodes(this.data.roomId).filter(function (n) { return n.furnitureId === fid; });
+    if (active && nodes.some(function (n) { return n.id === active; })) return active;
+    return this._rootNodeId(fid);
+  },
+
+  // 从已有物品中选择：列出未结束档案，点选即绑定/改存放家具（规范 §5.2、§9.7、§9.9）
+  openBindPicker: function () {
     var sel = this.data.selected;
     if (!sel) return;
-    var f = store.getFurniture(sel.id);
-    var row = null;
-    for (var i = 0; i < this._furniture.length; i++) if (this._furniture[i].id === sel.id) { row = this._furniture[i]; break; }
-    if (f && row) {
-      row._raw = f;
-      row.px = (f.position.x || 0).toFixed(2);
-      row.pz = (f.position.z || 0).toFixed(2);
-      row.rot = Math.round((f.rotation || 0) * 180 / Math.PI);
-    }
+    if (!this._targetNodeId(sel.id)) { wx.showToast({ title: '该家具暂无收纳节点', icon: 'none' }); return; }
+    // 绑定面板用 wx:if 替换三维块，canvas 将被销毁：释放引用便于返回时重建
+    this._glRenderer = null; this._glCanvas = null; this._glInitStarted = false;
+    var fid = sel.id;
+    var statusText = { at_home: '在家·位置未知', unknown: '位置未知', out: '外出', borrowed: '借出' };
+    var list = store.listItems().map(function (it) {
+      var node = it.currentNodeId ? store.getNode(it.currentNodeId) : null;
+      var owner = node && node.furnitureId ? store.getFurniture(node.furnitureId) : null;
+      return {
+        id: it.id, name: it.name,
+        locText: it.currentNodeId ? store.nodePath(it.currentNodeId).join(' / ') : (statusText[it.locationStatus] || '未设置'),
+        here: !!owner && owner.id === fid
+      };
+    });
+    this.setData({ bindableItems: list, bindTargetName: sel.name, showBindPicker: true });
   },
-  _refreshSelectedCard: function () {
-    var sel = this.data.selected, row = null;
+  closeBindPicker: function () {
+    var self = this;
+    this.setData({ showBindPicker: false, bindableItems: [] }, function () {
+      // canvas 随 wx:if 重建，重新初始化渲染器；失败会自动降级列表
+      self._glInitStarted = false;
+      setTimeout(function () { self._initGL(); }, 60);
+    });
+  },
+  // 绑定面板内直接新建物品：进入建档页并预选当前收纳节点
+  addItemFromPicker: function () {
+    var sel = this.data.selected;
     if (!sel) return;
-    for (var i = 0; i < this._furniture.length; i++) if (this._furniture[i].id === sel.id) { row = this._furniture[i]; break; }
-    if (row) this.setData({ selected: {
-      id: row.id, name: row.name, px: row.px, pz: row.pz, rot: row.rot, sz: row.sz, status: row.status
-    }, furniture: this._furniture });
+    this.addItemAtFurniture(sel.id, this._targetNodeId(sel.id));
+  },
+  bindExistingItem: function (e) {
+    var id = e.currentTarget.dataset.id;
+    var sel = this.data.selected;
+    if (!id || !sel) return;
+    var nodeId = this._targetNodeId(sel.id);
+    if (!nodeId) return;
+    var r = store.moveItem(id, { locationStatus: 'at_home', currentNodeId: nodeId });
+    if (!r.ok) { wx.showToast({ title: '绑定失败：' + r.error, icon: 'none' }); return; }
+    wx.showToast({ title: r.unchanged ? '已在该位置' : '已绑定到「' + sel.name + '」', icon: 'none' });
+    this.closeBindPicker();
+    this._syncSceneToGL(); this.loadData();
   },
 
+  // 家具模型库：按需展开为抽屉，点选即添加占位家具（规范 §3.1、§4.1）
+  toggleLib: function () { this.setData({ showLib: !this.data.showLib }); },
   addFromLib: function (e) {
     var cat = e.currentTarget.dataset.cat;
     if (!cat) return;
@@ -425,20 +743,30 @@ Page({
     var count = store.listFurniture(this.data.roomId).filter(function (f) { return f.category === cat; }).length;
     var r = store.addFurniture(this.data.roomId, { category: cat, name: count ? cat + ' ' + (count + 1) : cat });
     if (!r.ok) { wx.showToast({ title: '添加失败：' + r.error, icon: 'none' }); return; }
-    wx.showToast({ title: '已添加，可拖动摆放', icon: 'success' });
+    this.setData({ showLib: false });
+    wx.showToast({ title: '已添加，选中后可用按钮微调', icon: 'success' });
     this.loadData();
   },
+
+  // ---- V1.3 §0/§4「管理」入口：选中后点明确按钮进入家具管理，不用双击 ----
+  openManage: function () {
+    if (!this.data.selected) return;
+    wx.navigateTo({ url: '/pages/furniture-detail/furniture-detail?id=' + this.data.selected.id });
+  },
+  enterMove: function () { this._beginEdit('move'); },
+  enterRotate: function () { this._beginEdit('rotate'); },
+  enterDimension: function () { this._beginEdit('dimension'); },
 
   _doRemoveFurniture: function (id) {
     var r = store.removeFurniture(id);
     if (!r.ok) {
       if (r.error === 'HAS_LINKS') {
-        wx.showModal({ title: '无法删除', content: '已被关联：' + r.items
-          + ' 件物品 / ' + r.childNodes + ' 个节点，须先迁移或归档', showCancel: false });
+        wx.showModal({ title: '无法删除', content: '该家具下仍有 ' + r.items + ' 件物品 / ' + r.childNodes
+          + ' 个收纳节点。物品记录不会被删除，请先把它们移到其他位置后再删除家具。', showCancel: false });
       } else wx.showToast({ title: '删除失败：' + r.error, icon: 'none' });
       return;
     }
-    wx.showToast({ title: '家具已删除', icon: 'success' });
+    wx.showToast({ title: '家具已删除，物品记录未受影响', icon: 'success' });
     if (this.data.selected && this.data.selected.id === id) this.setData({ selected: null, bindings: null });
     this.loadData();
   },
@@ -446,22 +774,45 @@ Page({
     if (!this.data.selected) return;
     this.confirmRemove(this.data.selected.id);
   },
-  // 长按/按钮删除统一走二次确认（关联保护仍由数据层负责）
+  // 删除确认：明确物品归属不被静默丢失（规范 §4.5）
   confirmRemove: function (id) {
     if (!id) return;
     var self = this;
     var f = store.getFurniture(id);
+    var b = store.bindingsOfFurniture(id);
     wx.showModal({
       title: '删除家具',
-      content: '确认删除「' + ((f && f.name) || '该家具') + '」？删除后不可恢复；已关联节点或物品时会被阻断。',
+      content: '确认删除「' + ((f && f.name) || '该家具') + '」？'
+        + (b.items.length ? '该家具关联 ' + b.items.length + ' 件物品，删除会被阻断，需先迁移存放位置。' : '删除后不可恢复。'),
       confirmText: '删除', confirmColor: '#BE5F44',
       success: function (res) { if (res.confirm) self._doRemoveFurniture(id); }
     });
   },
-  // 收纳模式：点家具直接进入其收纳节点详情
+
+  // 查看物品：进入家具详情（关联物品列表 + 逻辑收纳节点）
   goFurnitureNodes: function (furnitureId) {
-    if (!furnitureId) return;
-    wx.navigateTo({ url: '/pages/furniture-detail/furniture-detail?id=' + furnitureId });
+    var fid = furnitureId || (this.data.selected && this.data.selected.id);
+    if (!fid) return;
+    wx.navigateTo({ url: '/pages/furniture-detail/furniture-detail?id=' + fid });
+  },
+  goNodes: function () { this.goFurnitureNodes(); },
+  // 抽屉内的次要操作折叠到一处，避免遮挡三维场景
+  moreFurnitureOps: function () {
+    if (!this.data.selected) return;
+    var self = this;
+    var candidate = this.data.selected.status === 'candidate';
+    var items = ['编辑家具资料'];
+    if (candidate) items.push('确认候选家具');
+    items.push('删除家具');
+    wx.showActionSheet({
+      itemList: items,
+      success: function (res) {
+        var label = items[res.tapIndex];
+        if (label === '编辑家具资料') self.editFurniture();
+        else if (label === '确认候选家具') self.confirmCandidate();
+        else if (label === '删除家具') self.removeSelected();
+      }
+    });
   },
 
   _dist: function (ts) {
@@ -475,56 +826,62 @@ Page({
     if (!f) return;
     this._safeGL('setSelected', [idx]);
     this.setData({
-      selected: { id: f.id, name: f.name, px: f.px, pz: f.pz, rot: f.rot, sz: f.sz, status: f.status },
-      bindings: this._decorateBindings(f.id)
+      selected: this._selectedCard(f),
+      bindings: this._decorateBindings(f.id),
+      sceneMode: (this.data.sceneMode === 'loading' || this.data.sceneMode === 'view') ? 'selected' : this.data.sceneMode
     });
+    this._refreshSheet(f.id);
   },
   selectFromList: function (e) {
     var id = e.currentTarget.dataset.id;
     if (!id) return;
     wx.navigateTo({ url: '/pages/furniture-detail/furniture-detail?id=' + id });
   },
+  // 更换外观模型（UF-002 / BR-009）：从该家具类别的模型变体中选一个，
+  // 只改 furniture.model，不动逻辑节点与物品关联；渲染器 signature 含 model，会自动重建外观。
+  changeModel: function () {
+    var sel = this.data.selected;
+    if (!sel || !sel.id) { wx.showToast({ title: '请先选择一件家具', icon: 'none' }); return; }
+    var f = store.getFurniture(sel.id);
+    if (!f) { wx.showToast({ title: '家具不存在', icon: 'none' }); return; }
+    var vars = (C.FURNITURE_LIB[f.category] || {}).vars || [];
+    if (!vars.length) { wx.showToast({ title: '该家具暂无可选外观', icon: 'none' }); return; }
+    var self = this;
+    wx.showActionSheet({
+      itemList: vars.slice(0, 6),
+      success: function (res) {
+        var model = vars[res.tapIndex];
+        if (!model || model === f.model) return;
+        var r = store.updateFurniture(f.id, { model: model });
+        if (!r.ok) { wx.showToast({ title: '更换失败', icon: 'none' }); return; }
+        self.loadData();               // 刷新 _furniture 与 selected（_raw.model 更新）
+        self._safeGL('setSelected', [self._findIndexById(f.id)]);
+        self._safeRender();            // signature 变化 → 重建模型，外观可见
+        wx.showToast({ title: '已换为「' + model + '」，关联不变', icon: 'none' });
+      }
+    });
+  },
   clearSel: function () {
+    if (this.data.sceneMode !== 'selected' && this.data.sceneMode !== 'view') return;
     this._safeGL('setSelected', [-1]);
-    this.setData({ selected: null, bindings: null });
+    this.setData({ selected: null, bindings: null, sheetOpen: false, sheetCollapsed: false, sceneMode: 'view' });
     this._safeRender();
   },
 
-  setMode: function (e) {
-    var m = e.currentTarget.dataset.m;
-    this.setData({ mode: m, hint: this.HINTS[m] || this.HINTS.browse });
-  },
-  // 浏览模式点选模型后，给一个明确的「移动模型」入口：切到编辑模式再拖动，
-  // 避免用户短按后以为可以直接拖动却只旋转了视角。
-  enterMoveMode: function () {
-    if (!this.data.selected) { wx.showToast({ title: '请先点选模型', icon: 'none' }); return; }
-    this.setMode({ currentTarget: { dataset: { m: 'edit' } } });
-    wx.showToast({ title: '编辑模式：单指拖动模型移动', icon: 'none' });
-  },
   setView: function (e) {
     var v = e.currentTarget.dataset.v;
     if (v === this.data.view) return;
     if (v === 'list') {
-      // canvas 将被 wx:if 销毁，释放旧渲染器引用；切回时重建
       this._glRenderer = null; this._glCanvas = null; this._glInitStarted = false;
       this.setData({ view: 'list' });
     } else {
       this.setData({ view: '3d' }, this._initGL.bind(this));
     }
   },
-  resetView: function () { this._safeGL('reset'); this._safeRender(); },
 
   editFurniture: function () {
     if (!this.data.selected) return;
     wx.navigateTo({ url: '/pages/furniture-edit/furniture-edit?id=' + this.data.selected.id });
-  },
-  goNodes: function () {
-    if (!this.data.selected) return;
-    wx.navigateTo({ url: '/pages/furniture-detail/furniture-detail?id=' + this.data.selected.id });
-  },
-  goItemDetail: function (e) {
-    var id = e.currentTarget.dataset.id;
-    if (id) wx.navigateTo({ url: '/pages/item-detail/item-detail?id=' + id });
   },
   confirmCandidate: function () {
     var self = this;

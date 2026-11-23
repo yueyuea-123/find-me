@@ -6,8 +6,14 @@
       <view class="grow" style="margin-left:24rpx">
         <view class="hero-name">{{item.name}}</view>
         <view class="card-s">{{item.catText}} · {{item.modeText}}</view>
+        <view class="row" style="flex-wrap:wrap;margin-top:10rpx" wx:if="{{item.tags.length}}">
+          <text class="mini-tag" wx:for="{{item.tags}}" wx:for-item="tg" wx:key="*this">{{tg}}</text>
+        </view>
       </view>
-      <text class="tag {{item.mgmtClass}}">{{item.mgmtText}}</text>
+      <view class="fav-wrap">
+        <text class="fav-star {{item.favorite?'on':''}}" bindtap="toggleFavorite">{{item.favorite?'★':'☆'}}</text>
+        <text class="tag {{item.mgmtClass}}">{{item.mgmtText}}</text>
+      </view>
     </view>
     <view class="row between small" style="margin-top:20rpx">
       <text class="muted">档案完善度</text><text>档案 {{item.completed}}%</text>
@@ -32,6 +38,7 @@
     </view>
     <view class="kv"><text class="muted">位置状态</text><text class="tag {{item.locClass}}">{{item.locText}}</text></view>
     <view class="kv"><text class="muted">存放位置</text><text>{{item.locPath}}</text></view>
+    <view class="kv" wx:if="{{item.homePath && item.homePath!==item.locPath}}"><text class="muted">常驻位置</text><text>{{item.homePath}}</text></view>
     <view class="kv" wx:if="{{item.borrowTo}}"><text class="muted">借出对象</text><text>{{item.borrowTo}}</text></view>
     <view class="kv" wx:if="{{item.dueDate}}"><text class="muted">预计归还</text><text>{{item.dueDate}}</text></view>
     <view class="kv" wx:if="{{item.disposalText}}"><text class="muted">处置类型</text><text>{{item.disposalText}}</text></view>

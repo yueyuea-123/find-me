@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="900" viewBox="0 0 920 900" font-family="-apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <rect x="0" y="0" width="920" height="900" fill="#F7F5F1"/>
+  <text x="36" y="42" font-size="24" font-weight="700" fill="#252824">核心业务流程图（主流程）</text>
+  <text x="36" y="66" font-size="13" fill="#8B8E87">四条主流程：添加家具 / 添加物品 / 移动物品 / 库存与提醒　｜　菱形=判定　绿色=成功落库　红色=阻断/校验失败</text>
+
+  <!-- ============ 流程 A 添加家具 ============ -->
+  <text x="36" y="104" font-size="17" font-weight="700" fill="#58734F">流程 A · 添加家具（页面 02 → 03）</text>
+  <g font-size="12">
+    <rect x="36" y="118" width="130" height="44" rx="10" fill="#FFFFFF" stroke="#6F8966" stroke-width="1.5"/>
+    <text x="52" y="138" fill="#252824">客厅空间(02)</text><text x="52" y="155" fill="#8B8E87">点「添加家具」</text>
+
+    <rect x="196" y="118" width="120" height="44" rx="10" fill="#FFFFFF" stroke="#6F8966" stroke-width="1.5"/>
+    <text x="212" y="138" fill="#252824">选家具模型</text><text x="212" y="155" fill="#8B8E87">上一件/下一件</text>
+
+    <rect x="346" y="118" width="130" height="44" rx="10" fill="#FFFFFF" stroke="#6F8966" stroke-width="1.5"/>
+    <text x="362" y="138" fill="#252824">设长宽高(cm)</text><text x="362" y="155" fill="#8B8E87">尺寸表单</text>
+
+    <rect x="506" y="118" width="140" height="44" rx="10" fill="#FFFFFF" stroke="#6F8966" stroke-width="1.5"/>
+    <text x="522" y="138" fill="#252824">位置调整</text><text x="522" y="155" fill="#8B8E87">移动/旋转/缩放互斥</text>
+
+    <polygon points="700,128 752,151 700,174 648,151" fill="#FFF6E8" stroke="#D89A3D" stroke-width="1.5"/>
+    <text x="670" y="148" fill="#252824">尺寸有效?</text><text x="682" y="164" fill="#8B8E87">校验</text>
+
+    <rect x="772" y="118" width="112" height="44" rx="10" fill="#6F8966"/>
+    <text x="788" y="138" fill="#FFFFFF" font-weight="700">保存家具</text><text x="788" y="155" fill="#EAF0E7">+生成收纳根节点</text>
+
+    <line x1="166" y1="140" x2="196" y2="140" stroke="#6F8966" stroke-width="2"/>
+    <line x1="316" y1="140" x2="346" y2="140" stroke="#6F8966" stroke-width="2"/>
+    <line x1="476" y1="140" x2="506" y2="140" stroke="#6F8966" stroke-width="2"/>
+    <line x1="646" y1="140" x2="648" y2="140" stroke="#6F8966" stroke-width="2"/>
+    <line x1="752" y1="151" x2="772" y2="140" stroke="#6F8966" stroke-width="2"/>
+    <text x="600" y="196" fill="#D65A50">否 → 就地提示返回修改</text>
+    <text x="772" y="180" fill="#58734F">返回客厅，新家具选中</text>
+  </g>
+  <line x1="36" y1="214" x2="884" y2="214" stroke="#ECE9E3" stroke-width="1.5"/>
+
+  <!-- ============ 流程 B 添加物品 ============ -->
+  <text x="36" y="246" font-size="17" font-weight="700" fill="#58734F">流程 B · 添加物品 / 建档（页面 05，三入口）</text>
+  <g font-size="12">
+    <rect x="36" y="262" width="200" height="66" rx="10" fill="#FFFFFF" stroke="#6F8966" stroke-width="1.5"/>
+    <text x="50" y="282" fill="#252824" font-weight="700">三个入口</text>
+    <text x="50" y="302" fill="#8B8E87">①首页添加物品</text>
+    <text x="50" y="319" fill="#8B8E87">②三维点家具/位置　③我的物品</text>
+
+    <rect x="266" y="262" width="150" height="44" rx="10" fill="#FFFFFF" stroke="#6F8966" stroke-width="1.5"/>
+    <text x="282" y="282" fill="#252824">添加物品页(05)</text><text x="282" y="299" fill="#8B8E87">填名称/分类/数量</text>
+
+    <polygon points="470,268 528,284 470,300 412,284" fill="#FFF6E8" stroke="#D89A3D" stroke-width="1.5"/>
+    <text x="432" y="280" fill="#252824">选存放位置</text><text x="428" y="296" fill="#8B8E87">入口②预选</text>
+
+    <rect x="558" y="250" width="200" height="68" rx="10" fill="#FFFFFF" stroke="#6F8966" stroke-width="1.5"/>
+    <text x="572" y="270" fill="#252824">空间→房间→家具→收纳位置</text>
+    <text x="572" y="290" fill="#8B8E87">不选 → 位置未知</text>
+    <text x="572" y="308" fill="#8B8E87">（移动页首次确认）</text>
+
+    <rect x="790" y="262" width="94" height="44" rx="10" fill="#6F8966"/>
+    <text x="806" y="282" fill="#FFFFFF" font-weight="700">保存</text><text x="804" y="299" fill="#EAF0E7">写 items</text>
+
+    <line x1="236" y1="284" x2="266" y2="284" stroke="#6F8966" stroke-width="2"/>
+    <line x1="416" y1="284" x2="412" y2="284" stroke="#6F8966" stroke-width="2"/>
+    <line x1="528" y1="284" x2="558" y2="284" stroke="#6F8966" stroke-width="2"/>
+    <line x1="758" y1="284" x2="790" y2="284" stroke="#6F8966" stroke-width="2"/>
+    <text x="266" y="334" fill="#58734F">currentNodeId = 所选节点；spaceId 按 spaceIdOfNode 校准；返回来源页刷新</text>
+  </g>
+  <line x1="36" y1="350" x2="884" y2="350" stroke="#ECE9E3" stroke-width="1.5"/>
+
+  <!-- ============ 流程 C 移动物品 ============ -->
+  <text x="36" y="382" font-size="17" font-weight="700" fill="#58734F">流程 C · 移动物品 / 位置历史（pages/move、pages/history）</text>
+  <g font-size="12">
+    <rect x="36" y="398" width="150" height="44" rx="10" fill="#FFFFFF" stroke="#6F8966" stroke-width="1.5"/>
+    <text x="52" y="418" fill="#252824">物品详情(07)</text><text x="52" y="435" fill="#8B8E87">点「移动」</text>
+
+    <polygon points="236,398 300,420 236,442 172,420" fill="#FFF6E8" stroke="#D89A3D" stroke-width="1.5"/>
+    <text x="196" y="418" fill="#252824">选状态</text>
+
+    <rect x="330" y="380" width="170" height="46" rx="10" fill="#FFFFFF" stroke="#6F8966" stroke-width="1.5"/>
+    <text x="344" y="399" fill="#252824">在家 → 必选收纳位置</text><text x="344" y="416" fill="#8B8E87">首次确认 first_confirm</text>
+
+    <rect x="330" y="436" width="170" height="46" rx="10" fill="#FFFFFF" stroke="#6F8966" stroke-width="1.5"/>
+    <text x="344" y="455" fill="#252824">带出/借出 → 留常驻位</text><text x="344" y="472" fill="#8B8E87">清 currentNodeId</text>
+
+    <rect x="530" y="436" width="150" height="46" rx="10" fill="#FFFFFF" stroke="#6F8966" stroke-width="1.5"/>
+    <text x="544" y="455" fill="#252824">归还 → 自动回填</text><text x="544" y="472" fill="#8B8E87">homeNodeId (autoBack)</text>
+
+    <rect x="710" y="398" width="174" height="84" rx="10" fill="#6F8966"/>
+    <text x="724" y="420" fill="#FFFFFF" font-weight="700">确认落库</text>
+    <text x="724" y="442" fill="#EAF0E7">写 movements 历史</text>
+    <text x="724" y="460" fill="#EAF0E7">更新 currentNodeId</text>
+    <text x="724" y="476" fill="#EAF0E7">/ locationStatus / spaceId</text>
+
+    <line x1="186" y1="420" x2="172" y2="420" stroke="#6F8966" stroke-width="2"/>
+    <line x1="300" y1="414" x2="330" y2="403" stroke="#6F8966" stroke-width="2"/>
+    <line x1="300" y1="426" x2="330" y2="459" stroke="#6F8966" stroke-width="2"/>
+    <line x1="500" y1="459" x2="530" y2="459" stroke="#6F8966" stroke-width="2"/>
+    <line x1="680" y1="459" x2="710" y2="440" stroke="#6F8966" stroke-width="2"/>
+    <line x1="500" y1="403" x2="710" y2="410" stroke="#6F8966" stroke-width="2" stroke-dasharray="5 4"/>
+    <text x="330" y="510" fill="#58734F">位置历史页(pages/history)全量可追溯 from→to + 状态 + 时间</text>
+  </g>
+  <line x1="36" y1="526" x2="884" y2="526" stroke="#ECE9E3" stroke-width="1.5"/>
+
+  <!-- ============ 流程 D 库存与提醒 ============ -->
+  <text x="36" y="558" font-size="17" font-weight="700" fill="#58734F">流程 D · 库存与提醒（页面 08、inventory-detail）</text>
+  <g font-size="12">
+    <rect x="36" y="574" width="160" height="44" rx="10" fill="#FFFFFF" stroke="#6F8966" stroke-width="1.5"/>
+    <text x="52" y="594" fill="#252824">库存管理(08)</text><text x="52" y="611" fill="#8B8E87">全部/易耗/长期筛选</text>
+
+    <rect x="226" y="574" width="150" height="44" rx="10" fill="#FFFFFF" stroke="#6F8966" stroke-width="1.5"/>
+    <text x="242" y="594" fill="#252824">库存详情</text><text x="242" y="611" fill="#8B8E87">入库/消耗/调整</text>
+
+    <rect x="406" y="574" width="150" height="44" rx="10" fill="#FFFFFF" stroke="#6F8966" stroke-width="1.5"/>
+    <text x="422" y="594" fill="#252824">写 transactions</text><text x="422" y="611" fill="#8B8E87">更新 inventory.balance</text>
+
+    <polygon points="606,568 668,596 606,624 544,596" fill="#FFF6E8" stroke="#D89A3D" stroke-width="1.5"/>
+    <text x="568" y="592" fill="#252824">余额 &lt; 阈值?</text>
+
+    <rect x="698" y="552" width="186" height="44" rx="10" fill="#D65A50"/>
+    <text x="712" y="572" fill="#FFFFFF" font-weight="700">低于 X 提醒</text><text x="712" y="589" fill="#FFECEA">红色进度条</text>
+
+    <rect x="698" y="606" width="186" height="44" rx="10" fill="#6F8966"/>
+    <text x="712" y="626" fill="#FFFFFF" font-weight="700">充足</text><text x="712" y="643" fill="#EAF0E7">绿色进度条</text>
+
+    <line x1="196" y1="596" x2="226" y2="596" stroke="#6F8966" stroke-width="2"/>
+    <line x1="376" y1="596" x2="406" y2="596" stroke="#6F8966" stroke-width="2"/>
+    <line x1="556" y1="596" x2="544" y2="596" stroke="#6F8966" stroke-width="2"/>
+    <line x1="668" y1="588" x2="698" y2="574" stroke="#6F8966" stroke-width="2"/>
+    <line x1="668" y1="604" x2="698" y2="628" stroke="#6F8966" stroke-width="2"/>
+
+    <rect x="36" y="664" width="848" height="60" rx="10" fill="#FFFFFF" stroke="#ECE9E3" stroke-width="1.5"/>
+    <text x="52" y="688" fill="#252824" font-weight="700">结束管理物品前：</text>
+    <text x="52" y="710" fill="#8B8E87">须先将库存结存清零（业务规则），再走 disposal 留痕。库存提醒不改变物品与收纳位置的归属关系。</text>
+  </g>
+  <text x="36" y="762" font-size="12" fill="#8B8E87">说明：具体字段上限、尺寸默认值、库存阈值按《业务规则说明书 V1.1》执行；本图不臆造数值，不含未冻结能力（智能识别/多人协作/自动盘点）。</text>
+</svg>

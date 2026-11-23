@@ -32,6 +32,12 @@
 
   <view class="card" wx:if="{{statusKey==='at_home'}}">
     <view class="card-t">② 选择目标位置</view>
+    <view class="quick-loc" wx:if="{{quickNodes.length}}">
+      <view class="quick-loc-t">常用位置</view>
+      <view class="chip-grid">
+        <view class="chip {{nodeIndex===item.index?'on':''}}" wx:for="{{quickNodes}}" wx:key="id" data-index="{{item.index}}" bindtap="chooseQuick">{{item.label}}</view>
+      </view>
+    </view>
     <picker mode="selector" range="{{nodeOptions}}" range-key="label" value="{{nodeIndex}}" bindchange="onNode">
       <view class="picker">{{nodeOptions[nodeIndex].label}} ▾</view>
     </picker>

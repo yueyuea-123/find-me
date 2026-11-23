@@ -7,6 +7,10 @@
     <view class="card-s">库存变更都留有交易记录；补货须通过入库交易（TBD-005）。</view>
   </view>
 
+  <view class="inv-filters">
+    <view class="filter-pill {{filterKey===f.key?'on':''}}" wx:for="{{filters}}" wx:key="key" data-key="{{f.key}}" bindtap="onFilter">{{f.name}}</view>
+  </view>
+
   <view class="card item-card" wx:for="{{list}}" wx:key="id" bindtap="openDetail" data-id="{{item.itemId}}">
     <view class="row between">
       <view class="icon-box inv-icon">▣</view>
@@ -19,6 +23,7 @@
         <view class="small muted">阈值 {{item.threshold}}{{item.unit}}</view>
       </view>
     </view>
+    <view class="bar inv-bar"><view class="{{item.low?'low':''}}" style="width:{{item.pct}}%"></view></view>
   </view>
 
   <view class="state" wx:if="{{list.length===0}}">

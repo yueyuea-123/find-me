@@ -1,7 +1,7 @@
 /* pages/photos/photos.wxss */
-.hint-box { background: #F6EDDC; border-left: 6rpx solid #9C6B3F; color: #6B5D4D; font-size: 24rpx; padding: 18rpx 20rpx; border-radius: 8rpx; margin-top: 20rpx; line-height: 1.6; }
+.hint-box { background: #F0EFEB; border-left: 6rpx solid #6F8966; color: #8B8E87; font-size: 24rpx; padding: 18rpx 20rpx; border-radius: 8rpx; margin-top: 20rpx; line-height: 1.6; }
 .photo-grid { display: flex; flex-wrap: wrap; margin-top: 20rpx; }
 .photo-cell { width: 31%; margin: 0 2% 16rpx 0; position: relative; }
-.photo-cell image { width: 100%; height: 200rpx; border-radius: 12rpx; background: #E9E0D2; }
+.photo-cell image { width: 100%; height: 200rpx; border-radius: 12rpx; background: #ECE9E3; }
 .photo-del { position: absolute; right: -8rpx; top: -8rpx; width: 44rpx; height: 44rpx; border-radius: 50%; background: rgba(0,0,0,0.6); color: #fff; text-align: center; line-height: 40rpx; font-size: 32rpx; }
-.empty-line { text-align: center; color: #A29481; font-size: 26rpx; padding: 40rpx 0; }
+.empty-line { text-align: center; color: #8B8E87; font-size: 26rpx; padding: 40rpx 0; }

@@ -1,8 +1,8 @@
 /* pages/profile/profile.wxss */
 /* 对齐 demo .icon-btn.tint：accent-soft 底 + accent 字 + 圆形 */
-.avatar { width: 88rpx; height: 88rpx; border-radius: 50%; background: #EFE2D1; color: #9C6B3F; font-size: 34rpx; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.menu { display: flex; justify-content: space-between; align-items: center; padding: 22rpx 0; border-bottom: 1rpx solid #E9E0D2; font-size: 28rpx; }
+.avatar { width: 88rpx; height: 88rpx; border-radius: 50%; background: #F0EFEB; color: #6F8966; font-size: 34rpx; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.menu { display: flex; justify-content: space-between; align-items: center; padding: 22rpx 0; border-bottom: 1rpx solid #ECE9E3; font-size: 28rpx; }
 .menu:last-child { border-bottom: none; }
 .kv { display: flex; justify-content: space-between; align-items: center; padding: 14rpx 0; font-size: 28rpx; border-bottom: 1rpx solid #f4f6f8; }
 .kv:last-child { border-bottom: none; }
-.warn { color: #BE5F44; }
+.warn { color: #D65A50; }

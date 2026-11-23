@@ -1,6 +1,12 @@
 /* pages/inventory/inventory.wxss —— 对齐 demo pInventory */
 .inv-icon { width: 72rpx; height: 72rpx; font-size: 36rpx; border-radius: 22rpx; }
 .right { text-align: right; }
-.bal { font-size: 44rpx; font-weight: 600; color: #9C6B3F; }
-.bal.warn { color: #BE5F44; }
+.bal { font-size: 44rpx; font-weight: 600; color: #6F8966; }
+.bal.warn { color: #D65A50; }
 .unit { font-size: 24rpx; margin-left: 6rpx; }
+/* 库存筛选与余量进度条（交互说明书 V1.2 §6） */
+.inv-filters { display: flex; margin: 4rpx 0 20rpx; }
+.inv-filters .filter-pill { margin-right: 16rpx; background: #F0EFEB; color: #8B8E87; padding: 12rpx 28rpx; border-radius: 999rpx; font-size: 24rpx; }
+.inv-filters .filter-pill.on { background: #6F8966; color: #fff; }
+.inv-bar { margin-top: 18rpx; }
+.inv-bar > view.low { background: #D65A50; }

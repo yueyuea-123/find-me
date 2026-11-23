@@ -1,0 +1,36 @@
+{
+  "design_width": 750,
+  "unit": "rpx",
+  "export_scale": 2,
+  "colors": {
+    "background": "#F7F5F1",
+    "surface": "#FFFFFF",
+    "text": "#252824",
+    "secondary_text": "#8B8E87",
+    "primary": "#6F8966",
+    "primary_dark": "#58734F",
+    "divider": "#ECE9E3",
+    "danger": "#D65A50",
+    "warning": "#D89A3D"
+  },
+  "radius": {
+    "card": 24,
+    "button": 44,
+    "pill": 999
+  },
+  "spacing": [
+    8,
+    12,
+    16,
+    24,
+    32,
+    40,
+    48
+  ],
+  "typography": {
+    "page_title": 36,
+    "section_title": 30,
+    "body": 24,
+    "caption": 20
+  }
+}

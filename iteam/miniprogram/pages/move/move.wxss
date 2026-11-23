@@ -1,6 +1,10 @@
 /* pages/move/move.wxss */
 .chip-grid { display: flex; flex-wrap: wrap; margin-top: 12rpx; }
-.chip { font-size: 26rpx; padding: 14rpx 26rpx; background: #F3EDE2; color: #6B5D4D; border-radius: 999rpx; margin: 0 14rpx 14rpx 0; }
-.chip.on { background: #9C6B3F; color: #fff; }
+.chip { font-size: 26rpx; padding: 14rpx 26rpx; background: #F0EFEB; color: #8B8E87; border-radius: 999rpx; margin: 0 14rpx 14rpx 0; }
+.chip.on { background: #6F8966; color: #fff; }
 .kv { display: flex; justify-content: space-between; padding: 12rpx 0; font-size: 27rpx; }
-.hint-box { background: #F6EDDC; border-left: 6rpx solid #9C6B3F; color: #6B5D4D; font-size: 24rpx; padding: 16rpx 20rpx; border-radius: 8rpx; margin-top: 16rpx; line-height: 1.6; }
+.hint-box { background: #F0EFEB; border-left: 6rpx solid #6F8966; color: #8B8E87; font-size: 24rpx; padding: 16rpx 20rpx; border-radius: 8rpx; margin-top: 16rpx; line-height: 1.6; }
+/* P0-3 常用位置快捷：选中态复用 chip.on，点击即等价于 picker 选中该节点 */
+.quick-loc { margin-bottom: 20rpx; }
+.quick-loc-t { font-size: 24rpx; color: #8B8E87; margin-bottom: 4rpx; }
+.quick-loc .chip { font-size: 22rpx; padding: 10rpx 20rpx; }

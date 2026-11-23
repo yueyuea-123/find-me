@@ -1,8 +1,13 @@
 /* pages/item-list/item-list.wxss —— 对齐 demo pItemList 的 accent-soft 图标块 */
 .list-icon { width: 72rpx; height: 72rpx; font-size: 36rpx; border-radius: 22rpx; }
 .search-card { position: sticky; top: 0; z-index: 5; }
-.search-count { position: absolute; right: 32rpx; top: 24rpx; font-size: 24rpx; color: #9C6B3F; }
+.search-count { position: absolute; right: 32rpx; top: 24rpx; font-size: 24rpx; color: #6F8966; }
 .quick-filters { display: flex; flex-wrap: wrap; margin-top: 16rpx; }
 .filter-row { display: flex; flex-wrap: wrap; margin-top: 16rpx; }
-.filter-pill { font-size: 24rpx; color: #6B5D4D; background: #F3EDE2; padding: 10rpx 18rpx; border-radius: 999rpx; margin: 0 12rpx 12rpx 0; }
-.filter-pill.on { background: #EFE2D1; color: #9C6B3F; }
+.filter-pill { font-size: 24rpx; color: #8B8E87; background: #F0EFEB; padding: 10rpx 18rpx; border-radius: 999rpx; margin: 0 12rpx 12rpx 0; }
+.filter-pill.on { background: #F0EFEB; color: #6F8966; }
+/* P0-2 位置路径突出：找东西时第一眼要看的是"在哪"，完善度%已移除 */
+.loc-line { display: flex; align-items: center; margin-top: 8rpx; }
+.loc-ico { color: #6F8966; font-size: 28rpx; margin-right: 8rpx; }
+.loc-path { font-size: 26rpx; color: #8B8E87; font-weight: 500; }
+.mini-tag { font-size: 20rpx; color: #6F8966; background: #F0EFEB; border-radius: 999rpx; padding: 2rpx 12rpx; margin: 0 8rpx 6rpx 0; }

@@ -1,7 +1,7 @@
 /* pages/room/room.wxss —— 对齐 demo pRoom 的房间列表卡片布局 */
 
 /* 顶部副标题：我的家 · 共 N 个房间 */
-.room-subtitle { font-size: 26rpx; color: #A29481; margin: 4rpx 0 20rpx; }
+.room-subtitle { font-size: 26rpx; color: #8B8E87; margin: 4rpx 0 20rpx; }
 
 /* 房间卡片：整卡可点，左图标 + 名称 + 尺寸·件数 + 双标签 + 右箭头 */
 .room-card { padding: 30rpx 32rpx; }
@@ -10,7 +10,7 @@
 /* 房间卡片左侧图标块：对齐 demo 的 accent-soft 方块 + grid 图标 */
 .room-icon {
   width: 80rpx; height: 80rpx; border-radius: 24rpx;
-  background: #EFE2D1; color: #9C6B3F;
+  background: #F0EFEB; color: #6F8966;
   display: flex; align-items: center; justify-content: center;
   font-size: 40rpx; flex-shrink: 0;
 }
@@ -23,11 +23,11 @@
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
   display: flex; gap: 20rpx;
   padding: 20rpx 28rpx calc(20rpx + env(safe-area-inset-bottom));
-  background: #FAF6EE;
-  border-top: 1rpx solid #E9E0D2;
+  background: #F7F5F1;
+  border-top: 1rpx solid #ECE9E3;
 }
 .room-cta .btn {
   flex: 1; margin: 0; height: 88rpx; border-radius: 24rpx;
-  border: 1rpx solid #E9E0D2; background: #fff;
+  border: 1rpx solid #ECE9E3; background: #fff;
 }
-.room-cta .btn.primary { background: #9C6B3F; color: #fff; border-color: #9C6B3F; }
+.room-cta .btn.primary { background: #6F8966; color: #fff; border-color: #6F8966; }

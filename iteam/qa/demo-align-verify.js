@@ -19,10 +19,15 @@ function hasNot(file, needle, desc) {
 has('pages/index/index.wxml', 'bindtap="go3d"', '首页快捷「三维」绑定 go3d');
 has('pages/index/index.js', "wx.navigateTo({ url: '/pages/room3d/room3d?id=' + rooms[0].id", '首页 go3d 直达第一个房间三维页');
 
-// 三维房间：demo 提示、短按建档、默认选中卡
-has('pages/room3d/room3d.wxml', '拖动摆放 · 长按删除 · 点击进入添加物品', '三维画布提示对齐 demo');
-has('pages/room3d/room3d.js', 'addItemAtFurniture: function (furnitureId)', '短按家具进入建档处理函数');
-has('pages/room3d/room3d.js', "'/pages/item-edit/item-edit?nodeId=' + nodeId", '短按家具预选收纳节点');
+// 三维房间：V1.3 A 方案基准（默认不拖动 / 选中按钮微调 / 状态机 / 视图切换）。
+// 旧 demo 原串仍以 display:none 保留作静态占位；运行口径已切换为 V1.3，见 qa/v13-state-machine-test.js。
+has('pages/room3d/room3d.wxml', '拖动摆放 · 长按删除 · 点击进入添加物品', '三维画布提示兼容占位（demo 原串）');
+has('pages/room3d/room3d.js', '点家具选中 · 空白处拖动转视角 · 双指缩放 · 选中后按钮微调并保存', '三维提示对齐 V1.3 A 方案口径');
+has('pages/room3d/room3d.js', 'addItemAtFurniture: function (furnitureId', '新建物品建档处理函数');
+has('pages/room3d/room3d.js', "'/pages/item-edit/item-edit?nodeId=' + target", '新建物品预选收纳节点');
+has('pages/room3d/room3d.js', 'chooseAddItem: function ()', '添加物品两路径入口');
+has('pages/room3d/room3d.js', 'bindExistingItem: function (e)', '从已有物品绑定入口');
+has('pages/room3d/room3d.js', 'toggleLib: function ()', '家具库按需展开入口');
 has('pages/room3d/room3d.js', 'if (!selRow && list.length) selRow = list[0];', '选中卡默认展示第一件家具');
 
 // 物品详情：档案引导、状态 chips、操作文案、返回按钮、结束管理阻断
@@ -60,7 +65,8 @@ has('pages/profile/profile.wxml', '康女士', '个人中心称谓对齐 demo');
 // 首页：提醒整卡 alert-soft + 快捷图标 surface-2 + 问候语小字
 has('pages/index/index.wxml', 'class="remind"', '首页提醒卡对齐 demo .remind（整卡陶红浅底）');
 hasNot('pages/index/index.wxml', 'class="card remind-card"', '首页提醒卡不再是白底嵌套卡');
-has('pages/index/index.wxss', 'background: #F3EDE2; color: #9C6B3F', '首页快捷图标底色对齐 demo --surface-2');
+// 视觉口径升级：以交付稿高保真 + design-tokens.json V1.1（鼠尾草绿）为基准，替代旧原木棕 demo 色
+has('pages/index/index.wxss', 'background: #F0EFEB; color: #6F8966', '首页快捷图标底色对齐高保真 --surface-2 / --primary');
 has('pages/index/index.wxss', '.hm-greet { font-size: 22rpx', '首页问候语对齐 demo 小字');
 // 物品详情：serif 名称 + 图标块 + 竖列 ops（保留全部操作入口）
 has('pages/item-detail/item-detail.wxml', 'class="icon-box hero-icon"', '物品详情头部图标块');
@@ -69,19 +75,19 @@ has('pages/item-detail/item-detail.wxml', 'bindtap="goHistory"', '位置历史�
 has('pages/item-detail/item-detail.wxml', 'bindtap="endManage"', '结束管理入口保留');
 has('pages/item-detail/item-detail.wxss', 'font-family: "Songti SC", "STSong", serif', '物品名 serif 对齐 demo');
 // 全局 ops / note-inline / icon-box
-has('app.wxss', '.op + .op { border-top: 1rpx solid #E9E0D2; }', '全局竖列操作分隔线对齐 demo');
-has('app.wxss', '.note-inline { font-size: 24rpx; color: #6B5D4D; background: #F3EDE2', 'note-inline 底色对齐 demo --surface-2');
-has('app.wxss', '.icon-box { background: #EFE2D1', '全局图标块令牌对齐 demo --accent-soft');
+has('app.wxss', '.op + .op { border-top: 1rpx solid #ECE9E3; }', '全局竖列操作分隔线对齐高保真 --divider');
+has('app.wxss', '.note-inline { font-size: 24rpx; color: #8B8E87; background: #F0EFEB', 'note-inline 底色对齐高保真 --text-2 / --surface-2');
+has('app.wxss', '.icon-box { background: #F0EFEB', '全局图标块令牌对齐高保真 --surface-2');
 // 空间 / 库存 / 提醒 / 物品列表：图标块与当前空间边框
 has('pages/space/space.wxml', 'class="icon-box space-icon"', '空间卡图标块对齐 demo');
-has('pages/space/space.wxss', '.space-current { border: 3rpx solid #9C6B3F; }', '当前空间 accent 边框对齐 demo');
+has('pages/space/space.wxss', '.space-current { border: 3rpx solid #6F8966; }', '当前空间 accent 边框对齐高保真 --primary');
 has('pages/space/space.wxml', '个房间 · 个人空间', '空间卡说明文案对齐 demo');
 has('pages/inventory/inventory.wxml', 'class="icon-box inv-icon"', '库存卡图标块对齐 demo');
 has('pages/alerts/alerts.wxml', 'class="alert-icon"', '提醒卡铃铛图标块对齐 demo');
 has('pages/item-list/item-list.wxml', 'class="icon-box list-icon"', '物品列表卡图标块对齐 demo');
 // 我的：tint 头像 + chips
 has('pages/profile/profile.wxml', '● 本地可用', '个人中心本地可用 chip 对齐 demo');
-has('pages/profile/profile.wxss', '.avatar { width: 88rpx; height: 88rpx; border-radius: 50%; background: #EFE2D1', '头像对齐 demo tint 风格');
+has('pages/profile/profile.wxss', '.avatar { width: 88rpx; height: 88rpx; border-radius: 50%; background: #F0EFEB', '头像对齐高保真 --surface-2 风格');
 
 // ===== 界面与交互说明 V1.0 复核（2026-11-22 第三轮） =====
 has('pages/item-detail/item-detail.js', '补充位置，初始存放信息不记为一次移动', '建档引导：去定位文案');
@@ -114,7 +120,8 @@ has('package3d/renderer.js', 'function addPlant', '绿植程序化造型');
 has('package3d/renderer.js', 'function buildDecor', '软装随房间尺寸重建');
 has('package3d/renderer.js', 'convertSRGBToLinear', 'gammaOutput 颜色空间修正');
 has('package3d/renderer.js', 'pitch: Math.PI / 5.5', '等距俯视角');
-has('pages/room3d/room3d.wxss', 'height: 520rpx', '三维窗口加高适配娃娃屋比例');
+// 视觉口径升级：高保真 source/02-客厅空间.svg 场景区为 750×950，取代旧 520rpx 窗口高度
+has('pages/room3d/room3d.wxss', 'height: 950rpx', '三维舞台高度对齐高保真 02-客厅空间 SVG');
 
 let failed = 0;
 checks.forEach(c => {

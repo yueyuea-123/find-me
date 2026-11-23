@@ -1,2 +1,11 @@
 /* pages/item-edit/item-edit.wxss */
-.input.err { border: 2rpx solid #BE5F44; background: #FDF5F1; }
+/* P1-5 标签多选 */
+.tag-picker { display: flex; flex-wrap: wrap; }
+.tag-opt { font-size: 24rpx; color: #8B8E87; background: #F0EFEB; padding: 10rpx 20rpx; border-radius: 999rpx; margin: 0 12rpx 12rpx 0; }
+.tag-opt.on { background: #6F8966; color: #fff; }
+.input.err { border: 2rpx solid #D65A50; background: #FDF5F1; }
+/* 缺图统一占位（交互说明书 V1.2 §3） */
+.ph-empty { height: 240rpx; display: flex; align-items: center; justify-content: center; font-size: 26rpx; color: #8B8E87; background: #F7F5F1; border: 2rpx dashed #ECE9E3; border-radius: 16rpx; }
+/* 返回入口（未保存修改提示） */
+.edit-back { text-align: center; font-size: 24rpx; color: #6F8966; padding: 24rpx 0 8rpx; }
+.dirty-dot { color: #D89A3D; }

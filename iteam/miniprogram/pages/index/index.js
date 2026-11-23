@@ -51,6 +51,7 @@ Page({
     this.setData({
       stats: stats, overview: overview, alerts: alerts,
       recent: rec.slice(0, 2), hourGreet: greet,
+      noRooms: overview.rooms.length === 0,
       dragging: false, dragInvalid: false
     });
   },

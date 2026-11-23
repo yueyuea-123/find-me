@@ -1,89 +1,181 @@
-/* pages/room3d/room3d.wxss —— 模式1交互优化：
-   房间头 → segbar → 三维视图窗口（红框，选中浮标）→ 工具条 → 家具卡（编辑小步操作）→ 横向模型库
-   真 3D canvas 内嵌在窗口内；WebGL 失败或列表模式整页降级 */
+/* pages/room3d/room3d.wxss
+   视觉基准：《家庭物品管理小程序_开发交付稿》高保真 02-客厅空间.png / source/02-客厅空间.svg
+   配色基准：design-tokens.json V1.1（鼠尾草绿 #6F8966 / 深绿 #58734F / 暖白 #F7F5F1）
+   交互基准：《客厅三维空间交互与开发设计规范 V1.3》A 方案（状态机见 room3d.js） */
 
-.room3d-page { padding-bottom: 48rpx; }
+.page.room3d-page { padding: 0 0 40rpx; background: #F7F5F1; }
 
-/* 房间头 */
-.room-head { margin: 4rpx 0 16rpx; }
-.room-menu { font-size: 52rpx; color: #9C6B3F; padding: 0 8rpx; line-height: 1; }
-
-/* 顶部模式胶囊：浏览 / 编辑 / 收纳 */
-.segbar {
-  display: inline-flex; align-items: center;
-  background: #F3EDE2; border-radius: 999rpx; padding: 6rpx;
-  margin: 0 0 20rpx;
+/* ---------- 顶部导航（高保真：返回 / 居中标题 / 胶囊） ---------- */
+.hifi-nav {
+  height: 88rpx; box-sizing: border-box; display: flex; align-items: center;
+  justify-content: space-between; padding: 0 24rpx;
 }
-.segbar .s {
-  font-size: 26rpx; color: #6B5D4D; padding: 12rpx 34rpx;
-  border-radius: 999rpx;
+.hifi-back { width: 80rpx; font-size: 56rpx; line-height: 1; color: #252824; }
+.hifi-title { font-size: 32rpx; font-weight: 700; color: #252824; }
+.hifi-capsule {
+  width: 140rpx; height: 56rpx; box-sizing: border-box; display: flex; align-items: center;
+  justify-content: space-around; border: 1rpx solid #ECE9E3; border-radius: 999rpx;
+  background: #FFFFFF; color: #252824; font-size: 26rpx; line-height: 1;
 }
-.segbar .s.on { background: #9C6B3F; color: #fff; }
+.hifi-dot { color: #58734F; font-size: 26rpx; }
 
-/* 三维视图窗口（截图红框）：固定高度容器，canvas 填满 */
-.view3d {
-  position: relative; width: 100%; height: 520rpx;
-  border-radius: 32rpx; overflow: hidden;
-  background: linear-gradient(180deg, #F7F1E6 0%, #F0E7D8 100%);
-  box-shadow: 0 6rpx 22rpx rgba(92, 68, 40, 0.10);
+/* ---------- 三维舞台：高保真 SVG 场景区 750×950 ---------- */
+.hifi-stage {
+  position: relative; width: 100%; height: 950rpx; overflow: hidden;
+  background: linear-gradient(180deg, #EFEDE6 0%, #E8E4DA 100%);
 }
 .glcanvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+.hifi-stage-tag {
+  position: absolute; left: 24rpx; top: 24rpx; z-index: 2;
+  background: #FFFFFF; color: #58734F; border-radius: 999rpx;
+  padding: 10rpx 24rpx; font-size: 22rpx; font-weight: 700;
+}
+/* 右侧悬浮相机键：等距/俯视循环、复位、适配（cover-view 叠在 WebGL 上） */
+.hifi-cam { position: absolute; right: 24rpx; top: 520rpx; z-index: 3; display: flex; flex-direction: column; }
+.hifi-cam-btn {
+  width: 88rpx; height: 88rpx; line-height: 84rpx; text-align: center;
+  background: #FFFFFF; color: #6F8966; border: 1rpx solid #ECE9E3;
+  border-radius: 24rpx; font-size: 40rpx; margin-bottom: 16rpx;
+}
+.hifi-cam-text { font-size: 24rpx; font-weight: 700; }
 .view3d-badge {
-  position: absolute; left: 20rpx; top: 18rpx; z-index: 2;
-  background: rgba(255,255,255,0.9); color: #9C6B3F;
-  border: 1rpx solid #E9E0D2; border-radius: 999rpx;
-  padding: 6rpx 18rpx; font-size: 22rpx; pointer-events: none;
+  position: absolute; left: 24rpx; top: 84rpx; z-index: 2;
+  background: #FFFFFF; color: #58734F; border: 1rpx solid #ECE9E3; border-radius: 999rpx;
+  padding: 8rpx 20rpx; font-size: 22rpx;
 }
 .canvas-hint {
-  position: absolute; left: 20rpx; right: 20rpx; bottom: 18rpx;
-  text-align: center; font-size: 22rpx; color: #8A7F71;
-  pointer-events: none;
+  position: absolute; left: 24rpx; right: 140rpx; bottom: 24rpx; z-index: 2;
+  text-align: left; font-size: 20rpx; color: #8B8E87; pointer-events: none;
 }
 .view3d-empty {
-  position: absolute; left: 0; right: 0; top: 50%; margin-top: -28rpx;
-  text-align: center; font-size: 26rpx; color: #A29481; pointer-events: none;
+  position: absolute; left: 0; right: 0; top: 42%; z-index: 2;
+  text-align: center; font-size: 26rpx; color: #8B8E87; pointer-events: none;
+}
+.hifi-dirty {
+  position: absolute; left: 24rpx; bottom: 60rpx; z-index: 2;
+  font-size: 22rpx; color: #D89A3D; background: #FFFFFF;
+  border-radius: 999rpx; padding: 6rpx 18rpx;
 }
 
-/* 窗口下方工具条 */
-.viewtools { display: flex; align-items: center; margin: 20rpx 0; }
-.seg { display: flex; background: #F3EDE2; border-radius: 14rpx; padding: 4rpx; }
-.seg-i { color: #6B5D4D; font-size: 24rpx; padding: 10rpx 18rpx; border-radius: 10rpx; }
-.viewtools .btn.sm { margin: 0 0 0 12rpx; }
-
-/* 选中家具卡片 */
-.selcard { margin-top: 4rpx; }
-.selname { font-size: 30rpx; }
-.field-row { display: flex; margin-top: 20rpx; }
-.field-cell {
-  flex: 1; min-width: 0; margin-right: 12rpx; padding: 14rpx 16rpx;
-  background: #F3EDE2; border-radius: 16rpx;
+/* ---------- 选中抽屉：高保真白卡 + 鼠尾草绿强调 ---------- */
+.bsheet {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 5;
+  background: #FFFFFF; border-top: 1rpx solid #ECE9E3;
+  border-radius: 32rpx 32rpx 0 0; padding: 18rpx 24rpx 24rpx;
 }
-.field-cell:last-child { margin-right: 0; }
-.fl { font-size: 22rpx; color: #A29481; margin-bottom: 6rpx; }
-.fv { font-size: 24rpx; color: #3B3229; font-weight: 600; }
-.fv-sm { font-size: 21rpx; }
-.bindbox {
-  display: flex; align-items: center; gap: 16rpx;
-  margin-top: 18rpx; padding: 18rpx 20rpx;
-  background: #E9EEE0; border-radius: 20rpx;
+.bsheet.collapsed { padding-bottom: 12rpx; }
+.bsheet-handle { width: 72rpx; height: 8rpx; margin: 0 auto 12rpx; background: #ECE9E3; border-radius: 999rpx; }
+.bsheet-bar { display: flex; flex-direction: row; align-items: center; min-height: 52rpx; }
+.bsheet-title { flex: 1; font-size: 28rpx; font-weight: 600; color: #252824; margin-right: 64rpx; }
+.bsheet-toggle { font-size: 22rpx; color: #58734F; padding: 8rpx 4rpx; }
+.bsheet-close { position: absolute; right: 20rpx; top: 28rpx; font-size: 26rpx; color: #8B8E87; padding: 6rpx 8rpx; }
+.bsheet-sub { font-size: 22rpx; color: #6F8966; margin: 12rpx 0 8rpx; }
+.bsheet-nodes { display: flex; flex-direction: row; flex-wrap: wrap; }
+.bsheet-node {
+  font-size: 22rpx; color: #8B8E87; background: #F0EFEB;
+  border: 1rpx solid #F0EFEB; border-radius: 12rpx; padding: 8rpx 14rpx; margin: 0 12rpx 10rpx 0;
 }
-.bindbox .bi { font-size: 34rpx; color: #6E7F59; }
+.bsheet-node.on { background: #E8EEE3; border-color: #6F8966; color: #58734F; }
+.bsheet-items { display: flex; flex-direction: row; flex-wrap: wrap; }
+.bsheet-item { font-size: 22rpx; color: #252824; background: #F7F5F1; border-radius: 10rpx; padding: 8rpx 14rpx; margin: 0 12rpx 8rpx 0; }
+.bsheet-empty { font-size: 22rpx; color: #8B8E87; margin: 8rpx 0; }
+.bsheet-actions { display: flex; flex-direction: row; flex-wrap: wrap; margin-top: 12rpx; }
+.bsheet-btn {
+  font-size: 22rpx; color: #8B8E87; background: #F0EFEB;
+  border-radius: 12rpx; padding: 12rpx 18rpx; margin: 0 12rpx 8rpx 0;
+}
+.bsheet-btn.primary { background: #6F8966; color: #FFFFFF; }
 
-/* 编辑模式操作区：仅保留资料/添加物品/删除三个按钮 + 手势说明 */
-.ops-edit { margin-top: 16rpx; }
+/* ---------- 底部悬浮坞（高保真：分段 + 横向卡片 + 主按钮） ---------- */
+.hifi-dock {
+  position: relative; z-index: 10; margin: -40rpx 24rpx 0;
+  background: #FFFFFF; border-radius: 32rpx; padding: 24rpx;
+  box-shadow: 0 8rpx 30rpx rgba(37, 40, 36, 0.10);
+}
+.hifi-tabs { display: flex; flex-direction: row; background: #F0EFEB; border-radius: 999rpx; padding: 6rpx; }
+.hifi-tab {
+  flex: 1; text-align: center; padding: 16rpx 0; border-radius: 999rpx;
+  font-size: 24rpx; font-weight: 600; color: #8B8E87;
+}
+.hifi-tab.on { background: #6F8966; color: #FFFFFF; }
+.hifi-cards { display: flex; flex-direction: row; white-space: nowrap; margin-top: 24rpx; }
+.hifi-card { display: inline-block; width: 180rpx; margin-right: 16rpx; }
+.hifi-card-img {
+  width: 180rpx; height: 130rpx; box-sizing: border-box; border-radius: 18rpx;
+  background: #F0EFEB; border: 3rpx solid transparent;
+}
+.hifi-card.on .hifi-card-img { border-color: #6F8966; }
+/* 无专属缩略图的家具：用模型库 icon + 当前外观名占位（不臆造图片） */
+.hifi-card-icon {
+  width: 180rpx; height: 130rpx; box-sizing: border-box; border-radius: 18rpx;
+  background: #F0EFEB; border: 3rpx solid transparent;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.hifi-card-icon.on { border-color: #6F8966; }
+.hifi-card-emoji { font-size: 60rpx; line-height: 1; }
+.hifi-card-model { font-size: 20rpx; color: #6F8966; margin-top: 10rpx; max-width: 160rpx; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.hifi-card-name { text-align: center; font-size: 22rpx; font-weight: 600; color: #252824; margin-top: 12rpx; }
+.hifi-emptycards { text-align: center; font-size: 24rpx; color: #8B8E87; padding: 40rpx 0 8rpx; }
+.hifi-add {
+  height: 88rpx; line-height: 88rpx; text-align: center; margin-top: 24rpx;
+  background: #58734F; color: #FFFFFF; border-radius: 44rpx;
+  font-size: 28rpx; font-weight: 700;
+}
+.hifi-add:active { opacity: 0.85; }
 
-/* 家具模型库：单行横向滚动 */
-.libcard { margin-top: 20rpx; }
+/* ---------- 物品视图（高保真 06-我的物品 双列卡片） ---------- */
+.hifi-itemview { padding: 16rpx 24rpx 40rpx; }
+.hifi-search {
+  height: 72rpx; line-height: 72rpx; padding: 0 28rpx; box-sizing: border-box;
+  background: #F0EFEB; border-radius: 36rpx; font-size: 24rpx; color: #8B8E87;
+}
+.hifi-grid { display: flex; flex-direction: row; flex-wrap: wrap; margin-top: 20rpx; }
+.hifi-itemcard {
+  width: calc(50% - 12rpx); box-sizing: border-box; margin-right: 24rpx; margin-bottom: 24rpx;
+  background: #FFFFFF; border-radius: 24rpx; overflow: hidden;
+  box-shadow: 0 6rpx 22rpx rgba(37, 40, 36, 0.06);
+}
+.hifi-itemcard:nth-child(2n) { margin-right: 0; }
+.hifi-itemimg { width: 100%; height: 260rpx; background: #F0EFEB; }
+.hifi-itembody { padding: 20rpx; }
+.hifi-itemname { font-size: 26rpx; font-weight: 600; color: #252824; }
+.hifi-itemqty { font-size: 22rpx; color: #8B8E87; margin-top: 6rpx; }
+
+/* ---------- V1.3 编辑浮层：默认态隐藏，编辑态覆盖悬浮坞 ---------- */
+.selpanel, .editpanel {
+  position: fixed; left: 24rpx; right: 24rpx; bottom: 24rpx; z-index: 30;
+  background: #FFFFFF; border: 1rpx solid #ECE9E3; border-radius: 28rpx; padding: 24rpx;
+  box-shadow: 0 10rpx 36rpx rgba(37, 40, 36, 0.14);
+}
+.selpanel-title, .edit-head { font-size: 28rpx; font-weight: 600; color: #252824; margin-bottom: 16rpx; }
+.opgrid { display: flex; flex-direction: row; flex-wrap: wrap; }
+.opgrid .btn.sm { margin: 0 12rpx 10rpx 0; padding: 14rpx 28rpx; }
+.dpad { display: flex; flex-direction: column; align-items: center; }
+.dpad .btn.sm { width: 200rpx; margin: 6rpx 0; }
+.dpad-mid { display: flex; flex-direction: row; }
+.dpad-mid .btn.sm { margin: 6rpx 8rpx; }
+.dimrow { display: flex; flex-direction: row; }
+.dimcell { flex: 1; min-width: 0; margin-right: 12rpx; }
+.dimcell:last-child { margin-right: 0; }
+.diminput {
+  width: 100%; box-sizing: border-box; margin-top: 8rpx; padding: 14rpx 16rpx;
+  background: #F7F5F1; border: 1rpx solid #ECE9E3; border-radius: 14rpx;
+  font-size: 26rpx; color: #252824;
+}
+.edit-actions { display: flex; flex-direction: row; justify-content: flex-end; margin-top: 18rpx; }
+.edit-actions .btn.sm { margin-left: 12rpx; padding: 14rpx 32rpx; }
+
+/* ---------- 家具模型库：按需展开 ---------- */
+.libcard { margin: 20rpx 24rpx 0; border-radius: 28rpx; }
 .libscroll { width: 100%; white-space: nowrap; }
 .librow { display: inline-flex; }
 .libitem { width: 140rpx; box-sizing: border-box; padding: 12rpx 8rpx 12rpx 0; text-align: center; }
 .libico {
   width: 96rpx; height: 96rpx; line-height: 96rpx; margin: 0 auto;
-  border-radius: 22rpx; background: #F6EDDC; font-size: 46rpx;
+  border-radius: 22rpx; background: #F0EFEB; font-size: 46rpx;
 }
-.libname { font-size: 22rpx; color: #6B5D4D; margin-top: 8rpx; }
+.libname { font-size: 22rpx; color: #8B8E87; margin-top: 8rpx; }
 
-/* 整页降级 */
+/* ---------- 整页降级 ---------- */
 .degrade-page .degrade-tip { padding: 16rpx 8rpx 8rpx; }
-.degrade-page .room-icon { font-size: 38rpx; }
-.degrade-page .room-cta { margin-top: 24rpx; }
+.degrade-thumb { width: 96rpx; height: 96rpx; border-radius: 18rpx; background: #F0EFEB; flex-shrink: 0; }

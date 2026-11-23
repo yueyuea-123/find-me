@@ -1,7 +1,8 @@
 /**
  * package3d/renderer.js —— Three.js 三维房间渲染器（r108 适配版 + GLB 资产）
- * 接口与 utils/room-renderer.js 一致：createRoomRenderer / resize / render / pick /
- * orbit / pan / zoom / reset / setSelected，room3d 页无需关心实现差异。
+ * 相机口径（规范 V1.0 §2.3）：固定等距视角。yaw/pitch 在 view 初始化后不再由 UI 改动；
+ * room3d 页只调用 pick / dragDelta / previewMove / zoom（有限缩放浏览）/ reset / setSelected。
+ * orbit / pan 仅为兼容 utils/room-renderer.js 接口保留，页面不再调用，不提供自由旋转/平移。
  * 绑定仍走逻辑节点（BR-009），本文件只负责外观与拾取。
  */
 var THREE_ADAPT = require('./vendor/threejs-miniprogram.js');
@@ -440,9 +441,26 @@ function createRoomRenderer(canvas, getData, opts) {
     var s = '';
     for (var i = 0; i < list.length; i++) {
       var f = list[i] || {}, p = f.position || {}, z = f.size || {};
-      s += i + ':' + f.id + '|' + f.category + '|' + p.x + ',' + p.z + '|' + f.rotation + '|' + z.w + ',' + z.h + ',' + z.d + ';';
+      // model 纳入签名：更换外观模型（FURNITURE_LIB.vars）后必须重建，三维外观才会跟随变化
+      s += i + ':' + f.id + '|' + f.category + '|' + (f.model || '') + '|' + p.x + ',' + p.z + '|' + f.rotation + '|' + z.w + ',' + z.h + ',' + z.d + ';';
     }
     return s;
+  }
+
+  // 外观模型变体色板：同一 category 的不同 model 派生稳定的着色差异，
+  // 使「米色床品 / 灰色床品」等在三维里可见；索引用 model 在 vars 中的位置，越界回落到原色。
+  var MODEL_VARIANT_COLORS = [0xD9C7A8, 0x9AA0A6, 0xB08C6A, 0x8FA9A0, 0xC9A9A0, 0xA79BB5];
+  // 仅标准材质（GLB 木/布构件）参与变体着色；玻璃/灯光等基础材质保持原色
+  function isTintable(mat) { return !!(mat && mat.isMeshStandardMaterial && mat.color); }
+  function variantColor(category, model) {
+    if (!model) return null;
+    try {
+      var lib = require('../../utils/constants.js').FURNITURE_LIB || {};
+      var vars = (lib[category] || {}).vars || [];
+      var idx = vars.indexOf(model);
+      if (idx <= 0) return null; // 首个变体=原色，不覆写 GLB 自带材质
+      return MODEL_VARIANT_COLORS[(idx - 1) % MODEL_VARIANT_COLORS.length];
+    } catch (e) { return null; }
   }
 
   function syncScene() {
@@ -475,11 +493,18 @@ function createRoomRenderer(canvas, getData, opts) {
       g.position.set((f.position && f.position.x) || 0, 0, (f.position && f.position.z) || 0);
       g.rotation.y = f.rotation || 0;
       g.userData.furnitureIndex = i;
+      var tint = variantColor(f.category, f.model);
       g.traverse(function (o) {
         if (o.isMesh) {
           o.castShadow = true;
           o.receiveShadow = true;
           o.userData.furnitureIndex = i;
+          // 外观模型变体：clone 材质避免污染共享模板；仅对浅色（近似木/布）mesh 着色，
+          // 跳过深色/玻璃构件，保留 GLB 原有层次。首个变体不着色=原色。
+          if (tint && isTintable(o.material)) {
+            o.material = o.material.clone();
+            o.material.color = lin(tint);
+          }
         }
       });
       scene.add(g);
@@ -522,6 +547,16 @@ function createRoomRenderer(canvas, getData, opts) {
     renderer.render(scene, camera);
   }
 
+  // 屏幕像素位移 → 地面世界位移（正交相机方形像素：worldPerPixel=2*span/画布高度；
+  // 俯视下屏幕纵向在地面上的投影缩短为 sin(pitch)，故纵向按 1/sin(pitch) 补偿做到跟手）。
+  // 返回 A=屏幕水平（右为正）位移、B=屏幕纵向（下为正）位移，pan 与 dragDelta 共用此口径。
+  function screenDelta(dxPx, dyPx) {
+    var h = canvas.height || 1;
+    var wpp = (2 * (view.baseSpan / view.zoom)) / h;
+    var sp = Math.sin(view.pitch) || 0.0001;
+    return { A: dxPx * wpp, B: dyPx * wpp / sp };
+  }
+
   loadAssets();
 
   return {
@@ -560,27 +595,28 @@ function createRoomRenderer(canvas, getData, opts) {
       }
       return best;
     },
+    // 旋转视角：内容跟手（手往右内容往右、手往上内容往上）。
+    // yaw 用 += 而非 -=：原先 -= 会让手往右拖时内容往左跑，与平移方向相反。
     orbit: function (dx, dy) {
-      view.yaw -= dx * 0.008;
+      view.yaw += dx * 0.008;
       view.pitch = clamp(view.pitch + dy * 0.006, 0.18, 1.15);
       applyCamera();
     },
+    // 平移视角：与 dragDelta 共用同一套屏幕→地面换算，target 取反方向移动，
+    // 使视图内容跟手（手往右内容往右、手往上内容往上），修复原先轴向用反导致的反向漂移。
     pan: function (dx, dy) {
-      var s = 0.012 / view.zoom;
-      var right = new THREE.Vector3().subVectors(camera.position, view.target);
-      right.y = 0; right.normalize();
-      var forward = new THREE.Vector3(-right.z, 0, right.x);
-      view.target.addScaledVector(right, -dx * s);
-      view.target.addScaledVector(forward, -dy * s);
+      var d = screenDelta(dx, dy);
+      var A = d.A, B = d.B;
+      var sy = Math.sin(view.yaw), cy = Math.cos(view.yaw);
+      view.target.x -= A * sy + B * cy;
+      view.target.z -= B * sy - A * cy;
       applyCamera();
     },
     // 屏幕像素位移 → 地面世界位移（米）。正交相机方形像素：worldPerPixel=2*span/canvas.height；
     // 屏幕竖直方向在地面上的投影缩短为 sin(pitch)，故纵向位移按 1/sin(pitch) 补偿，做到"跟手"。
     dragDelta: function (dxPx, dyPx) {
-      var h = canvas.height || 1;
-      var wpp = (2 * (view.baseSpan / view.zoom)) / h;
-      var sp = Math.sin(view.pitch) || 0.0001;
-      var A = dxPx * wpp, B = dyPx * wpp / sp;
+      var d = screenDelta(dxPx, dyPx);
+      var A = d.A, B = d.B;
       var sy = Math.sin(view.yaw), cy = Math.cos(view.yaw);
       return { dx: A * sy + B * cy, dz: B * sy - A * cy };
     },
@@ -635,6 +671,26 @@ function createRoomRenderer(canvas, getData, opts) {
       view.target.set(0, Math.min(0.6, (roomSize.h || 2.8) * 0.3), 0);
       applyFrustum();
       applyCamera();
+    },
+    // V1.3 §3.1「适配」：保留当前观察角度，仅把房间与家具整体拉回视野（target 归房间中心、缩放归 1）。
+    // 与 reset 的区别：reset 同时恢复等距默认角度；fit 不动角度。
+    fit: function () {
+      view.zoom = 1;
+      view.target.set(0, Math.min(0.6, (roomSize.h || 2.8) * 0.3), 0);
+      applyFrustum();
+      applyCamera();
+    },
+    // V1.3 §3.1 视角预设：等距 / 俯视 / 正面。首版实现等距与俯视，正面一并给出接口。
+    // 俯视取接近垂直但不等于 π/2 的角度，避免正交相机取景退化。
+    setPreset: function (name) {
+      if (name === 'top') { view.yaw = 0; view.pitch = 1.42; }
+      else if (name === 'front') { view.yaw = 0; view.pitch = 0.22; }
+      else { view.yaw = Math.PI / 4; view.pitch = Math.PI / 5.5; } // isometric
+      view.zoom = 1;
+      view.target.set(0, Math.min(0.6, (roomSize.h || 2.8) * 0.3), 0);
+      applyFrustum();
+      applyCamera();
+      return name;
     },
     setSelected: function (idx) {
       selectedIndex = (typeof idx === 'number' && idx >= 0) ? idx : -1;

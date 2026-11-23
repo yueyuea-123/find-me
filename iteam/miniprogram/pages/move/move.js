@@ -6,7 +6,8 @@ Page({
   data: {
     itemName: '', currentLocText: '', currentLocClass: '', currentPath: '', targetPath: '未选择',
     statusList: C.LOCATION_STATUS, statusKey: 'at_home',
-    nodeOptions: [{ id: '', label: '请选择具体位置' }], nodeIndex: 0, note: '', borrowTo: '', dueDate: ''
+    nodeOptions: [{ id: '', label: '请选择具体位置' }], nodeIndex: 0, note: '', borrowTo: '', dueDate: '',
+    quickNodes: []
   },
   onLoad: function (q) {
     this._id = q.id || '';
@@ -19,7 +20,20 @@ Page({
         });
       });
     });
-    this.setData({ nodeOptions: opts });
+    // P0-3 常用位置：从全量移动历史统计各节点被存放的频次，取前 6 个仍有效的节点，
+    // 省去在跨空间长列表里反复翻找（节点已删除的自动排除）。
+    var freq = {};
+    store.listMovements().forEach(function (m) {
+      if (m.toNodeId) freq[m.toNodeId] = (freq[m.toNodeId] || 0) + 1;
+    });
+    var quick = [];
+    Object.keys(freq).forEach(function (id) {
+      for (var i = 0; i < opts.length; i++) {
+        if (opts[i].id === id) { quick.push({ id: id, index: i, label: store.nodePath(id).join(' / ') }); break; }
+      }
+    });
+    quick.sort(function (a, b) { return freq[b.id] - freq[a.id]; });
+    this.setData({ nodeOptions: opts, quickNodes: quick.slice(0, 6) });
   },
   onShow: function () {
     var it = store.getItem(this._id);
@@ -46,6 +60,13 @@ Page({
     var opt = this.data.nodeOptions[i] || {};
     // 选择具体节点即视为「在家」，并回显完整路径
     this.setData({ nodeIndex: i, statusKey: 'at_home', targetPath: opt.id ? opt.label : '未选择' });
+  },
+  // P0-3 点击常用位置：直接同步 picker 的下标、状态与回显，与手动选择等价
+  chooseQuick: function (e) {
+    var i = Number(e.currentTarget.dataset.index);
+    var opt = this.data.nodeOptions[i] || {};
+    if (!opt.id) return;
+    this.setData({ nodeIndex: i, statusKey: 'at_home', targetPath: opt.label });
   },
   onNote: function (e) { this.setData({ note: e.detail.value }); },
   onBorrowTo: function (e) { this.setData({ borrowTo: e.detail.value }); },
