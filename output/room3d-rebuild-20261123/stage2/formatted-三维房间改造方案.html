@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="docx-page-size" content="A4">
+<title>三维房间改造方案</title>
+<style>
+:root {
+  --typography-fontFamily-heading: "黑体", "SimHei";
+  --typography-fontFamily-body: "宋体", "SimSun";
+  --typography-fontSize-h1: 16pt;
+  --typography-fontSize-h2: 14pt;
+  --typography-fontSize-h3: 12pt;
+  --typography-fontSize-body: 12pt;
+  --typography-fontSize-small: 10.5pt;
+  --typography-lineHeight-body: 1.6;
+  --typography-lineHeight-heading: 1.4;
+  --typography-fontWeight-bold: 700;
+  --typography-fontWeight-normal: 400;
+  --color-primary: #2E4A3D;
+  --color-text: #1A1A1A;
+  --color-muted: #666666;
+  --color-border: #C9D1CB;
+  --color-bg: #FFFFFF;
+  --color-callout-bg: #F2F6F3;
+  --spacing-paragraph: 0.8em;
+  --spacing-section: 1.6em;
+  --spacing-block: 1em;
+  --layout-margin: 2.6cm;
+  --layout-contentWidth: 15.6cm;
+  --fs-h1: var(--typography-fontSize-h1);
+  --fs-h2: var(--typography-fontSize-h2);
+  --fs-h3: var(--typography-fontSize-h3);
+  --fs-body: var(--typography-fontSize-body);
+  --fs-small: var(--typography-fontSize-small);
+  --ff-heading: var(--typography-fontFamily-heading);
+  --ff-body: var(--typography-fontFamily-body);
+  --lh-body: var(--typography-lineHeight-body);
+  --lh-heading: var(--typography-lineHeight-heading);
+  --fw-bold: var(--typography-fontWeight-bold);
+  --fw-normal: var(--typography-fontWeight-normal);
+  --fs-cover-title: 30pt;
+  --fs-cover-sub: 15pt;
+  --margin-page: var(--layout-margin);
+  --page-content-width: var(--layout-contentWidth, 15.6cm);
+}
+@page {
+  margin: var(--margin-page);
+  @bottom-center { content: counter(page); font-family: var(--ff-body); font-size: var(--fs-small); color: var(--color-muted); }
+}
+@page cover {
+  @bottom-center { content: none; }
+}
+section[role="cover"] { page: cover; }
+body {
+  max-width: var(--page-content-width);
+  margin-left: auto;
+  margin-right: auto;
+  font-family: var(--ff-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+p {
+  font-family: var(--ff-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  text-indent: 2em;
+  margin-top: 0;
+  margin-bottom: var(--spacing-paragraph);
+  text-align: justify;
+}
+h1, h2, h3 {
+  font-family: var(--ff-heading);
+  color: var(--color-primary);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-heading);
+  text-indent: 0;
+}
+h1 { font-size: var(--fs-h1); margin-top: var(--spacing-section); margin-bottom: var(--spacing-block); }
+h2 { font-size: var(--fs-h2); margin-top: var(--spacing-section); margin-bottom: var(--spacing-block); }
+h3 { font-size: var(--fs-h3); margin-top: var(--spacing-block); margin-bottom: var(--spacing-paragraph); }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--spacing-block);
+  margin-bottom: var(--spacing-block);
+  font-family: var(--ff-body);
+  font-size: var(--fs-small);
+}
+th, td {
+  border: 0.5px solid var(--color-border);
+  padding: 6px 8px;
+  vertical-align: top;
+  text-align: left;
+  line-height: var(--lh-body);
+}
+th {
+  font-family: var(--ff-heading);
+  font-weight: var(--fw-bold);
+  background: var(--color-callout-bg);
+  color: var(--color-primary);
+}
+p.note {
+  font-size: var(--fs-small);
+  color: var(--color-muted);
+  text-indent: 0;
+}
+p.figure { text-align: center; text-indent: 0; margin-top: var(--spacing-block); margin-bottom: var(--spacing-paragraph); }
+p.figure img { width: 11.5cm; }
+p.caption { text-align: center; text-indent: 0; font-size: var(--fs-small); color: var(--color-muted); margin-bottom: var(--spacing-block); }
+p.cover-title { font-family: var(--ff-heading); font-size: var(--fs-cover-title); font-weight: var(--fw-bold); color: var(--color-primary); text-align: center; text-indent: 0; margin-top: 6cm; margin-bottom: 1.2cm; }
+p.cover-sub { font-family: var(--ff-heading); font-size: var(--fs-cover-sub); color: var(--color-primary); text-align: center; text-indent: 0; margin-bottom: 4cm; }
+p.cover-meta { font-family: var(--ff-body); font-size: var(--fs-body); text-align: center; text-indent: 0; color: var(--color-muted); margin-bottom: var(--spacing-paragraph); }
+nav.doc-toc { font-family: var(--ff-body); font-size: var(--fs-body); }
+nav.doc-toc p { text-indent: 0; margin-bottom: var(--spacing-paragraph); }
+.step { text-indent: 0; margin-bottom: var(--spacing-paragraph); }
+</style>
+</head>
+<body>
+
+<section role="cover">
+  <p class="cover-title">三维房间改造方案</p>
+  <p class="cover-sub">展示与交互升级 · 待评审稿</p>
+  <p class="cover-meta">版本 V1.0</p>
+  <p class="cover-meta">编制日期：2026 年 11 月 23 日</p>
+  <p class="cover-meta">适用对象：居所收纳小程序「三维房间」页面（room3d）</p>
+</section>
+
+<section role="cover">
+  <nav class="doc-toc">
+    <p style="font-family:var(--ff-heading);font-size:var(--fs-h1);font-weight:var(--fw-bold);color:var(--color-primary);text-align:center;text-indent:0;">目录</p>
+    <p>一、编制说明</p>
+    <p>二、现状诊断</p>
+    <p>三、改造目标</p>
+    <p>四、改造内容</p>
+    <p>五、分阶段路线</p>
+    <p>六、待确认事项</p>
+    <p>七、风险与应对</p>
+    <p>八、验收口径</p>
+    <p>九、结语</p>
+  </nav>
+</section>
+
+<section role="body" data-page-restart="1">
+
+<h1>一、编制说明</h1>
+
+<p>本方案针对「三维房间」页面当前在展示效果、交互手感、运行性能与功能覆盖四方面的不满意，给出一套可评审、可分阶段实施、每阶段可独立验证与回退的改造路线。</p>
+
+<p>方案的所有现状判断均来自对现有代码与文档的核查，可逐条追溯；涉及待确认事项的地方明确标注，不以推测代替事实。本轮评审已确认三项方向性决策，作为方案的编制前提：</p>
+
+<table>
+  <tr><th>编号</th><th>决策项</th><th>已确认方向</th></tr>
+  <tr><td>D1</td><td>视觉改造力度</td><td>重做正式美术资产，用 Blender 重新建模并精修材质，不再走「换回带色版备份」的低成本路线</td></tr>
+  <tr><td>D2</td><td>交互方案</td><td>推翻 V1.3 冻结的 A 方案（方向盘步进），恢复直接拖拽布置；方向盘与角度按钮不再作为主路径</td></tr>
+  <tr><td>D3</td><td>功能缺口</td><td>家具展示要达到参考图的丰富度与精细度——品类多、单件造型可辨识、有颜色，底部卡片用真实渲染缩略图</td></tr>
+</table>
+
+<p>需要说明的是，D3 与现行《三维家具风格规范 V1.0》§1.1「收纳表达优先于视觉丰富度」及 §4.4「剔除绿植、地毯、灯具、摆件」的定位存在冲突。参考图之所以呈现丰富饱满的观感，恰恰依赖这些被剔除的品类。本方案据此提出同步调整产品定位，并将品类范围作为待确认事项单列（见第六章），不代为擅自修改。</p>
+
+<h1>二、现状诊断</h1>
+
+<h2>2.1 四个痛点的病根</h2>
+
+<p>四个痛点并非彼此独立的缺陷，而是两次「为降低首版成本而主动降级」的决策叠加后的结果，且底层能力大多仍保留在代码中，具备低风险回收的条件。</p>
+
+<table>
+  <tr><th>痛点</th><th>现状表现</th><th>病根（可追溯依据）</th><th>可复用基础</th></tr>
+  <tr><td>展示素、假</td><td>家具为灰白素模、零贴图，房间空旷、家具无辨识度；底部卡片为 emoji 图标</td><td>2026-11-23 将带色版 GLB 切换为白膜版（单材质、零贴图）；带色版完整备份仍在 package3d/assets/furniture_colored_backup/</td><td>带色版备份、8 件 Blender 建模脚本、场景软装程序化几何</td></tr>
+  <tr><td>交互繁琐</td><td>选中家具后按方向盘 5cm 步进、15° 旋转、输入长宽高、单独保存</td><td>V1.3 规范冻结 A 方案（简化操作），页面 onTouchMove 命中家具即锁定为「点击」、不调拖拽接口</td><td>渲染器已实现 dragDelta / previewMove / previewRotate / previewScale（renderer.js 617–662 行）</td></tr>
+  <tr><td>卡顿</td><td>拖动、缩放不跟手，真机尤为明显</td><td>signature() 纳入位置/角度/尺寸，任一家具动一步即触发 syncScene() 将全部实例销毁重建（renderer.js 466–475、440–448 行）；pick() 对每件家具遍历 8 个角点做投影（571–597 行）</td><td>已有 preview 系列接口支持「拖动中只改内存、抬手再落盘」，说明增量路线可行</td></tr>
+  <tr><td>功能不符预期</td><td>家具种类少且大量复用，物品不进三维，非收纳家具不显示；整体丰富度远低于参考图</td><td>V2.0 既定口径：8 类就近复用（电视柜/床头柜/收纳盒共用 cabinet）、非收纳家具不建模型、物品只在列表呈现（V1.3 §8）</td><td>绑定走逻辑节点（BR-009），与渲染层解耦，扩充模型与品类不影响收纳关系</td></tr>
+</table>
+
+<p class="figure"><img src="/Users/Admin1/Documents/kywork/3d/output/room3d-rebuild-20261123/stage2/images/fig1-current.png" alt="现状：三维房间主卧展示效果" width="430"></p>
+<p class="caption">图 1　现状：家具为灰白素模、品类少，房间空旷、家具辨识度低</p>
+
+<p class="figure"><img src="/Users/Admin1/Documents/kywork/3d/output/room3d-rebuild-20261123/stage2/images/fig2-target.jpg" alt="目标参考：品类丰富、造型可辨识的娃娃屋场景" width="430"></p>
+<p class="caption">图 2　目标参考：品类丰富、单件造型可辨识、有颜色，底部为真实渲染缩略图</p>
+
+<h2>2.2 关键发现</h2>
+
+<p class="step">a) <strong>视觉降级是可逆的，但本轮选择不回退、而是重做。</strong>带色版备份仍在包内，拷回即可消除灰白观感且无需改渲染代码；但该版本同样是低多边形程序化建模，达不到参考图的精细度。评审据此选择重做美术资产。</p>
+
+<p class="step">b) <strong>直接拖拽的底层能力已经写好，只是被页面层关掉。</strong>渲染器提供了完整的拖拽预览接口，拖动中只在内存改模型、抬手才落盘，设计上本就为跟手交互准备。恢复拖拽主要是页面层接线与规范改口径，不是从零开发。</p>
+
+<p class="step">c) <strong>卡顿的主因是「全量重建」而非模型面数。</strong>8 件 GLB 合计约 3216 三角面、228 KB，本身很轻；真正的开销在于每一步微调都把全部家具实例销毁重建，以及拾取时逐件投影包围盒。这决定了性能优化的重点是重建粒度与拾取算法，而非盲目减面。</p>
+
+<p class="step">d) <strong>功能丰富度的瓶颈是口径，不是技术。</strong>现行规范主动剔除了构成「生活气息」的品类，并将物品排除在三维之外。要达到参考图效果，必须先调整口径，再谈资产与渲染。</p>
+
+<h1>三、改造目标</h1>
+
+<h2>3.1 总体目标</h2>
+
+<p>将「三维房间」从「能记录位置的灰白示意场景」改造为「品类丰富、造型可辨识、可直观拖拽布置的彩色娃娃屋场景」，同时显著改善拖动与缩放的跟手度，并保持既有物品—家具—收纳节点绑定关系（BR-009）不受破坏。</p>
+
+<h2>3.2 分项目标</h2>
+
+<table>
+  <tr><th>维度</th><th>现状</th><th>目标</th></tr>
+  <tr><td>视觉</td><td>灰白素模、零贴图、品类少</td><td>彩色哑光材质、大圆角低多边形、品类覆盖主要收纳与生活场景、单件造型可辨识</td></tr>
+  <tr><td>交互</td><td>方向盘步进、多层浮层、独立保存</td><td>选中即拖、双指缩放旋转、网格吸附；方向盘类按钮降级为精确微调备选</td></tr>
+  <tr><td>性能</td><td>每步全量重建、拾取逐件投影</td><td>增量重建（只动变化件）、拾取包围盒缓存、按机型分级渲染</td></tr>
+  <tr><td>功能</td><td>8 类复用、物品不建模、非收纳家具不显示</td><td>按确认后的品类清单扩充；物品展示方式按确认结果实施</td></tr>
+  <tr><td>数据</td><td>绑定走逻辑节点</td><td>保持 BR-009 不变，换模型、拖位置、加品类均不得破坏关联关系</td></tr>
+</table>
+
+<h2>3.3 明确不做</h2>
+
+<p class="step">a) 不追求照片级渲染或 CAD/BIM 精度。</p>
+<p class="step">b) 不做自由三轴 Gizmo、家具碰撞模拟、自动避障、AR 扫描与多人实时协同。</p>
+<p class="step">c) 不在场景主视图里直接编辑柜体内部每个格子的几何结构。</p>
+<p class="step">d) 不在未确认品类范围前擅自扩充家具库与模板、种子数据。</p>
+
+<h1>四、改造内容</h1>
+
+<p>改造按四条主线展开，每条主线内部再分阶段，确保任一阶段可独立验证、可回退。</p>
+
+<h2>4.1 主线一：美术资产重做（对应 D1、D3）</h2>
+
+<p class="step">a) <strong>风格基准确入。</strong>沿用《三维家具风格规范 V1.0》§3 的色板、尺寸基准、哑光 PBR 与等距视角作为建模约束；因 D3 的丰富度要求，对 §1.1、§4.4 的定位与剔除清单做专项调整，形成本次改造专用的品类与风格增补说明，评审通过后冻结。</p>
+
+<p class="step">b) <strong>建模与精修。</strong>在现有 preview/blender-build/build_furniture.py 基础上扩展，按确认后的品类清单逐件建模：低多边形 + 大圆角，单件点缀色不超过两种，统一底面中心锚点与 2D 占地框。参考图里的沙发、单人椅、床架、圆形地毯、落地灯、吊灯、猫窝、绿植、边桌等作为造型与配色参照，但不照搬具体模型与图标。</p>
+
+<p class="step">c) <strong>缩略图升级。</strong>用同一批 Blender 资产离线渲染各品类的真实缩略图，替换底部卡片与家具卡片中的 emoji 图标；缩略图与 3D 模型分路径加载，延续既有降级策略。</p>
+
+<p class="step">d) <strong>资产管线与包体复核。</strong>每件 GLB 保持数百至数千三角面、共享材质、512–1024 贴图与共享图集；更新 manifest 的 size、triangles、bytes 与版本字段。渲染器只读 file/key/size，无需改动即可接入。改造完成后复核主包与分包体积均不超过 2 MB 上限；若超包体，按品类分批加载或压缩纹理处理。</p>
+
+<p class="step">e) <strong>回退路径。</strong>保留当前带色版与白膜版备份目录，任一阶段出现异常即可切回，不影响业务逻辑。</p>
+
+<h2>4.2 主线二：交互改造（对应 D2）</h2>
+
+<p class="step">a) <strong>恢复直接拖拽。</strong>页面 onTouchMove 在命中家具时不再锁定为点击，改调渲染器已有的 previewMove；拖动中只更新内存模型并实时重绘，抬手时一次性调用 transformFurniture 落盘，与现有 preview 接口设计一致。</p>
+
+<p class="step">b) <strong>旋转与缩放。</strong>双指手势接入 previewRotate 与 previewScale，撤销/重做沿用现有 undoStack；方向按钮与 15° 按钮保留为「精确微调」入口，从主路径降为备选，满足需要精确定位的场景。</p>
+
+<p class="step">c) <strong>状态机瘦身。</strong>将现有 9 态状态机（loading / view / selected / move / rotate / dimension / saving / saveError / itemView）压缩为 loading / view / selected / editing / saving / itemView，三种编辑互斥改为统一的 editing 态内子模式，减少浮层切换与状态冲突。</p>
+
+<p class="step">d) <strong>吸附与边界。</strong>拖拽增加网格吸附与越界钳制，位置以世界坐标保存；相机视角变化不得标记为家具数据变更。</p>
+
+<p class="step">e) <strong>规范同步。</strong>修订《客厅三维空间交互与开发设计规范 V1.3》与《三维视图交互逻辑规范 V1.0》中被推翻的 A 方案条款、状态机定义、验收清单，以及《02-客厅三维空间_A方案交互状态图》，保持规范与实现一致。</p>
+
+<p class="step">f) <strong>BR-009 底线。</strong>换模型、拖位置、调尺寸、加新品类均不得破坏收纳节点与物品关联；每条交互改造完成后均需回归该项。</p>
+
+<h2>4.3 主线三：性能优化</h2>
+
+<p class="step">a) <strong>重建粒度下沉。</strong>将 signature() 从整场字符串改为按家具实例逐个比对，只有发生变化的实例才销毁重建；房间尺寸不变的常规编辑不再重建场景软装。</p>
+
+<p class="step">b) <strong>拾取优化。</strong>缓存各实例的投影包围盒，仅在家具位置、角度、尺寸或相机参数变化时重算；拾取命中从逐件 8 角点投影改为读缓存比对。</p>
+
+<p class="step">c) <strong>渲染分级。</strong>建立真机性能基线后，按机型分级配置阴影开关、阴影贴图尺寸、像素比与抗锯齿；低端机提供降级策略（减少阴影、降低纹理分辨率），必要时切静态预览并保留家具列表管理。</p>
+
+<p class="step">d) <strong>渲染循环治理。</strong>页面失去前台时暂停不必要的重绘，恢复前台后重新校验状态；进入页面先显示占位或骨架，避免白屏。</p>
+
+<p class="step">e) <strong>不承诺帧率数字。</strong>性能目标以「目标机型上建立验收基线、改造前后可比」为准，不以未经实测的帧率数值作为产品承诺。</p>
+
+<h2>4.4 主线四：功能补齐</h2>
+
+<p class="step">a) 按第六章确认后的品类清单扩充家具模型库与相应模板、种子数据，并复核所有已存家具的 category 引用。</p>
+
+<p class="step">b) 物品是否在三维中呈现、以何种形式呈现，按确认结果实施；若维持列表方式，则优化列表与三维场景的对应提示，降低割裂感。</p>
+
+<p class="step">c) 补齐参考图中构成丰富感但现行规范已剔除的品类（绿植、地毯、灯具、摆件等）时，明确其是否参与收纳绑定：不承载物品的纯装饰件只做场景呈现，不进入收纳逻辑，避免与 BR-009 混淆。</p>
+
+<h1>五、分阶段路线</h1>
+
+<table>
+  <tr><th>阶段</th><th>内容</th><th>主要产出</th><th>退出条件</th></tr>
+  <tr><td>阶段一</td><td>口径确认 + 风格增补说明冻结</td><td>品类清单、风格增补说明、修订后的规范口径</td><td>评审通过，品类范围明确</td></tr>
+  <tr><td>阶段二</td><td>美术资产重做：样板件先行，再批量建模</td><td>样板 GLB、缩略图、资产管线</td><td>样板风格评审通过，资产结构校验通过</td></tr>
+  <tr><td>阶段三</td><td>交互改造：拖拽接线、状态机瘦身、规范同步</td><td>新交互页面、修订后的 V1.3 规范与状态图</td><td>拖拽闭环、BR-009 回归通过、交互矩阵全通过</td></tr>
+  <tr><td>阶段四</td><td>性能优化：增量重建、拾取缓存、分级渲染</td><td>优化后的渲染器与真机基线</td><td>真机基线建立，改造前后可比，无白屏无闪退</td></tr>
+  <tr><td>阶段五</td><td>功能补齐与整体回归</td><td>扩充后的家具库、模板与种子数据</td><td>静态门禁、冒烟、交互矩阵、真机验收全通过</td></tr>
+</table>
+
+<p>各阶段顺序执行，前一阶段未通过评审不进入下一阶段；任一阶段均可单独回退到改造前版本。每次改动完成后按项目约定创建 Git 提交，并更新相关测试，确保交付前全部验证通过。</p>
+
+<h1>六、待确认事项</h1>
+
+<p>以下事项需评审确认后方可进入阶段一，本方案不代为决定：</p>
+
+<p class="step">1. <strong>品类清单范围。</strong>参考图包含坐卧家具、桌柜收纳、家居装饰、宠物用品等多个分类。按哪一档扩充：仅补收纳强相关品类、补齐日常主要品类，还是含宠物用品与装饰品的全量扩充？扩充后的家具库与模板如何收敛？</p>
+
+<p class="step">2. <strong>产品定位调整。</strong>是否正式推翻《三维家具风格规范 V1.0》§1.1「收纳表达优先于视觉丰富度」与 §4.4 剔除清单，改为「收纳记录与场景丰富度并重」？</p>
+
+<p class="step">3. <strong>物品的三维呈现。</strong>物品是否需要在三维场景中显示（如以图标或简化模型附着于收纳位置），还是维持 V1.3 §8 的列表方式？</p>
+
+<p class="step">4. <strong>性能验收机型。</strong>目标机型范围与低端机降级阈值如何确定，作为建立真机基线的依据。</p>
+
+<p class="step">5. <strong>场景与户型。</strong>是否维持当前固定的三面墙等距房间，还是需要支持换户型、改墙面等能力。</p>
+
+<h1>七、风险与应对</h1>
+
+<table>
+  <tr><th>风险</th><th>表现</th><th>应对</th></tr>
+  <tr><td>产品定位冲突</td><td>丰富度要求与现行「收纳优先」口径冲突，导致规范与实现两套口径</td><td>阶段一先冻结口径，评审通过后再动资产与代码</td></tr>
+  <tr><td>包体超限</td><td>资产扩充与贴图增加后主包或分包超过 2 MB</td><td>共享材质与图集、按品类分批加载、纹理压缩；每阶段复核包体</td></tr>
+  <tr><td>风格不一致</td><td>批量建模后风格漂移，返工成本高</td><td>样板件先评审通过再批量建模，统一锚点与色板</td></tr>
+  <tr><td>绑定关系被破坏</td><td>换模型、拖位置、加品类后收纳关联丢失</td><td>BR-009 作为每阶段回归项，绑定走逻辑节点与渲染层解耦</td></tr>
+  <tr><td>交互回归不彻底</td><td>推翻 A 方案后旧交互用例失效</td><td>同步修订规范与状态图，重建交互矩阵，覆盖编辑互斥、撤销、保存异常</td></tr>
+  <tr><td>真机性能退化</td><td>新资产与拖拽在低端机卡顿或闪退</td><td>分级渲染与降级策略，建立真机基线，必要时切静态预览</td></tr>
+  <tr><td>资产打包被过滤</td><td>真机上 GLB 被当作无依赖文件剔除，场景只剩地板</td><td>保留现有 packOptions.include 与 ignoreUploadUnusedFiles=false 配置，保留失败分类回传与明确提示</td></tr>
+</table>
+
+<h1>八、验收口径</h1>
+
+<p class="step">a) <strong>视觉：</strong>样板件与批量资产通过风格评审，造型、配色、材质、视角四项与确认后的风格基准一致；底部卡片使用真实渲染缩略图。</p>
+
+<p class="step">b) <strong>交互：</strong>选中家具可直接拖动，双指缩放旋转跟手；网格吸附与越界钳制生效；方向按钮作为精确微调可用；状态机与修订后的规范一致。</p>
+
+<p class="step">c) <strong>数据：</strong>BR-009 全程回归通过，换模型、拖位置、调尺寸、加品类均不破坏收纳节点与物品关联；分类与模板、种子数据引用一致，无重复房间或累积问题。</p>
+
+<p class="step">d) <strong>性能：</strong>目标机型上建立改造前后可比基线，拖动与缩放无明显卡顿，无白屏、无闪退；低端机降级策略生效。</p>
+
+<p class="step">e) <strong>工程：</strong>静态门禁、运行时冒烟、界面口径对齐、交互矩阵、设备兼容与真机验收全部通过；每次改动均有对应 Git 提交与更新后的测试。</p>
+
+<p class="step">f) <strong>包体：</strong>主包与分包均不超过 2 MB 上限。</p>
+
+<h1>九、结语</h1>
+
+<p>本方案的核心判断是：当前四个痛点共享同一根源——首版为降本所做的两次主动降级，而底层能力大多仍在。改造不必推倒全部已有工作，重点是恢复被关掉的拖拽能力、重做决定观感的美术资产、修正导致卡顿的重建粒度，并在明确口径后补齐丰富度。只要按阶段推进、每阶段可验证可回退，就能在控制风险的前提下把三维房间从「灰白示意」提升到「可用、好看、跟手」的娃娃屋场景。</p>
+
+<p>方案中所有现状判断均可追溯至现有代码与文档；所有待确认事项均已单列，不做推测性填充。评审确认后，即可进入阶段一。</p>
+
+</section>
+</body>
+</html>
