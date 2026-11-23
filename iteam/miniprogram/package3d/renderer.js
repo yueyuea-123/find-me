@@ -7,7 +7,13 @@
 var THREE_ADAPT = require('./vendor/threejs-miniprogram.js');
 var GLTF_REG = require('./vendor/gltf-loader.js');
 
-var BASE = '/package3d/assets/furniture/';
+// 代码包内资源路径：不同基础库/真机对前导斜杠的解析存在差异，逐个尝试取首个可读的。
+// 真机上若资产被打包过滤（project.config.json 的 ignoreDevUnusedFiles/ignoreUploadUnusedFiles），
+// manifest 会读取失败并回调 onAssetError，避免静默变成空白场景。
+var BASE_CANDIDATES = [
+  '/package3d/assets/furniture/',
+  'package3d/assets/furniture/'
+];
 
 // 15 类家具 → 8 件 GLB 就近复用
 var CATEGORY_TO_GLB = {
@@ -40,7 +46,8 @@ var POT_TONES = [0xC98F75, 0xD8A79C, 0xE8DED0, 0xB98B6A];
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 function rnd(seed) { var x = Math.sin(seed * 12.9898 + 78.233) * 43758.5453; return x - Math.floor(x); }
 
-function createRoomRenderer(canvas, getData) {
+function createRoomRenderer(canvas, getData, opts) {
+  opts = opts || {};
   var THREE;
   try {
     THREE = THREE_ADAPT.createScopedThreejs(canvas);
@@ -368,18 +375,43 @@ function createRoomRenderer(canvas, getData) {
   var helper = null;
   var pendingSig = '';
 
+  // 资产加载诊断：真机上若资产被打包过滤，失败静默会变成"只有地板没有家具"的空白场景。
+  // 这里汇总失败原因，通过 opts.onAssetError 回传页面，由页面给出明确提示或降级。
+  function assetError(code, detail) {
+    if (typeof opts.onAssetError !== 'function') return;
+    try { opts.onAssetError({ code: code, detail: detail || '' }); } catch (e) {}
+  }
+
   function loadAssets() {
-    var fs = wx.getFileSystemManager();
-    var manifest;
-    try {
-      manifest = JSON.parse(fs.readFileSync(BASE + 'manifest.json', 'utf8'));
-    } catch (e) { return; }
-    for (var i = 0; i < manifest.items.length; i++) {
+    var fs;
+    try { fs = wx.getFileSystemManager(); }
+    catch (e) { assetError('FS_UNAVAILABLE', String(e && e.message || e)); return; }
+
+    // manifest 决定能否继续：逐个候选路径尝试，保留首个成功的 base
+    var manifest = null, base = '', manifestErrs = [];
+    for (var b = 0; b < BASE_CANDIDATES.length; b++) {
+      try {
+        var raw = fs.readFileSync(BASE_CANDIDATES[b] + 'manifest.json', 'utf8');
+        var parsed = JSON.parse(raw);
+        if (parsed && parsed.items && parsed.items.length) { manifest = parsed; base = BASE_CANDIDATES[b]; break; }
+        manifestErrs.push(BASE_CANDIDATES[b] + ': manifest 内容为空');
+      } catch (e) {
+        manifestErrs.push(BASE_CANDIDATES[b] + ': ' + String(e && e.message || e));
+      }
+    }
+    if (!manifest) { assetError('MANIFEST_MISSING', manifestErrs.join(' | ')); return; }
+
+    var expected = manifest.items.length, loaded = 0, glbErrs = [];
+    for (var i = 0; i < expected; i++) {
       (function (item) {
         var buf;
         // readFileSync 不传 encoding 才返回 ArrayBuffer；'arraybuffer' 不是合法编码
-        try { buf = fs.readFileSync(BASE + item.file); }
-        catch (e) { return; }
+        try { buf = fs.readFileSync(base + item.file); }
+        catch (e) {
+          glbErrs.push(item.file + ': ' + String(e && e.message || e));
+          if (++loaded === expected) assetError('GLB_READ_FAILED', glbErrs.join(' | '));
+          return;
+        }
         var loader = new THREE.GLTFLoader();
         loader.parse(buf, '', function (gltf) {
           templates[item.key] = gltf.scene;
@@ -387,7 +419,11 @@ function createRoomRenderer(canvas, getData) {
           pendingSig = '';
           syncScene();
           draw();
-        }, function () {});
+          if (++loaded === expected && !glbErrs.length) assetError('ASSETS_READY', 'loaded=' + expected);
+        }, function (err) {
+          glbErrs.push(item.file + ': parse ' + String(err && err.message || err));
+          if (++loaded === expected) assetError('GLB_PARSE_FAILED', glbErrs.join(' | '));
+        });
       })(manifest.items[i]);
     }
   }

@@ -162,6 +162,14 @@ mock 验证页：`preview/mp-test/verify.html`（含小程序 `wx` API 模拟，
 
 > 2026-11-23 补充：开发者工具服务端口已开启，模拟器编译与自动化 AC（22/22 + 7/7）已通过；下表为**物理真机扫码**仍需人工确认的项，属自动化盲区（手势手感、机型兼容、帧率）。
 
+**真机资产问题（2026-11-23 已修，待复验）**：用户真机预览出现「房间只显示地板、无家具模型」，选中卡与数据均正常。根因是开发者工具的「过滤无依赖文件」默认开启——GLB 与 manifest 由 `fs.readFileSync(BASE + file)` 动态拼路径读取，无静态 require 依赖被判为无依赖文件，从真机包剔除；模拟器直接读本地目录故从未复现。修复：
+- `project.private.config.json`：`ignoreDevUnusedFiles=false`（预览/真机调试不过滤）；
+- `project.config.json`：`setting.ignoreUploadUnusedFiles=false`（上传不过滤）+ `packOptions.include` 强制带上 `package3d/assets/furniture`；
+- 渲染器 `loadAssets` 增加多候选路径（`BASE_CANDIDATES`）、manifest/GLB 失败分类与 `onAssetError` 回传，页面弹窗明确提示，不再静默空白；
+- `qa/pack-assets-test.js` 5/5 锁定上述配置，防回归。
+
+复验步骤：在开发者工具重新「预览」生成二维码 → 真机扫码 → 进入任一房间三维页，确认 8 件家具出现。若仍失败，弹窗会显示 `MANIFEST_MISSING` / `GLB_READ_FAILED` 等具体错误码，按码定位。
+
 1. 导入 `iteam/miniprogram`，确认分包 `package3d` 被识别、`app.json` 无校验错误。
 2. 进入任一房间的三维页，确认分包按需加载成功、无长时间空白。
 3. 核对四件代表家具的造型/光照/视角与白膜材质表现（当前为白膜资产，带色版备份可回退），确认选中高亮与短按拾取。

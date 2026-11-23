@@ -165,7 +165,18 @@ Page({
       this.setData({ glError: '三维模块不可用', view: 'list' });
       return;
     }
-    var r = rendererFactory.createRoomRenderer(canvas, getScene);
+    var r = rendererFactory.createRoomRenderer(canvas, getScene, {
+      onAssetError: function (info) {
+        if (info.code === 'ASSETS_READY') return;
+        // 资产缺失会让场景只剩地板、看似"三维空白"，必须显式告知并给出可操作路径
+        self.setData({ assetError: info.code + '：' + info.detail });
+        wx.showModal({
+          title: '三维模型资源不可用',
+          content: '模型文件未能加载（' + info.code + '）。请切换列表视图继续管理家具；若刚更新过版本，可删除小程序后重新进入以刷新资源包。',
+          showCancel: false, confirmText: '我知道了'
+        });
+      }
+    });
     if (!r.ok) {
       this.setData({ glError: r.error === 'WEBGL_UNAVAILABLE' ? '设备不支持 WebGL' : ('三维初始化失败：' + r.message), view: 'list' });
       return;

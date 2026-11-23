@@ -3,6 +3,7 @@
   "cloudfunctionRoot": "cloudfunctions/",
   "setting": {
     "urlCheck": true,
+    "ignoreUploadUnusedFiles": false,
     "es6": true,
     "enhance": true,
     "postcss": true,
@@ -75,7 +76,9 @@
   "srcMiniprogramRoot": "miniprogram/",
   "packOptions": {
     "ignore": [],
-    "include": []
+    "include": [
+      { "type": "folder", "value": "package3d/assets/furniture" }
+    ]
   },
   "editorSetting": {
     "tabIndent": "insertSpaces",
