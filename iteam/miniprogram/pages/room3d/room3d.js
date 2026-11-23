@@ -191,11 +191,19 @@ Page({
     this._safeRender();
   },
 
-  // 触摸坐标 → canvas 内坐标（减去窗口偏移）
-  _canvasXY: function (touch) {
+  // 触摸点统一换算为 canvas 内坐标。
+  // 真机 canvas 事件的 x/y 已是画布内坐标，不能再减窗口偏移；只有缺少 x/y 的
+  // 环境（模拟器/旧基础库）才用视口坐标 clientX/clientY 减 rect 兜底。
+  _touchPoint: function (t) {
+    if (typeof t.x === 'number' && typeof t.y === 'number' && isFinite(t.x) && isFinite(t.y)) {
+      return { x: t.x, y: t.y };
+    }
     var rect = this._glRect || { left: 0, top: 0 };
-    return { x: touch.x - rect.left, y: touch.y - rect.top };
+    var cx = (t.clientX !== undefined ? t.clientX : t.pageX);
+    var cy = (t.clientY !== undefined ? t.clientY : t.pageY);
+    return { x: (Number(cx) || 0) - (rect.left || 0), y: (Number(cy) || 0) - (rect.top || 0) };
   },
+  _canvasXY: function (touch) { return this._touchPoint(touch); },
 
   // 模式1：浏览/编辑/收纳严格分权
   //  浏览：点选家具=选中；拖空白=旋转视角；双指=缩放视角
@@ -209,7 +217,7 @@ Page({
       var p = this._canvasXY(ts[0]);
       var idx = this._safeGL('pick', [p.x, p.y]);
       var hit = (idx !== null && idx >= 0 && this._furniture[idx]);
-      this._sx = ts[0].x; this._sy = ts[0].y;
+      this._sx = p.x; this._sy = p.y;
       this._moved = false; this._lpFired = false;
       this._hitIdx = hit ? idx : -1;
       this._dragFid = hit ? this._furniture[idx].id : '';
@@ -248,7 +256,10 @@ Page({
   },
   _clearLongPress: function () { if (this._lpTimer) { clearTimeout(this._lpTimer); this._lpTimer = null; } },
   // 两指连线与屏幕 X 轴夹角（弧度）
-  _angle: function (ts) { return Math.atan2(ts[1].y - ts[0].y, ts[1].x - ts[0].x); },
+  _angle: function (ts) {
+    var a = this._touchPoint(ts[0]), b = this._touchPoint(ts[1]);
+    return Math.atan2(b.y - a.y, b.x - a.x);
+  },
   _findIndexById: function (id) {
     for (var i = 0; i < this._furniture.length; i++) if (this._furniture[i].id === id) return i;
     return -1;
@@ -258,7 +269,8 @@ Page({
     if (!this._glRenderer || this.data.view !== '3d' || this.data.glError) return;
     var ts = e.touches;
     if (ts.length === 1 && this._sx !== undefined) {
-      var dx = ts[0].x - this._sx, dy = ts[0].y - this._sy;
+      var p = this._touchPoint(ts[0]);
+      var dx = p.x - this._sx, dy = p.y - this._sy;
       if (Math.abs(dx) + Math.abs(dy) > 5) { this._moved = true; this._clearLongPress(); }
       if (this._moved && this._dragFid && this.data.mode === 'edit') {
         // 编辑模式拖家具：累计像素位移一次换算成地面世界位移，内存预览不落盘
@@ -290,7 +302,7 @@ Page({
         // 浏览/收纳：旋转视角
         this._safeGL('orbit', [dx, dy]);
       }
-      this._sx = ts[0].x; this._sy = ts[0].y;
+      this._sx = p.x; this._sy = p.y;
       this._safeRender();
     } else if (ts.length === 2 && this._pinch) {
       var d = this._dist(ts);
@@ -453,7 +465,8 @@ Page({
   },
 
   _dist: function (ts) {
-    var dx = ts[0].x - ts[1].x, dy = ts[0].y - ts[1].y;
+    var a = this._touchPoint(ts[0]), b = this._touchPoint(ts[1]);
+    var dx = a.x - b.x, dy = a.y - b.y;
     return Math.sqrt(dx * dx + dy * dy);
   },
 
@@ -480,6 +493,13 @@ Page({
   setMode: function (e) {
     var m = e.currentTarget.dataset.m;
     this.setData({ mode: m, hint: this.HINTS[m] || this.HINTS.browse });
+  },
+  // 浏览模式点选模型后，给一个明确的「移动模型」入口：切到编辑模式再拖动，
+  // 避免用户短按后以为可以直接拖动却只旋转了视角。
+  enterMoveMode: function () {
+    if (!this.data.selected) { wx.showToast({ title: '请先点选模型', icon: 'none' }); return; }
+    this.setMode({ currentTarget: { dataset: { m: 'edit' } } });
+    wx.showToast({ title: '编辑模式：单指拖动模型移动', icon: 'none' });
   },
   setView: function (e) {
     var v = e.currentTarget.dataset.v;

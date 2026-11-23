@@ -1173,12 +1173,32 @@ module.exports = {
   },
   // 墓碑清空（同步成功后调用）
   clearTombstones: function () { try { wx.setStorageSync(TOMB_KEY, []); } catch (e) {} },
-  // 用云端快照覆盖本地：先备份到临时键，再写入主存储并清缓存
+  // 用云端快照覆盖本地：按业务 id 去重（兼容历史重复数据），再写入主存储并清缓存
   applySnapshot: function (snap) {
     if (!snap || typeof snap !== 'object') return { ok: false, error: 'INVALID_SNAPSHOT' };
+    function timeOf(v) {
+      if (v === undefined || v === null) return 0;
+      if (typeof v === 'object' && v.$date) return new Date(v.$date).getTime() || 0;
+      var n = Number(v);
+      return isNaN(n) ? 0 : n;
+    }
+    function uniqueById(rows) {
+      var seen = {}, out = [];
+      (rows || []).forEach(function (row) {
+        if (!row) return;
+        var key = row.id || row._id;
+        if (!key) { out.push(row); return; }
+        var prev = seen[key];
+        if (!prev) { seen[key] = row; out.push(row); return; }
+        var t = (timeOf(row.updatedAt) - timeOf(prev.updatedAt)) ||
+                (timeOf(row.createdAt) - timeOf(prev.createdAt));
+        if (t > 0) { out[out.indexOf(prev)] = row; seen[key] = row; }
+      });
+      return out;
+    }
     var b = blank();
     ['spaces','rooms','furniture','nodes','items','movements','inventory','transactions','alerts'].forEach(function (k) {
-      if (Array.isArray(snap[k])) b[k] = snap[k];
+      if (Array.isArray(snap[k])) b[k] = uniqueById(snap[k]);
     });
     // 保留当前设置（activeSpaceId/seeded），避免跨设备覆盖用户当前所在空间
     var d = load();

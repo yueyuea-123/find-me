@@ -16,7 +16,10 @@ Page({
     dragInvalid: false
   },
 
-  onShow: function () { this.refresh(); },
+  onShow: function () {
+    this.setData({ editing: false, dragging: false, dragInvalid: false });
+    this.refresh();
+  },
 
   refresh: function () {
     var hour = new Date().getHours();
@@ -44,10 +47,11 @@ Page({
       });
     });
     rec.sort(function (a, b) { return b.ts - a.ts; });
+    // 刷新只更新数据；编辑态由 onShow / 切换按钮管理，避免连续拖动房间时中途退出编辑
     this.setData({
       stats: stats, overview: overview, alerts: alerts,
       recent: rec.slice(0, 2), hourGreet: greet,
-      editing: false, dragging: false, dragInvalid: false
+      dragging: false, dragInvalid: false
     });
   },
 

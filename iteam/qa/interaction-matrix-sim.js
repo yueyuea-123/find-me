@@ -39,7 +39,7 @@ const E = (mp, fn, arg) => mp.evaluate(fn, arg);
     ok('找到空白点', !!pts.blank, JSON.stringify(pts.blank));
     ok('canvas 窗口偏移可读（坐标换算前提）', !!pts.rect && pts.rect.left!==undefined, JSON.stringify(pts.rect));
     const off = pts.rect || {left:14,top:119};
-    const V = (cx,cy) => ({x:cx+off.left, y:cy+off.top});
+    // 真机 canvas 触摸的 x/y 已相对画布，clientX/Y 为视口坐标；两种口径都要覆盖
 
     // 辅助：在 evaluate 里打桩某个渲染器方法，执行 fn，返回调用次数
     const spy = async (method, actions) => E(mp, arg => {
@@ -56,7 +56,7 @@ const E = (mp, fn, arg) => mp.evaluate(fn, arg);
     await setMode('browse');
     await E(mp, () => getCurrentPages().slice(-1)[0].clearSel());
     const b1 = await E(mp, arg => { const p=getCurrentPages().slice(-1)[0];
-      const pt={x:arg.cx+arg.left,y:arg.cy+arg.top};
+      const pt={x:arg.cx,y:arg.cy,clientX:arg.cx+arg.left,clientY:arg.cy+arg.top};
       p.onTouchStart({touches:[pt],changedTouches:[pt]});
       p.onTouchEnd({touches:[],changedTouches:[pt]});
       return { sel:p.data.selected&&p.data.selected.name, hit:arg.idx };
@@ -66,7 +66,8 @@ const E = (mp, fn, arg) => mp.evaluate(fn, arg);
     // B2 浏览-拖空白旋转视角（打桩 orbit）
     const b2 = await E(mp, arg => { const p=getCurrentPages().slice(-1)[0]; const gl=p._glRenderer;
       let n=0; const orig=gl.orbit; gl.orbit=function(){n++;return orig.apply(this,arguments)};
-      const a={x:arg.ax+arg.left,y:arg.ay+arg.top}, b={x:arg.bx+arg.left,y:arg.by+arg.top};
+      const a={x:arg.ax,y:arg.ay,clientX:arg.ax+arg.left,clientY:arg.ay+arg.top},
+            b={x:arg.bx,y:arg.by,clientX:arg.bx+arg.left,clientY:arg.by+arg.top};
       try { p.onTouchStart({touches:[a],changedTouches:[a]}); p.onTouchMove({touches:[b],changedTouches:[b]}); p.onTouchEnd({touches:[],changedTouches:[b]}); }
       finally { gl.orbit=orig; }
       return n;
@@ -76,8 +77,8 @@ const E = (mp, fn, arg) => mp.evaluate(fn, arg);
     // B3 浏览-双指缩放视角（打桩 zoom）
     const b3 = await E(mp, arg => { const p=getCurrentPages().slice(-1)[0]; const gl=p._glRenderer;
       let n=0; const orig=gl.zoom; gl.zoom=function(){n++;return orig.apply(this,arguments)};
-      const a1={x:100+arg.left,y:100+arg.top},a2={x:200+arg.left,y:100+arg.top};
-      const b1={x:80+arg.left,y:100+arg.top},b2p={x:220+arg.left,y:100+arg.top};
+      const V=(cx,cy)=>({x:cx,y:cy,clientX:cx+arg.left,clientY:cy+arg.top});
+      const a1=V(100,100),a2=V(200,100),b1=V(80,100),b2p=V(220,100);
       try { p.onTouchStart({touches:[a1,a2],changedTouches:[]}); p.onTouchMove({touches:[b1,b2p],changedTouches:[]}); p.onTouchEnd({touches:[],changedTouches:[]}); }
       finally { gl.zoom=orig; }
       return n;
@@ -88,7 +89,7 @@ const E = (mp, fn, arg) => mp.evaluate(fn, arg);
     const b4 = await E(mp, arg => { const p=getCurrentPages().slice(-1)[0];
       const idx=arg.idx, fid=p._furniture[idx].id;
       const before=p.data.furniture[idx].px+'/'+p.data.furniture[idx].pz;
-      const a={x:arg.cx+arg.left,y:arg.cy+arg.top}, b={x:arg.cx+60+arg.left,y:arg.cy+40+arg.top};
+      const a={x:arg.cx,y:arg.cy,clientX:arg.cx+arg.left,clientY:arg.cy+arg.top}, b={x:arg.cx+60,y:arg.cy+40,clientX:arg.cx+60+arg.left,clientY:arg.cy+40+arg.top};
       p.onTouchStart({touches:[a],changedTouches:[a]}); p.onTouchMove({touches:[b],changedTouches:[b]}); p.onTouchEnd({touches:[],changedTouches:[b]});
       p.loadData();
       return {before,after:p.data.furniture[idx].px+'/'+p.data.furniture[idx].pz};
@@ -98,7 +99,7 @@ const E = (mp, fn, arg) => mp.evaluate(fn, arg);
     // ================= 编辑模式 =================
     await setMode('edit');
     const e1 = await E(mp, arg => { const p=getCurrentPages().slice(-1)[0];
-      const pt={x:arg.cx+arg.left,y:arg.cy+arg.top};
+      const pt={x:arg.cx,y:arg.cy,clientX:arg.cx+arg.left,clientY:arg.cy+arg.top};
       p.onTouchStart({touches:[pt],changedTouches:[pt]}); p.onTouchEnd({touches:[],changedTouches:[pt]});
       return {sel:p.data.selected&&p.data.selected.name};
     }, {cx:pts.hit.x, cy:pts.hit.y, idx:pts.hit.idx, ...off});
@@ -112,7 +113,8 @@ const E = (mp, fn, arg) => mp.evaluate(fn, arg);
     const e2 = await E(mp, arg => { const p=getCurrentPages().slice(-1)[0];
       const idx=arg.hit.idx;
       const raw0=JSON.parse(JSON.stringify(p._furniture[idx]._raw.position));
-      const a={x:arg.hit.x+arg.left,y:arg.hit.y+arg.top}, b={x:arg.hit.x+80+arg.left,y:arg.hit.y+50+arg.top};
+      const a={x:arg.hit.x,y:arg.hit.y,clientX:arg.hit.x+arg.left,clientY:arg.hit.y+arg.top},
+            b={x:arg.hit.x+80,y:arg.hit.y+50,clientX:arg.hit.x+80+arg.left,clientY:arg.hit.y+50+arg.top};
       p.onTouchStart({touches:[a],changedTouches:[a]}); p.onTouchMove({touches:[b],changedTouches:[b]});
       const midCard=p.data.selected.px+'/'+p.data.selected.pz;
       const midRaw=p._furniture[idx]._raw.position.x+'/'+p._furniture[idx]._raw.position.z;
@@ -128,8 +130,8 @@ const E = (mp, fn, arg) => mp.evaluate(fn, arg);
     // E3 编辑-双指捏合缩放家具
     const e3 = await E(mp, arg => { const p=getCurrentPages().slice(-1)[0];
       const before=p.data.selected.sz;
-      const a1={x:100+arg.left,y:100+arg.top},a2={x:200+arg.left,y:100+arg.top};
-      const b1={x:60+arg.left,y:100+arg.top},b2p={x:240+arg.left,y:100+arg.top};
+      const V=(cx,cy)=>({x:cx,y:cy,clientX:cx+arg.left,clientY:cy+arg.top});
+      const a1=V(100,100),a2=V(200,100),b1=V(60,100),b2p=V(240,100);
       p.onTouchStart({touches:[a1,a2],changedTouches:[]}); p.onTouchMove({touches:[b1,b2p],changedTouches:[]});
       const preview=p.data.selected.sz;
       p.onTouchEnd({touches:[],changedTouches:[]});
@@ -140,8 +142,8 @@ const E = (mp, fn, arg) => mp.evaluate(fn, arg);
     // E4 编辑-双指扭转旋转家具
     const e4 = await E(mp, arg => { const p=getCurrentPages().slice(-1)[0];
       const before=p.data.selected.rot;
-      const a1={x:100+arg.left,y:100+arg.top},a2={x:200+arg.left,y:100+arg.top};
-      const b1={x:100+arg.left,y:140+arg.top},b2p={x:200+arg.left,y:60+arg.top};
+      const V=(cx,cy)=>({x:cx,y:cy,clientX:cx+arg.left,clientY:cy+arg.top});
+      const a1=V(100,100),a2=V(200,100),b1=V(100,140),b2p=V(200,60);
       p.onTouchStart({touches:[a1,a2],changedTouches:[]}); p.onTouchMove({touches:[b1,b2p],changedTouches:[]});
       const preview=p.data.selected.rot;
       p.onTouchEnd({touches:[],changedTouches:[]});
@@ -152,7 +154,7 @@ const E = (mp, fn, arg) => mp.evaluate(fn, arg);
     // E6 编辑-拖空白平移视角（打桩 pan）
     const e6 = await E(mp, arg => { const p=getCurrentPages().slice(-1)[0]; const gl=p._glRenderer;
       let n=0; const orig=gl.pan; gl.pan=function(){n++;return orig.apply(this,arguments)};
-      const a={x:arg.ax+arg.left,y:arg.ay+arg.top}, b={x:arg.ax+40+arg.left,y:arg.ay+30+arg.top};
+      const a={x:arg.ax,y:arg.ay,clientX:arg.ax+arg.left,clientY:arg.ay+arg.top}, b={x:arg.ax+40,y:arg.ay+30,clientX:arg.ax+40+arg.left,clientY:arg.ay+30+arg.top};
       try { p.onTouchStart({touches:[a],changedTouches:[a]}); p.onTouchMove({touches:[b],changedTouches:[b]}); p.onTouchEnd({touches:[],changedTouches:[b]}); }
       finally { gl.pan=orig; }
       return n;
@@ -172,7 +174,7 @@ const E = (mp, fn, arg) => mp.evaluate(fn, arg);
     await E(mp, arg => { const p=getCurrentPages().slice(-1)[0];
       window.__mt=[]; window.__om=wx.showModal;
       wx.showModal=function(o){ window.__mt.push(o.title); };
-      const pt={x:arg.cx+arg.left,y:arg.cy+arg.top};
+      const pt={x:arg.cx,y:arg.cy,clientX:arg.cx+arg.left,clientY:arg.cy+arg.top};
       p.onTouchStart({touches:[pt],changedTouches:[pt]});
     }, {cx:e5hit.x, cy:e5hit.y, idx:e5hit.idx, ...off});
     await wait(750);
@@ -192,7 +194,7 @@ const E = (mp, fn, arg) => mp.evaluate(fn, arg);
     });
     const s1 = await E(mp, arg => { const p=getCurrentPages().slice(-1)[0];
       let url=''; const orig=wx.navigateTo; wx.navigateTo=function(o){url=o.url};
-      try { const pt={x:arg.cx+arg.left,y:arg.cy+arg.top};
+      try { const pt={x:arg.cx,y:arg.cy,clientX:arg.cx+arg.left,clientY:arg.cy+arg.top};
         p.onTouchStart({touches:[pt],changedTouches:[pt]}); p.onTouchEnd({touches:[],changedTouches:[pt]}); }
       finally { wx.navigateTo=orig; }
       return url;
@@ -202,7 +204,7 @@ const E = (mp, fn, arg) => mp.evaluate(fn, arg);
     // S2 收纳-拖空白旋转视角（打桩 orbit）
     const s2 = await E(mp, arg => { const p=getCurrentPages().slice(-1)[0]; const gl=p._glRenderer;
       let n=0; const orig=gl.orbit; gl.orbit=function(){n++;return orig.apply(this,arguments)};
-      const a={x:arg.ax+arg.left,y:arg.ay+arg.top}, b={x:arg.ax+40+arg.left,y:arg.ay+30+arg.top};
+      const a={x:arg.ax,y:arg.ay,clientX:arg.ax+arg.left,clientY:arg.ay+arg.top}, b={x:arg.ax+40,y:arg.ay+30,clientX:arg.ax+40+arg.left,clientY:arg.ay+30+arg.top};
       try { p.onTouchStart({touches:[a],changedTouches:[a]}); p.onTouchMove({touches:[b],changedTouches:[b]}); p.onTouchEnd({touches:[],changedTouches:[b]}); }
       finally { gl.orbit=orig; }
       return n;
@@ -216,7 +218,7 @@ const E = (mp, fn, arg) => mp.evaluate(fn, arg);
     await setMode('edit');
     const x1 = await E(mp, arg => { const p=getCurrentPages().slice(-1)[0];
       const idx=arg.idx;
-      const a={x:arg.cx+arg.left,y:arg.cy+arg.top}, b={x:arg.cx+2000+arg.left,y:arg.cy+2000+arg.top};
+      const a={x:arg.cx,y:arg.cy,clientX:arg.cx+arg.left,clientY:arg.cy+arg.top}, b={x:arg.cx+2000,y:arg.cy+2000,clientX:arg.cx+2000+arg.left,clientY:arg.cy+2000+arg.top};
       p.onTouchStart({touches:[a],changedTouches:[a]}); p.onTouchMove({touches:[b],changedTouches:[b]}); p.onTouchEnd({touches:[],changedTouches:[b]});
       p.loadData();
       const f=p.data.furniture[idx], rm=p._room;
@@ -250,10 +252,43 @@ const E = (mp, fn, arg) => mp.evaluate(fn, arg);
 
     // X4 坐标换算：_canvasXY 正确减偏移
     const x4 = await E(mp, arg => { const p=getCurrentPages().slice(-1)[0];
-      const c=p._canvasXY({x:arg.cx+arg.left,y:arg.cy+arg.top});
+      const c=p._canvasXY({x:arg.cx,y:arg.cy,clientX:arg.cx+arg.left,clientY:arg.cy+arg.top});
       return {cx:c.x,cy:c.y,expectX:arg.cx,expectY:arg.cy};
     }, {cx:160,cy:110,...off});
-    ok('X4 触摸坐标减去窗口偏移', Math.abs(x4.cx-x4.expectX)<1 && Math.abs(x4.cy-x4.expectY)<1, JSON.stringify(x4));
+    ok('X4 canvas 坐标不重复减窗口偏移', Math.abs(x4.cx-x4.expectX)<1 && Math.abs(x4.cy-x4.expectY)<1, JSON.stringify(x4));
+
+    // X6 仅有视口坐标时，仍按窗口偏移换算（兼容模拟器/旧基础库）
+    const x6 = await E(mp, arg => { const p=getCurrentPages().slice(-1)[0];
+      const c=p._canvasXY({clientX:arg.cx+arg.left, clientY:arg.cy+arg.top});
+      return {cx:c.x, cy:c.y, expectX:arg.cx, expectY:arg.cy};
+    }, {cx:160,cy:110,...off});
+    ok('X6 视口坐标兜底换算', Math.abs(x6.cx-x6.expectX)<1 && Math.abs(x6.cy-x6.expectY)<1, JSON.stringify(x6));
+
+    // X7 浏览模式点选后提供移动入口，点击进入编辑模式
+    const x7 = await E(mp, () => { const p=getCurrentPages().slice(-1)[0];
+      p.setMode({currentTarget:{dataset:{m:'browse'}}});
+      p.enterMoveMode();
+      return p.data.mode;
+    });
+    ok('X7 点选模型后可进入编辑模式移动', x7==='edit', 'mode=' + x7);
+    await setMode('browse');
+
+    // ================= 首页户型编辑 =================
+    await E(mp, () => wx.reLaunch({ url: '/pages/index/index' })); await wait(600);
+    const h1 = await E(mp, () => { const p=getCurrentPages().slice(-1)[0];
+      p.setData({editing:true});
+      const room=p.data.overview.rooms[2];
+      p.onRoomTouchStart({touches:[{clientX:100,clientY:100}],
+        currentTarget:{dataset:{id:room.id, handle:'s'}}});
+      const started=!!p._drag && p._drag.id===room.id && p._drag.handle==='s';
+      p._drag.cand={x:room.floor.x,y:room.floor.y+1,w:room.floor.w,h:room.floor.h};
+      p.onRoomTouchEnd();
+      const after=getCurrentPages().slice(-1)[0];
+      const savedRoom=after.data.overview.rooms.filter(r=>r.id===room.id)[0];
+      return {started, editing:after.data.editing, saved:!!savedRoom && savedRoom.floor.y===room.floor.y+1};
+    });
+    ok('H1 房间把手可发起拖动并落盘', h1.started && h1.saved, JSON.stringify(h1));
+    ok('H2 连续编辑时不退出编辑态', h1.editing===true, 'editing=' + h1.editing);
 
     console.log('\n========== 结果: ' + pass + '/' + (pass+fail) + ' 通过 ==========');
     if (fail) console.log('未通过项见上方 FAIL');

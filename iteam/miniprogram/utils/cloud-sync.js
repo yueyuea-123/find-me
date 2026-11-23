@@ -14,7 +14,7 @@ var FN = {
 
 var state = {
   enabled: false, loggedIn: false, openid: '', role: 'user',
-  dirty: false, lastSyncAt: 0, lastError: '', syncing: false
+  dirty: false, dirtySeq: 0, lastSyncAt: 0, lastError: '', syncing: false
 };
 
 var listeners = [];
@@ -68,7 +68,9 @@ function pull() {
   return callFunction(FN.sync, 'pull', {})
     .then(function (r) {
       if (!r || !r.ok) return { ok: false, error: (r && r.error) || 'PULL_FAILED' };
-      state.lastSyncAt = Date.now(); state.dirty = false; state.lastError = '';
+      // 拉取本身不代表本地变更已推送；dirty 只由 flush 成功或显式覆盖快照清除，
+      // 否则重试推送前的本地编辑会在下一次 pull 后被误判为已同步。
+      state.lastSyncAt = Date.now(); state.lastError = '';
       emit();
       return { ok: true, snapshot: r.data.snapshot };
     })
@@ -78,7 +80,7 @@ function pull() {
 // 标记本地有未推送变更（由 store.commit 调用）
 function markDirty() {
   if (!state.enabled) return;
-  state.dirty = true;
+  state.dirty = true; state.dirtySeq++;
   emit();
 }
 
@@ -87,6 +89,8 @@ function flush() {
   if (!state.loggedIn || state.syncing || !state.dirty) return Promise.resolve({ ok: false, error: 'IDLE' });
   if (!DATA_PROVIDER) return Promise.resolve({ ok: false, error: 'NO_PROVIDER' });
   state.syncing = true;
+  // 本次推送对应的变更版本；同步期间的新编辑不能被本次成功结果误标为已同步
+  var dirtyAtStart = state.dirtySeq;
 
   var ops = [];
   try {
@@ -126,10 +130,14 @@ function flush() {
   return chain.then(function (r) {
     state.syncing = false;
     if (r.ok) {
-      state.dirty = false; state.lastSyncAt = Date.now(); state.lastError = '';
-      if (DATA_PROVIDER.clearTombstones) DATA_PROVIDER.clearTombstones();
+      var noNewChange = state.dirtySeq === dirtyAtStart;
+      if (noNewChange) {
+        state.dirty = false;
+        if (DATA_PROVIDER.clearTombstones) DATA_PROVIDER.clearTombstones();
+      }
+      state.lastSyncAt = Date.now(); state.lastError = '';
       emit();
-      return { ok: true, pushed: ops.length };
+      return { ok: true, pushed: ops.length, pending: !noNewChange };
     }
     state.lastError = r.error || 'SYNC_FAILED';
     emit();

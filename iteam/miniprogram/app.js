@@ -16,21 +16,36 @@ function safeLog(tag, err) {
   } catch (e) {}
 }
 
-// 云同步启动流程：登录 → 注入数据提供者 → 拉取快照覆盖本地 → 启动自动同步
+// 云同步启动流程：登录 → 有未推送变更先推送 → 拉取快照覆盖本地 → 启动自动同步
+function snapshotHasData(snap) {
+  if (!snap || typeof snap !== 'object') return false;
+  return Object.keys(snap).some(function (k) { return Array.isArray(snap[k]) && snap[k].length > 0; });
+}
 function bootstrapCloud() {
   Sync.setDataProvider({
     getSnapshot: function () { return store.exportSnapshot(); },
     getTombstones: function () { return store.getTombstones(); },
     clearTombstones: function () { store.clearTombstones(); }
   });
+  var pullAndApply = function () {
+    return Sync.pull().then(function (p) {
+      if (!p || !p.ok || !p.snapshot) return;
+      // 新用户云端为空时保留本地演示/既有数据，改由自动同步推送上去
+      if (!snapshotHasData(p.snapshot)) { Sync.markDirty(); return; }
+      var applied = store.applySnapshot(p.snapshot);
+      if (!applied.ok) safeLog('applySnapshot', new Error(applied.error));
+    });
+  };
   Sync.init().then(function (r) {
     if (!r || !r.ok) { safeLog('cloudInit', new Error(r && r.error || 'unknown')); return; }
-    return Sync.pull().then(function (p) {
-      if (p && p.ok && p.snapshot) {
-        var applied = store.applySnapshot(p.snapshot);
-        if (!applied.ok) safeLog('applySnapshot', new Error(applied.error));
-      }
-    });
+    // 上次退出时有未推送修改，先推成功再拉；推送失败绝不覆盖本地，避免"改了又变回去"
+    if (Sync.getState().dirty) {
+      return Sync.flush().then(function (f) {
+        if (!f || !f.ok) { safeLog('flushBeforePull', new Error((f && f.error) || 'SYNC_PENDING')); return; }
+        return pullAndApply();
+      });
+    }
+    return pullAndApply();
   }).catch(function (e) { safeLog('bootstrapCloud', e); });
 }
 

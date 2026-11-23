@@ -166,6 +166,18 @@ check('云端快照覆盖本地后空间名与设置正确', () => {
   const r = store.applySnapshot(fake);
   return r.ok && store.listSpaces().length === 1 && store.listSpaces()[0].name === '云端空间';
 });
+check('云端重复快照覆盖本地时按 id 去重', () => {
+  const dup = { spaces: [{ id: 'sp_dup', name: '空间', createdAt: 1, updatedAt: 2 }],
+    rooms: [
+      { id: 'rm_dup', spaceId: 'sp_dup', name: '旧副本', createdAt: 1, updatedAt: 1 },
+      { id: 'rm_dup', spaceId: 'sp_dup', name: '新副本', createdAt: 1, updatedAt: 2 },
+      { id: 'rm_other', spaceId: 'sp_dup', name: '另一间', createdAt: 1, updatedAt: 1 }
+    ],
+    furniture: [], nodes: [], items: [], movements: [], inventory: [], transactions: [], alerts: [] };
+  const r = store.applySnapshot(dup);
+  const rooms = store.listRooms('sp_dup');
+  return r.ok && rooms.length === 2 && rooms.some(x => x.name === '新副本') && !rooms.some(x => x.name === '旧副本');
+});
 check('云同步状态默认未登录且不影响本地可用', () => {
   const s = Sync.getState();
   return typeof s.loggedIn === 'boolean' && typeof s.enabled === 'boolean';

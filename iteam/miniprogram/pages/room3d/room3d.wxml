@@ -66,6 +66,12 @@
         <text class="muted">▸</text>
       </view>
 
+      <!-- 浏览模式：点选模型后提供明确的移动入口，保持浏览手势不变 -->
+      <view class="row wrap" style="margin-top:16rpx" wx:if="{{mode==='browse'}}">
+        <button class="btn sm primary" bindtap="enterMoveMode">移动模型</button>
+        <text class="muted small" style="margin-left:12rpx">切换编辑模式后单指拖动模型</text>
+      </view>
+
       <!-- 编辑模式：手势直接操作家具（单指拖动=移动，双指捏合=缩放，双指扭转=旋转，长按=删除） -->
       <view class="ops-edit" wx:if="{{mode==='edit'}}">
         <view class="row wrap" style="margin-top:16rpx">

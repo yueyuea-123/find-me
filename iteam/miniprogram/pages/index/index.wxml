@@ -46,7 +46,7 @@
         </view>
         <view wx:if="{{item.itemCount>0}}" class="fp-badge">{{item.itemCount}}</view>
         <view wx:if="{{editing}}" wx:for="{{['nw','n','ne','e','se','s','sw','w']}}" wx:for-item="h" wx:key="*this"
-          class="fp-handle fh-{{h}}" data-handle="{{h}}" catchtouchstart="onRoomTouchStart" catchtouchmove="onRoomTouchMove" catchtouchend="onRoomTouchEnd"></view>
+          class="fp-handle fh-{{h}}" data-id="{{item.id}}" data-handle="{{h}}" catchtouchstart="onRoomTouchStart" catchtouchmove="onRoomTouchMove" catchtouchend="onRoomTouchEnd"></view>
       </view>
     </view>
     <view class="fp-legend">
