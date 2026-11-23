@@ -28,6 +28,7 @@
   <view class="mask" wx:if="{{showEditor}}" bindtap="closeEditor"></view>
   <view class="sheet" wx:if="{{showEditor}}">
     <text class="sheet-title">{{editing?'编辑空间':'新建空间'}}</text>
+    <view class="small muted" wx:if="{{!editing}}" style="margin:-12rpx 0 24rpx">支持多个空间，首版仅个人使用</view>
     <view class="form-error" wx:if="{{formError}}">{{formError}}</view>
     <view class="field">
       <text class="label">空间名称 <text class="req">*</text></text>
@@ -35,7 +36,7 @@
     </view>
     <view class="sheet-actions">
       <button class="btn ghost" bindtap="closeEditor">取消</button>
-      <button class="btn primary" bindtap="save">保存</button>
+      <button class="btn primary" bindtap="save">{{editing?'保存':'创建'}}</button>
     </view>
   </view>
 </view>

@@ -3,14 +3,14 @@
     <view class="row between">
       <view>
         <view class="card-t">{{furniture.icon}} {{furniture.name}}</view>
-        <view class="card-s">{{furniture.category}} · {{furniture.model}}</view>
+        <view class="card-s">{{furniture.category}} · 模型：{{furniture.model}}</view>
       </view>
       <text class="tag {{furniture.status==='candidate'?'orange':'green'}}">{{furniture.status==='candidate'?'AI候选':'已确认'}}</text>
     </view>
     <view class="divider"></view>
     <view class="row wrap">
       <button class="btn sm" bindtap="editFurniture">编辑家具</button>
-      <button class="btn sm primary" bindtap="addNode">＋ 收纳节点</button>
+      <button class="btn sm primary" bindtap="addNode">＋ 新增</button>
       <button class="btn sm" bindtap="changeModel">更换外观模型</button>
       <button class="btn sm danger" bindtap="delFurniture">删除家具</button>
     </view>
@@ -27,7 +27,7 @@
         <text class="muted">▸</text>
       </view>
     </view>
-    <view class="empty-line" wx:if="{{bindings.items.length===0}}">尚未关联物品，可先创建收纳节点再归位。</view>
+    <view class="empty-line" wx:if="{{bindings.items.length===0}}">还没有物品绑定到这里</view>
   </view>
 
   <view class="card">
@@ -41,7 +41,7 @@
         <text class="muted">▸</text>
       </view>
     </view>
-    <view class="empty-line" wx:if="{{nodes.length===0}}">还没有收纳节点，点「＋ 收纳节点」添加抽屉/隔层/收纳盒</view>
+    <view class="empty-line" wx:if="{{nodes.length===0}}">暂无节点</view>
   </view>
 </view>
 

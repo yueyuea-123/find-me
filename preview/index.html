@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>三维家具风格验证预览</title>
+  <link rel="stylesheet" href="./src/style.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./vendor/three.module.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <aside class="panel">
+      <header class="panel-head">
+        <h1>家具模型库</h1>
+        <p class="sub">L1 核心 8 件 · 风格验证样板</p>
+      </header>
+
+      <div class="catalog" id="catalog"></div>
+
+      <div class="panel-foot">
+        <div class="hint-title">操作说明</div>
+        <ul class="hints">
+          <li>拖动家具：在模型上按住移动</li>
+          <li>旋转视角：在空白处按住拖动</li>
+          <li>缩放视角：鼠标滚轮</li>
+          <li>网格吸附：0.1 米</li>
+        </ul>
+        <div class="tools">
+          <button id="btn-snap" class="btn active">吸附：开</button>
+          <button id="btn-reset" class="btn">重置视角</button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="stage">
+      <div class="stage-head">
+        <div class="stage-title">等距娃娃屋 · 低多边形</div>
+        <div class="stage-status" id="status">加载中…</div>
+      </div>
+      <div class="canvas-wrap" id="canvas-wrap">
+        <canvas id="c"></canvas>
+        <div class="info-card hidden" id="info-card">
+          <div class="info-name" id="info-name"></div>
+          <div class="info-meta" id="info-meta"></div>
+        </div>
+      </div>
+      <div class="stage-foot" id="stage-foot">左键拖动家具移动 · 空白处拖动旋转视角 · 滚轮缩放</div>
+    </main>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

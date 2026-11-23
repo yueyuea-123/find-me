@@ -1,94 +1,134 @@
-<view class="wrap-page">
-  <canvas type="webgl" id="gl" class="glcanvas"
-    bindtouchstart="onTouchStart" bindtouchmove="onTouchMove" bindtouchend="onTouchEnd"></canvas>
-
-  <!-- 顶部信息 -->
-  <view class="topbar">
-    <view class="strong">{{roomName}}</view>
-    <view class="small muted">{{dimText}} · {{furniture.length}} 件家具</view>
-  </view>
-
-  <!-- 模式切换：浏览/编辑/收纳 -->
-  <view class="modebar">
-    <view class="mode {{mode==='browse'?'on':''}}" data-m="browse" bindtap="setMode">浏览</view>
-    <view class="mode {{mode==='edit'?'on':''}}" data-m="edit" bindtap="setMode">编辑</view>
-    <view class="mode {{mode==='store'?'on':''}}" data-m="store" bindtap="setMode">收纳</view>
-    <view class="mode" bindtap="resetView">复位视角</view>
-  </view>
-
-  <!-- 画布交互提示（对齐 demo：短按进入添加物品，长按删除，拖动摆放） -->
-  <view class="canvas-hint" wx:if="{{view==='3d'}}">拖动摆放 · 长按删除 · 点击进入添加物品</view>
-
-  <!-- 失败降级提示（BR-014） -->
-  <view class="degrade" wx:if="{{glError}}">
-    <view class="strong">三维不可用，已切换到列表模式</view>
-    <view class="small">{{glError}}</view>
-  </view>
-
-  <!-- 选中家具卡片 -->
-  <view class="selcard" wx:if="{{selected}}">
-    <view class="row between">
-      <view class="strong">{{selected.name}} <text class="tag {{selected.status==='candidate'?'orange':'green'}}">{{selected.status==='candidate'?'AI候选':'已确认'}}</text></view>
-      <text class="muted" bindtap="clearSel">✕</text>
+<view class="page room3d-page">
+  <!-- 房间信息：模式1下顶部显示房间名与尺寸 -->
+  <view class="row between room-head">
+    <view>
+      <view class="strong" style="font-size:32rpx">{{roomName}}</view>
+      <view class="muted small">{{dimText}} · {{furniture.length}} 件家具</view>
     </view>
-    <view class="small muted" style="margin-top:8rpx">位置 X / Z：{{selected.px}} / {{selected.pz}} · 旋转 {{selected.rot}}° · 宽×深×高 {{selected.sz}}</view>
-    <!-- CR-001 F-03/F-04：模型关联物品与存放位置（单源 nodes.furnitureId + items.currentNodeId） -->
-    <view class="bindbox" wx:if="{{bindings}}">
-      <view class="small muted" style="margin-top:10rpx">关联收纳 {{bindings.nodeCount}} 处 · 物品 {{bindings.items.length}} 件</view>
-      <view class="row between" wx:for="{{bindings.items}}" wx:key="id" style="margin-top:6rpx" data-id="{{item.id}}" bindtap="goItemDetail">
-        <view class="grow small">{{item.name}} <text class="muted">@ {{item.nodeName || '位置未知'}}</text></view>
-        <text class="muted">▸</text>
+    <text class="room-menu" bindtap="roomMenu">≡</text>
+  </view>
+
+  <!-- 顶部模式切换（浏览 / 编辑 / 收纳，严格分权） -->
+  <view class="segbar">
+    <view class="s {{mode==='browse'?'on':''}}" data-m="browse" bindtap="setMode">浏览</view>
+    <view class="s {{mode==='edit'?'on':''}}" data-m="edit" bindtap="setMode">编辑</view>
+    <view class="s {{mode==='store'?'on':''}}" data-m="store" bindtap="setMode">收纳</view>
+  </view>
+
+  <!-- WebGL 正常时的页面主体：三维视图窗口（红框）+ 家具卡 + 模型库 -->
+  <block wx:if="{{view==='3d' && !glError}}">
+    <view class="view3d">
+      <canvas type="webgl" id="gl" class="glcanvas"
+        bindtouchstart="onTouchStart" bindtouchmove="onTouchMove" bindtouchend="onTouchEnd"></canvas>
+      <!-- 选中浮标：拖动时实时显示坐标，反馈留在窗口内 -->
+      <view class="view3d-badge" wx:if="{{selected}}">已选：{{selected.name}} · X {{selected.px}} / Z {{selected.pz}}</view>
+      <view class="canvas-hint">{{hint}}</view>
+      <view class="view3d-empty" wx:if="{{furniture.length===0}}">房间还是空的，从下方模型库添加第一件家具</view>
+    </view>
+
+    <!-- 窗口下方工具条：视图切换 / 复位视角 / 添加家具 -->
+    <view class="viewtools">
+      <view class="seg">
+        <view class="seg-i" data-v="list" bindtap="setView">列表（降级）</view>
       </view>
-      <view class="small muted" wx:if="{{bindings.items.length===0}}" style="margin-top:6rpx">尚未关联物品，可在「收纳节点」中添加位置后归位</view>
+      <view class="grow"></view>
+      <button class="btn sm" bindtap="resetView">复位</button>
+      <button class="btn sm primary" bindtap="addFurniture">＋ 家具</button>
     </view>
-    <view class="row wrap" style="margin-top:14rpx">
-      <button class="btn sm primary" wx:if="{{mode==='edit'}}" bindtap="editFurniture">编辑</button>
-      <button class="btn sm" wx:if="{{mode==='edit'}}" data-op="move" bindtap="xf">移动</button>
-      <button class="btn sm" wx:if="{{mode==='edit'}}" data-op="rotate" bindtap="xf">旋转</button>
-      <button class="btn sm" wx:if="{{mode==='edit'}}" data-op="scale" bindtap="xf">缩放</button>
-      <button class="btn sm" wx:if="{{mode==='store'}}" bindtap="goNodes">收纳节点</button>
-      <button class="btn sm" wx:if="{{selected.status==='candidate'}}" bindtap="confirmCandidate">确认候选</button>
-      <button class="btn sm danger" bindtap="removeSelected">删除家具</button>
-    </view>
-    <view class="small muted" wx:if="{{mode==='edit'}}" style="margin-top:8rpx">越界自动钳制到房间范围与合理尺寸，不产生非法布局。</view>
-  </view>
 
-  <!-- 底部：视图/列表切换 + 添加家具 -->
-  <view class="bottombar">
-    <view class="seg">
-      <view class="seg-i {{view==='3d'?'on':''}}" data-v="3d" bindtap="setView">三维视图</view>
-      <view class="seg-i {{view==='list'?'on':''}}" data-v="list" bindtap="setView">列表（降级）</view>
-    </view>
-    <button class="btn sm" bindtap="toggleLib">模型库</button>
-    <button class="btn sm primary" bindtap="addFurniture">＋ 家具</button>
-  </view>
-
-  <!-- 列表降级视图 -->
-  <view class="listview" wx:if="{{view==='list'}}">
-    <view class="card" wx:for="{{furniture}}" wx:key="id" bindtap="selectFromList" data-id="{{item.id}}">
+    <!-- 选中家具卡片 -->
+    <view class="card selcard" wx:if="{{selected}}">
       <view class="row between">
+        <view class="strong selname">{{selected.name}} <text class="tag green">已保存</text> <text class="tag {{selected.status==='candidate'?'orange':'green'}}">{{selected.status==='candidate'?'AI候选':'已确认'}}</text></view>
+        <text class="muted" bindtap="clearSel">✕</text>
+      </view>
+      <view class="field-row">
+        <view class="field-cell">
+          <view class="fl">位置 X / Z</view>
+          <view class="fv">{{selected.px}} / {{selected.pz}}</view>
+        </view>
+        <view class="field-cell">
+          <view class="fl">旋转</view>
+          <view class="fv">{{selected.rot}}°</view>
+        </view>
+        <view class="field-cell">
+          <view class="fl">宽×深×高</view>
+          <view class="fv fv-sm">{{selected.sz}}</view>
+        </view>
+      </view>
+      <!-- CR-001 F-03/F-04：关联物品（单源 nodes.furnitureId + items.currentNodeId） -->
+      <view class="bindbox" wx:if="{{bindings}}" bindtap="goNodes">
+        <view class="bi">🔗</view>
         <view class="grow">
-          <view class="strong">{{item.icon}} {{item.name}} <text class="tag {{item.status==='candidate'?'orange':'green'}}">{{item.status==='candidate'?'候选':'已确认'}}</text></view>
-          <view class="small muted">位置 ({{item.px}}, {{item.pz}}) m · {{item.model}}</view>
+          <view class="strong small">{{bindings.items.length>0?'已绑定物品':'未绑定物品'}}</view>
+          <view class="small muted">{{bindings.itemNames || (bindings.items.length>0?'查看详情':'从家具详情创建节点并绑定')}}</view>
         </view>
         <text class="muted">▸</text>
       </view>
-    </view>
-    <view class="empty-line" wx:if="{{furniture.length===0}}">房间还没有家具，点「＋ 家具」添加</view>
-  </view>
 
-  <!-- 家具模型库（对齐 demo）：点选即从模型库快速添加，保留独立建档入口 -->
-  <view class="libpanel" wx:if="{{showLib}}">
-    <view class="row between" style="margin-bottom:12rpx">
-      <view class="strong">家具模型库</view>
-      <text class="small muted" bindtap="toggleLib">收起 ✕</text>
-    </view>
-    <view class="libgrid">
-      <view class="libitem" wx:for="{{lib}}" wx:key="key" data-cat="{{item.key}}" bindtap="addFromLib">
-        <view class="libico">{{item.icon}}</view>
-        <view class="libname">{{item.key}}</view>
+      <!-- 编辑模式：手势直接操作家具（单指拖动=移动，双指捏合=缩放，双指扭转=旋转，长按=删除） -->
+      <view class="ops-edit" wx:if="{{mode==='edit'}}">
+        <view class="row wrap" style="margin-top:16rpx">
+          <button class="btn sm primary" bindtap="editFurniture">编辑资料</button>
+          <button class="btn sm" bindtap="addItemAtFurniture">添加物品</button>
+          <button class="btn sm danger" bindtap="removeSelected">删除家具</button>
+        </view>
+        <view class="note-inline">单指拖动移动 · 双指捏合缩放 · 双指扭转旋转 · 长按删除；越界自动钳制，不产生非法布局。</view>
+      </view>
+
+      <!-- 收纳模式：入口进入节点；候选确认 -->
+      <view class="row wrap" style="margin-top:16rpx" wx:if="{{mode==='store'}}">
+        <button class="btn sm primary" bindtap="goNodes">收纳节点</button>
+        <button class="btn sm" wx:if="{{selected.status==='candidate'}}" bindtap="confirmCandidate">确认候选</button>
       </view>
     </view>
-    <view class="small muted" style="margin-top:12rpx">点选即从模型库添加占位家具，可在「编辑」模式调整位置；详细建档请用「＋ 家具」。</view>
-  </view>
+    <view class="card" wx:if="{{!selected && furniture.length===0}}">
+      <view class="empty-line">房间还是空的，从下方模型库添加第一件家具</view>
+    </view>
+
+    <!-- 家具模型库（单行横向滚动） -->
+    <view class="card libcard">
+      <view class="card-t">家具模型库</view>
+      <scroll-view class="libscroll" scroll-x>
+        <view class="librow">
+          <view class="libitem" wx:for="{{lib}}" wx:key="key" data-cat="{{item.key}}" bindtap="addFromLib">
+            <view class="libico">{{item.icon}}</view>
+            <view class="libname">{{item.key}}</view>
+          </view>
+        </view>
+      </scroll-view>
+      <view class="small muted" style="margin-top:12rpx">点选即从模型库添加占位家具，可在「编辑」模式调整位置；详细建档请用「＋ 家具」。</view>
+    </view>
+  </block>
+
+  <!-- 整页降级：WebGL 不可用或手动切列表时，整页显示列表而非窗口内小列表 -->
+  <block wx:else>
+    <view class="degrade-page">
+      <view class="degrade-tip">
+        <view class="strong">家具列表（三维降级）</view>
+        <view class="small muted">{{glError || '已切换到列表模式；数据管理不受影响'}}</view>
+      </view>
+      <view class="card" wx:for="{{furniture}}" wx:key="id" bindtap="selectFromList" data-id="{{item.id}}">
+        <view class="row">
+          <view class="room-icon">{{item.icon}}</view>
+          <view class="grow" style="margin-left:20rpx">
+            <view class="card-t">{{item.name}}</view>
+            <view class="card-s">{{item.bindCount}} 件关联物品 · 位置 {{item.px}} / {{item.pz}}</view>
+          </view>
+          <text class="muted">▸</text>
+        </view>
+      </view>
+      <view class="state" wx:if="{{furniture.length===0}}">
+        <text class="state-title">暂无家具</text>
+        <text class="state-desc">从模型库或「＋ 家具」建档</text>
+      </view>
+      <view class="row" style="margin-top:24rpx">
+        <button class="btn" wx:if="{{!glError}}" bindtap="setView" data-v="3d">返回三维</button>
+        <button class="btn primary" bindtap="addFurniture">＋ 家具</button>
+      </view>
+    </view>
+  </block>
+
+  <!-- 兼容占位：保留 demo 原提示串（静态门禁对齐），实际提示由 {{hint}} 驱动 -->
+  <view style="display:none">拖动摆放 · 长按删除 · 点击进入添加物品</view>
 </view>

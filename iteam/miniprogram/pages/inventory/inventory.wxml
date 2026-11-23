@@ -23,7 +23,7 @@
 
   <view class="state" wx:if="{{list.length===0}}">
     <text class="state-icon">📦</text>
-    <text class="state-title">还没有库存物品</text>
+    <text class="state-title">暂无库存物品</text>
     <text class="state-desc">添加物品时选「只记库存」或「位置+库存」即可管理易耗品</text>
   </view>
 

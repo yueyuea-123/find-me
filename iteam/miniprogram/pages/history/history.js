@@ -6,7 +6,7 @@ var ST = { at_home: '在家', unknown: '位置未知', out: '外出', borrowed: 
 var CLS = { first_confirm: 'blue', move: 'green', out: 'orange', return: 'green', end: 'gray', initial: 'gray' };
 
 Page({
-  data: { itemName: '', history: [] },
+  data: { title: '位置历史', history: [] },
   onLoad: function (q) { this._id = q.id || ''; },
   onShow: function () {
     var it = store.getItem(this._id);
@@ -24,6 +24,6 @@ Page({
         time: store.fmtTime(m.createdAt)
       };
     });
-    this.setData({ itemName: it ? it.name : '', history: list });
+    this.setData({ title: (it ? it.name + ' · ' : '') + '位置历史（' + list.length + '）', history: list });
   }
 });

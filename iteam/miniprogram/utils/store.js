@@ -269,8 +269,11 @@ function addRoom(spaceId, name, dims) {
   dims = dims || {};
   var r0 = {
     id: uid('rm'), spaceId: spaceId, name: name,
-    width: dims.width || 0, depth: dims.depth || 0, height: dims.height || 0,
-    calibrated: !!(dims.width && dims.depth),
+    // 新建房间写入默认尺寸 4×4×2.8m（布局输入，不承诺测量精度）
+    width: Number(dims.width) > 0 ? Number(dims.width) : 4,
+    depth: Number(dims.depth) > 0 ? Number(dims.depth) : 4,
+    height: Number(dims.height) > 0 ? Number(dims.height) : 2.8,
+    calibrated: Number(dims.width) > 0 && Number(dims.depth) > 0,
     // CR-001 F-01/F-07：手动编辑画布为主路径；templateKey 为 T9 典型场景模板预留（当前恒空）
     source: 'manual', templateKey: '', layout: makeLayout(dims),
     photos: [], task: { status: 'none', taskId: '', error: '' },
@@ -635,7 +638,8 @@ function removeNode(id) {
   var d = load(), n = findById(d.nodes, id);
   if (!n) return { ok: false, error: 'NOT_FOUND' };
   var children = d.nodes.filter(function (x) { return x.parentId === id; });
-  var items = d.items.filter(function (it) { return it.currentNodeId === id; });
+  // 关联保护只统计仍在管理的物品；已结束物品不占用节点，与页面展示口径一致
+  var items = itemsInNode(id);
   if (children.length || items.length) {
     return { ok: false, error: 'HAS_LINKS', children: children.length, items: items.length };
   }
@@ -723,7 +727,7 @@ function addItem(opts) {
     var th = Number(opts.threshold) || 0;
     var bal = Number(opts.balance) || 0;
     d.inventory.push({ id: uid('iv'), itemId: it.id, balance: bal, unit: unit, threshold: th, updatedAt: now() });
-    if (bal > 0) d.transactions.push({ id: uid('tx'), itemId: it.id, type: 'adjust', delta: bal, balanceAfter: bal, note: '建档初始数量', createdAt: now() });
+    // 初始库存属于建档初始状态，不生成交易流水（后续变化统一走库存交易）
   }
   var r = commit();
   if (!r.ok) return r;
@@ -896,7 +900,8 @@ function updateInventory(itemId, patch) {
   var _it = findById(d.items, itemId);
   if (_it && _it.managementStatus === 'ended') return { ok: false, error: 'ENDED_ITEM' };
   if (patch.unit !== undefined) {
-    if (C.UNITS.indexOf(patch.unit) < 0) return { ok: false, error: 'INVALID_UNIT' };
+    // 兼容历史单位：已有值原样保存时不拒绝，只拦截新的非法单位
+    if (patch.unit !== iv.unit && C.UNITS.indexOf(patch.unit) < 0) return { ok: false, error: 'INVALID_UNIT' };
     iv.unit = patch.unit;
   }
   if (patch.threshold !== undefined) iv.threshold = Math.max(0, Number(patch.threshold) || 0);
@@ -919,8 +924,9 @@ function inventoryTx(itemId, type, amount, note, opts) {
   if (type === 'adjust' && !opts.internal && !(opts.reason || (note || '').trim())) {
     return { ok: false, error: 'REASON_REQUIRED' };
   }
-  var delta = (type === 'consume' || type === 'disposal') ? -amount : amount;
-  var next = iv.balance + delta;
+  // 调整：把余额直接设为输入数量（与消耗/入库的增减语义分开）；delta 记实际增减量
+  var next = (type === 'adjust') ? amount : iv.balance + ((type === 'consume' || type === 'disposal') ? -amount : amount);
+  var delta = next - iv.balance;
   if (next < 0) return { ok: false, error: 'BELOW_ZERO', balance: iv.balance }; // BR-011 库存不为负
   // 幂等：全部校验通过后、写入前占用 requestId；重复提交不重复入账（业务规则 §9.2/§12）
   if (opts.requestId && claimRequest(d, opts.requestId)) {
@@ -1084,17 +1090,19 @@ function seedDemo() {
       managementStatus: 'active', completed: 60, createdAt: now(), updatedAt: now() };
     d.items.push(it);
     if (mode === 'inventory' || mode === 'hybrid') {
+      // 建档初始库存不生成流水；演示数据中的洗发水交易用于展示后续入库/消耗记录
       d.inventory.push({ id: uid('iv'), itemId: it.id, balance: extra.balance || 0, unit: extra.unit || '瓶',
         threshold: extra.threshold || 0, updatedAt: now() });
-      if (extra.balance) d.transactions.push({ id: uid('tx'), itemId: it.id, type: 'adjust', delta: extra.balance,
-        balanceAfter: extra.balance, note: '建档初始数量', createdAt: now() });
     }
     return it.id;
   }
   addIt('身份证', '证件卡片', 'location', drawer.id, 'at_home');
   addIt('羊毛毯', '家居布艺', 'location', bedNode.id, 'at_home');
-  addIt('洗发水', '卫浴清洁', 'inventory', '', 'at_home', { balance: 1, threshold: 2, unit: '瓶' });
+  var shampooId = addIt('洗发水', '卫浴清洁', 'inventory', '', 'at_home', { balance: 1, threshold: 2, unit: '瓶' });
   addIt('抽纸', '卫浴清洁', 'inventory', '', 'at_home', { balance: 8, threshold: 5, unit: '包' });
+  // 演示交易：与 demo 快照一致，体现入库/消耗留痕，初始库存本身不记交易
+  d.transactions.push({ id: uid('tx'), itemId: shampooId, type: 'in', delta: 2, balanceAfter: 3, note: '超市采购', createdAt: now() - 1728e5 });
+  d.transactions.push({ id: uid('tx'), itemId: shampooId, type: 'consume', delta: -2, balanceAfter: 1, note: '', createdAt: now() - 6e5 });
   addIt('备用钥匙', '其他', 'location', '', 'unknown');
   d.settings.seeded = true;
   var r = commit();

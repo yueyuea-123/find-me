@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GLB 资产加载验证</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "PingFang SC", sans-serif; background: #F5EFE3; color: #5A5148; }
+  #hud { position: fixed; left: 0; top: 0; width: 300px; height: 100%; background: #FBF7EF; border-right: 1px solid #E4D9C6; padding: 18px; overflow: auto; z-index: 10; }
+  #hud h1 { font-size: 16px; margin: 0 0 4px; }
+  #hud .sub { font-size: 12px; color: #9C9080; margin-bottom: 16px; }
+  .item { padding: 10px 12px; margin-bottom: 6px; border-radius: 10px; background: #F1EADB; font-size: 13px; cursor: pointer; border: 1px solid transparent; }
+  .item:hover { background: #EADFC9; }
+  .item.on { border-color: #C9A87C; background: #EADFC9; }
+  .item .m { font-size: 11px; color: #9C9080; margin-top: 2px; }
+  #status { margin-top: 16px; padding: 10px; border-radius: 8px; background: #EAF3DE; font-size: 12px; line-height: 1.6; }
+  #canvas-wrap { margin-left: 300px; width: calc(100% - 300px); height: 100vh; }
+  canvas { display: block; }
+  .err { background: #FCEBEB !important; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three.module.js",
+  "three/addons/": "./vendor/"
+} }
+</script>
+</head>
+<body>
+<div id="hud">
+  <h1>GLB 资产加载验证</h1>
+  <div class="sub">Three.js GLTFLoader 加载烘焙的 GLB</div>
+  <div id="list"></div>
+  <div id="status">初始化中…</div>
+</div>
+<div id="canvas-wrap"><canvas id="c"></canvas></div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from './vendor/GLTFLoader.js';
+
+const canvas = document.getElementById('c');
+const wrap = document.getElementById('canvas-wrap');
+const status = document.getElementById('status');
+const list = document.getElementById('list');
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xF5EFE3);
+
+const camera = new THREE.OrthographicCamera(-3.2, 3.2, 3.2, -3.2, 0.1, 100);
+camera.position.set(6, 5, 6);
+camera.lookAt(0, 0.8, 0);
+
+scene.add(new THREE.HemisphereLight(0xFFFFFF, 0xD9B98C, 2.0));
+const dir = new THREE.DirectionalLight(0xFFF6E8, 2.2);
+dir.position.set(4, 8, 5);
+dir.castShadow = true;
+dir.shadow.mapSize.set(1024, 1024);
+dir.shadow.camera.left = -4; dir.shadow.camera.right = 4;
+dir.shadow.camera.top = 4; dir.shadow.camera.bottom = -4;
+scene.add(dir);
+
+const floor = new THREE.Mesh(
+  new THREE.PlaneGeometry(20, 20),
+  new THREE.MeshStandardMaterial({ color: 0xD9B98C, roughness: 0.95 })
+);
+floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
+scene.add(floor);
+
+const loader = new GLTFLoader();
+const manifest = await (await fetch('./assets/furniture_blender/manifest.json')).json();
+let current = null;
+
+function show(gltf, item) {
+  if (current) { scene.remove(current); }
+  const g = gltf.scene;
+  g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  scene.add(g);
+  current = g;
+  const box = new THREE.Box3().setFromObject(g);
+  const center = box.getCenter(new THREE.Vector3());
+  camera.lookAt(0, Math.max(0.6, center.y), 0);
+  status.classList.remove('err');
+  status.innerHTML = `已加载 <b>${item.name}</b> (${item.key}.glb)<br>元数据: ${(item.bytes/1024).toFixed(0)} KB · ${item.triangles} 三角面<br>包围盒: ${(box.max.x-box.min.x).toFixed(2)} × ${(box.max.z-box.min.z).toFixed(2)} × ${(box.max.y-box.min.y).toFixed(2)} m`;
+}
+
+manifest.items.forEach((item) => {
+  const el = document.createElement('div');
+  el.className = 'item';
+  el.innerHTML = `${item.name}<div class="m">${item.key}.glb · ${item.triangles} tris</div>`;
+  el.onclick = async () => {
+    document.querySelectorAll('.item').forEach((x) => x.classList.remove('on'));
+    el.classList.add('on');
+    status.textContent = '加载中…';
+    try {
+      const gltf = await loader.loadAsync('./assets/furniture_blender/' + item.file);
+      show(gltf, item);
+    } catch (e) {
+      status.classList.add('err');
+      status.textContent = '加载失败: ' + e.message;
+    }
+  };
+  list.appendChild(el);
+});
+
+function resize() {
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  renderer.setSize(w, h, false);
+  const aspect = w / h;
+  camera.left = -3.2 * aspect; camera.right = 3.2 * aspect;
+  camera.top = 3.2; camera.bottom = -3.2;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+resize();
+
+function loop() { renderer.render(scene, camera); requestAnimationFrame(loop); }
+loop();
+
+// 自动加载第一件
+document.querySelector('.item').click();
+window.__glbReady = true;
+</script>
+</body>
+</html>

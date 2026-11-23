@@ -2,7 +2,7 @@
 var store = require('../../utils/store.js');
 var C = require('../../utils/constants.js');
 
-var cats = Object.keys(C.FURNITURE_LIB);
+var cats = (C.FURNITURE_CATEGORIES || []).slice();
 
 Page({
   data: {
@@ -18,10 +18,11 @@ Page({
     if (q.id) {
       var f = store.getFurniture(q.id);
       if (!f) { wx.showToast({ title: '家具不存在', icon: 'none' }); return; }
-      var ci = Math.max(0, cats.indexOf(f.category));
+      var options = C.withCurrent(cats, f.category);
+      var ci = Math.max(0, options.indexOf(f.category));
       var mv = (C.FURNITURE_LIB[f.category] || {}).vars || [];
       this.setData({
-        editing: true, id: q.id, roomId: f.roomId, catIndex: ci,
+        editing: true, id: q.id, roomId: f.roomId, categories: options, catIndex: ci,
         models: mv, modelIndex: Math.max(0, mv.indexOf(f.model)),
         formName: f.name,
         fw: String(f.size.w), fh: String(f.size.h), fd: String(f.size.d),
@@ -78,7 +79,7 @@ Page({
         var r = store.removeFurniture(self.data.id); // BR-008 关联保护
         if (!r.ok) {
           wx.showModal({ title: '无法删除', content: r.error === 'HAS_LINKS'
-            ? ('该家具下有 ' + r.childNodes + ' 个子节点、' + r.items + ' 件关联物品，请先处理关联数据。')
+            ? ('已被关联：' + r.items + ' 件物品 / ' + r.childNodes + ' 个节点，须先迁移或归档')
             : ('删除失败：' + r.error), showCancel: false });
           return;
         }

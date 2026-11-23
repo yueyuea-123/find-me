@@ -205,6 +205,30 @@ check('BR-002 完成度自动计算', () => {
   const r = store.addItem({ name: '完整档案', category: '其他', note: 'n', photoPath: 'p', currentNodeId: drawer.id });
   return r.ok && r.data.completed === 100;
 });
+check('界面口径：建档初始库存不生成交易流水', () => {
+  const r = store.addItem({ name: '初始库存断言', trackingMode: 'inventory', balance: 5, unit: '个' });
+  return !!(r.ok && store.listTransactions(r.data.id).length === 0);
+});
+check('界面口径：调整直接把余额设为输入数量且 delta 为实际增减', () => {
+  const t = store.addItem({ name: '调整语义断言', trackingMode: 'inventory', balance: 5, unit: '个' }).data;
+  const r = store.inventoryTx(t.id, 'adjust', 3, '盘点', { reason: '盘点' });
+  const tx = store.listTransactions(t.id)[0];
+  return !!(r.ok && r.balance === 3 && tx && tx.delta === -2 && tx.balanceAfter === 3);
+});
+check('界面口径：新建房间缺省尺寸为 4×4×2.8m', () => {
+  const r = store.addRoom(sp.id, '缺省尺寸断言房间', {});
+  const rm = r.ok && store.getRoom(r.data.id);
+  const okDims = !!(rm && rm.width === 4 && rm.depth === 4 && rm.height === 2.8);
+  if (r.ok) store.deleteRoom(r.data.id);
+  return okDims;
+});
+check('界面口径：已结束物品不占用节点，节点可删除', () => {
+  const n = store.addNode(room.id, '', '结束物品节点断言', '收纳盒');
+  const t = store.addItem({ name: '结束物品节点占用断言', currentNodeId: n.data.id }).data;
+  store.endManagement(t.id, { type: 'discard' });
+  const r = store.removeNode(n.data.id);
+  return !!(n.ok && r.ok);
+});
 
 expectFail('BR-008 有关联物品的家具禁止删除', () => store.removeFurniture(bed.id), 'HAS_LINKS');
 check('BR-009 换家具模型不影响收纳节点与物品关联', () => {
@@ -351,7 +375,7 @@ check('模板重复应用幂等：同一房间不重复追加家具（防10/345�
   const first = store.listFurniture(r.data.id).length;
   const again = store.applyRoomTemplate(r.data.id, 'bedroom');
   const after = store.listFurniture(r.data.id).length;
-  return !!(first === 5 && after === first && again.ok && again.data.applied === false);
+  return !!(first === 3 && after === first && again.ok && again.data.applied === false);
 });
 
 // ---------------------------------------------------------------- B3. 已确认规则增补断言（TBD-002/003/005/007/008）
@@ -523,7 +547,11 @@ routes.forEach(route => {
         try { def[hook].call(ctx, hook === 'onLoad' ? optsFor(route) : undefined); }
         catch (e) { runtimeErrors.push(`[${route}.${hook}] ${e.message}`); }
       }
-      if (route === 'pages/room3d/room3d' && hook === 'onReady') degraded = (ctx.data.view === 'list');
+      // 节点获取改为带重试（wx:if 挂载时机）；驱动重试耗尽，验证最终降级分支
+      if (route === 'pages/room3d/room3d' && hook === 'onReady' && typeof def._initGL === 'function') {
+        try { def._initGL.call(ctx, 10); } catch (e) { /* mock 环境重试耗尽即降级 */ }
+        degraded = (ctx.data.view === 'list');
+      }
     });
 
     Object.keys(def).forEach(method => {
@@ -537,10 +565,10 @@ routes.forEach(route => {
     if (route === 'pages/room3d/room3d') {
       checks.push({ name: '三维页 WebGL 不可用时自动降级列表', pass: degraded, error: ctx.data.view });
       // 模拟渲染器抛异常，验证 _safeGL 兜底切换到列表
-      ctx.renderer = { render() { throw new Error('mock gl crash'); } };
+      ctx._glRenderer = { render() { throw new Error('mock gl crash'); } };
       ctx.data.view = '3d';
       let safe = false;
-      try { ctx._safeGL('render'); safe = (ctx.data.view === 'list' && ctx.renderer === null); }
+      try { ctx._safeGL('render'); safe = (ctx.data.view === 'list' && ctx._glRenderer === null); }
       catch (e) { safe = false; }
       checks.push({ name: '三维渲染异常时静默降级不白屏', pass: safe });
     }

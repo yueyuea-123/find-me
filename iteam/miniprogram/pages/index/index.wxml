@@ -4,6 +4,7 @@
   <view class="hero-mini">
     <view class="hm-greet">{{hourGreet}}，康女士</view>
     <view class="hm-space" bindtap="goSpaces">{{stats.spaceName || '我的家'}} <text class="hm-caret">▾</text></view>
+    <view class="hm-avatar" bindtap="goAlerts">康</view>
   </view>
 
   <!-- 四项统计 -->
@@ -25,7 +26,7 @@
         <text class="fp-edit {{editing?'fp-done':''}}" bindtap="toggleEdit">{{editing?'完成':'编辑布局'}}</text>
       </view>
     </view>
-    <view class="fp-hint">{{editing?'编辑中：拖动房间或边角把手调整，越界自动拦截':'点击房间查看三维 · 可「编辑布局」调整房间排布'}}</view>
+    <view class="fp-hint">{{editing?'编辑中：拖动房间移动、拖任意边/角把手调整宽高；越界自动钳制，重叠不可保存':'点击房间查看三维 · 可「编辑布局」调整房间排布'}}</view>
     <view class="floorplan {{editing?'fp-grid-on':''}}" style="height:{{overview.rows*96}}rpx">
       <view
         wx:for="{{overview.rooms}}"

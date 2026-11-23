@@ -1,0 +1,160 @@
+{
+  "version": "1.0",
+  "unit": "meter",
+  "up": "Y",
+  "note": "尺寸顺序 [宽, 深, 高]；锚点为底面中心；Blender 资产按同名 key.glb 替换即可",
+  "items": [
+    {
+      "key": "sofa",
+      "name": "沙发",
+      "file": "sofa.glb",
+      "size": [
+        2,
+        0.9,
+        0.8
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 1296,
+      "bytes": 135008,
+      "version": "1.0",
+      "source": "程序化烘焙（Blender 可直接替换同名文件）"
+    },
+    {
+      "key": "bed",
+      "name": "床",
+      "file": "bed.glb",
+      "size": [
+        1.5,
+        2,
+        0.5
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 648,
+      "bytes": 67984,
+      "version": "1.0",
+      "source": "程序化烘焙（Blender 可直接替换同名文件）"
+    },
+    {
+      "key": "chair",
+      "name": "椅子",
+      "file": "chair.glb",
+      "size": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 756,
+      "bytes": 78924,
+      "version": "1.0",
+      "source": "程序化烘焙（Blender 可直接替换同名文件）"
+    },
+    {
+      "key": "table",
+      "name": "桌",
+      "file": "table.glb",
+      "size": [
+        1.4,
+        0.8,
+        0.75
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 648,
+      "bytes": 67792,
+      "version": "1.0",
+      "source": "程序化烘焙（Blender 可直接替换同名文件）"
+    },
+    {
+      "key": "coffee",
+      "name": "茶几",
+      "file": "coffee.glb",
+      "size": [
+        1,
+        0.6,
+        0.4
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 648,
+      "bytes": 67776,
+      "version": "1.0",
+      "source": "程序化烘焙（Blender 可直接替换同名文件）"
+    },
+    {
+      "key": "wardrobe",
+      "name": "衣柜",
+      "file": "wardrobe.glb",
+      "size": [
+        1.2,
+        0.6,
+        2
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 540,
+      "bytes": 56788,
+      "version": "1.0",
+      "source": "程序化烘焙（Blender 可直接替换同名文件）"
+    },
+    {
+      "key": "cabinet",
+      "name": "斗柜/抽屉柜",
+      "file": "cabinet.glb",
+      "size": [
+        1,
+        0.45,
+        0.9
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 864,
+      "bytes": 90272,
+      "version": "1.0",
+      "source": "程序化烘焙（Blender 可直接替换同名文件）"
+    },
+    {
+      "key": "shelf",
+      "name": "书柜/置物架",
+      "file": "shelf.glb",
+      "size": [
+        0.9,
+        0.35,
+        1.8
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 2376,
+      "bytes": 246784,
+      "version": "1.0",
+      "source": "程序化烘焙（Blender 可直接替换同名文件）"
+    }
+  ]
+}

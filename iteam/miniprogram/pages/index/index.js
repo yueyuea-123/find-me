@@ -24,7 +24,7 @@ Page({
     var stats = store.getStats();
     var overview = store.getHomeOverview();
     var alerts = store.listAlerts();
-    // 最近变动：合并位置历史与库存交易，按时间倒序取前 5
+    // 最近变动：合并位置历史与库存交易，按时间倒序取前 2
     var rec = [];
     store.listMovements().forEach(function (m) {
       var it = store.getItem(m.itemId);
@@ -46,7 +46,7 @@ Page({
     rec.sort(function (a, b) { return b.ts - a.ts; });
     this.setData({
       stats: stats, overview: overview, alerts: alerts,
-      recent: rec.slice(0, 5), hourGreet: greet,
+      recent: rec.slice(0, 2), hourGreet: greet,
       editing: false, dragging: false, dragInvalid: false
     });
   },
@@ -80,7 +80,7 @@ Page({
   toggleEdit: function () {
     var editing = !this.data.editing;
     this.setData({ editing: editing, dragging: false, dragInvalid: false });
-    wx.showToast({ title: editing ? '拖动房间或边角调整布局' : '布局已保存', icon: 'none' });
+    wx.showToast({ title: editing ? '编辑中：拖动房间移动、拖任意边/角把手调整宽高；越界自动钳制，重叠不可保存' : '布局已保存', icon: 'none' });
   },
 
   autoLayout: function () {
@@ -164,6 +164,6 @@ Page({
     this._drag = null;
     if (valid) store.updateRoom(d.id, { floor: cand });
     this.refresh();
-    if (!valid) wx.showToast({ title: '越界或与其他房间重叠，已还原', icon: 'none' });
+    if (!valid) wx.showToast({ title: '布局与其他房间重叠或越界，未保存', icon: 'none' });
   }
 });

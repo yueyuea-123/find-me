@@ -1,7 +1,6 @@
 <view class="page">
   <view class="card">
-    <view class="card-t">位置历史</view>
-    <view class="card-s">{{itemName}} · 共 {{history.length}} 条记录</view>
+    <view class="card-t">{{title}}</view>
   </view>
 
   <view class="card timeline" wx:for="{{history}}" wx:key="id">

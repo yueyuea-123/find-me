@@ -41,7 +41,7 @@
   </view>
 
   <view class="card">
-    <view class="card-t">交易记录</view>
+    <view class="card-t">交易流水（{{txs.length}}）</view>
     <view class="tx" wx:for="{{txs}}" wx:key="id">
       <view class="row between">
         <view>
@@ -55,6 +55,6 @@
       </view>
       <view class="tiny muted" style="margin-top:6rpx">{{item.time}}</view>
     </view>
-    <view class="empty-line" wx:if="{{txs.length===0}}">暂无交易记录</view>
+    <view class="empty-line" wx:if="{{txs.length===0}}">暂无交易</view>
   </view>
 </view>

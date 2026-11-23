@@ -1,1 +1,2 @@
 /* pages/item-edit/item-edit.wxss */
+.input.err { border: 2rpx solid #BE5F44; background: #FDF5F1; }

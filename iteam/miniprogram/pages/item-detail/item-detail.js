@@ -3,7 +3,7 @@ var store = require('../../utils/store.js');
 var C = require('../../utils/constants.js');
 
 Page({
-  data: { item: null, inv: null, justCreated: false },
+  data: { item: null, inv: null, justCreated: false, nextHint: '', nextBtn: '', nextPage: '' },
   onLoad: function (q) { this._id = q.id || ''; this.setData({ justCreated: !!(q && q.justCreated) }); },
   onShow: function () { this.load(); },
 
@@ -23,12 +23,21 @@ Page({
     var updated = store.fmtTime(it.updatedAt || it.createdAt || Date.now());
     var today = store.fmtTime(Date.now()).slice(0, 10);
     if (updated.indexOf(today) === 0) updated = '今天 ' + updated.slice(11);
+    // 建档后的下一步引导：无位置/位置未知 → 去定位；余额为 0 → 去入库；其余 → 去完善
+    var needPos = !it.currentNodeId || it.locationStatus === 'unknown';
+    var needStock = !!inv && inv.balance === 0;
+    var next = needPos
+      ? { hint: '补充位置，初始存放信息不记为一次移动', page: 'move', btn: '去定位' }
+      : needStock
+        ? { hint: '记录初始库存，后续变更走库存交易', page: 'inventoryDetail', btn: '去入库' }
+        : { hint: '继续完善分类、备注等信息', page: 'itemEdit', btn: '去完善' };
     this.setData({
+      nextHint: next.hint, nextBtn: next.btn, nextPage: next.page,
       item: {
         id: it.id, name: it.name, completed: it.completed,
         catText: it.category || '未分类', modeText: modeMap[it.trackingMode] || '',
         locationKey: it.locationStatus, updatedText: updated,
-        locText: stMap[it.locationStatus] || it.locationStatus,
+        locText: it.locationStatus === 'at_home' && it.currentNodeId ? '已定位' : (stMap[it.locationStatus] || it.locationStatus),
         locClass: it.locationStatus === 'at_home' ? 'green' : 'orange',
         locPath: it.currentNodeId ? store.nodePath(it.currentNodeId).join(' / ') : (stMap[it.locationStatus] || '未设置'),
         note: it.note, photo: it.photoPath,
@@ -47,6 +56,12 @@ Page({
   moveItem: function () { wx.navigateTo({ url: '/pages/move/move?id=' + this._id }); },
   goHistory: function () { wx.navigateTo({ url: '/pages/history/history?id=' + this._id }); },
   goInventory: function () { wx.navigateTo({ url: '/pages/inventory-detail/inventory-detail?id=' + this._id }); },
+  goNext: function () {
+    var page = this.data.nextPage;
+    if (!page) return;
+    var routes = { move: '/pages/move/move?id=', inventoryDetail: '/pages/inventory-detail/inventory-detail?id=', itemEdit: '/pages/item-edit/item-edit?id=' };
+    if (routes[page]) wx.navigateTo({ url: routes[page] + this._id });
+  },
   goBackList: function () { wx.redirectTo({ url: '/pages/item-list/item-list' }); },
   goTx: function () { wx.navigateTo({ url: '/pages/inventory-detail/inventory-detail?id=' + this._id + '&tab=tx' }); },
   previewPhoto: function () {
@@ -57,16 +72,21 @@ Page({
 
   endManage: function () {
     var self = this;
-    // demo 对齐：仍有库存余额时先阻断，须在库存详情明确处置后再结束管理
+    // 演示口径：有余额时先阻断，必须先明确处置方式（以处置结存留痕，不伪装成消耗）
     var iv = store.findInventoryByItem(this._id);
     if (iv && iv.balance > 0) {
       wx.showModal({
         title: '无法结束管理',
-        content: '剩余 ' + iv.balance + ' ' + iv.unit + ' 库存，须先明确处置方式（可在库存详情记「处置结存」）。',
-        showCancel: false
+        content: '剩余 ' + iv.balance + ' ' + iv.unit + ' 库存，须先明确处置方式。',
+        cancelText: '稍后处理', confirmText: '选择处置方式',
+        success: function (res) { if (res.confirm) self._chooseDisposal(); }
       });
       return;
     }
+    this._chooseDisposal();
+  },
+  _chooseDisposal: function () {
+    var self = this;
     var types = (C.DISPOSAL_TYPES || []).map(function (d) { return d.name; });
     wx.showActionSheet({
       itemList: types,
@@ -76,7 +96,7 @@ Page({
         var dtype = C.DISPOSAL_TYPES[idx].key;
         wx.showModal({
           title: '结束管理',
-          content: '档案与历史会长期保留，退出日常列表后仍可搜索与恢复。若有剩余库存，将按「处置结存」记一笔交易并清零（不伪装成消耗）。',
+          content: '档案与历史会长期保留；若有剩余库存，将按「处置结存」记一笔交易并清零（不伪装成消耗）。',
           editable: true, placeholderText: '处置说明（可选）',
           success: function (m) {
             if (!m.confirm) return;

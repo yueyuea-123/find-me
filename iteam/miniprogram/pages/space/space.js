@@ -34,14 +34,14 @@ Page({
   onName: function (e) { this.setData({ formName: e.detail.value, formError: '' }); },
   save: function () {
     var name = (this.data.formName || '').trim();
-    if (!name) { this.setData({ formError: '请输入空间名称' }); return; }
+    if (!name) { this.setData({ formError: '请输入名称' }); return; }
     var r = this.data.editing
       ? store.updateSpace(this.data.editingId, name)
       : store.addSpace(name);
     if (!r.ok) { this.setData({ formError: '保存失败：' + r.error }); return; }
     if (!this.data.editing && r.data) store.setActiveSpace(r.data.id);
     this.setData({ showEditor: false });
-    wx.showToast({ title: '已保存', icon: 'success' });
+    wx.showToast({ title: this.data.editing ? '已保存' : '空间已创建', icon: 'success' });
     this.load();
   },
   archive: function (e) {

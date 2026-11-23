@@ -56,18 +56,19 @@ Page({
     wx.navigateTo({ url: '/pages/admin/admin' });
   },
   goSpaces: function () { wx.navigateTo({ url: '/pages/space/space' }); },
+  goHistory: function () { wx.navigateTo({ url: '/pages/history/history' }); },
   goAlerts: function () { wx.navigateTo({ url: '/pages/alerts/alerts' }); },
   goEnded: function () { wx.navigateTo({ url: '/pages/item-list/item-list?ended=1' }); },
   goPrivacy: function () { wx.navigateTo({ url: '/pages/privacy/privacy' }); },
 
   resetDemo: function () {
     wx.showModal({
-      title: '载入演示数据',
+      title: '重置演示数据',
       content: '将在清空当前数据后载入一套演示空间/房间/家具/物品。确定继续？',
       success: function (res) {
         if (!res.confirm) return;
         store.clearAll(); store.seedDemo();
-        wx.showToast({ title: '演示数据已载入', icon: 'success' });
+        wx.showToast({ title: '演示数据已重置', icon: 'success' });
       }
     });
   },

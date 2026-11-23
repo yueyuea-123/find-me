@@ -4,8 +4,8 @@ var C = require('../../utils/constants.js');
 
 Page({
   data: {
-    editing: false, id: '', continuous: false, formError: '',
-    formName: '', categories: C.ITEM_CATEGORIES, catIndex: 0,
+    editing: false, id: '', continuous: false, formError: '', nameError: false,
+    formName: '', categories: ['未分类'].concat(C.ITEM_CATEGORIES), catIndex: 0,
     modes: C.TRACK_MODES, modeIndex: 0, needInventory: false,
     balance: '', units: C.UNITS, unitIndex: 0, threshold: '',
     nodeOptions: [{ id: '', label: '位置未知 / 暂不指定' }], nodeIndex: 0, hasNode: false,
@@ -16,10 +16,12 @@ Page({
     q = q || {};
     // 位置选项：房间 → 节点路径
     var opts = [{ id: '', label: '位置未知 / 暂不指定' }];
-    var active = store.getActiveSpace();
-    store.listRooms(active ? active.id : '').forEach(function (rm) {
-      store.listNodes(rm.id).forEach(function (n) {
-        opts.push({ id: n.id, label: store.nodePath(n.id).join(' / ') });
+    // 跨空间列出所有节点完整路径（与演示一致）
+    store.listSpaces().forEach(function (sp) {
+      store.listRooms(sp.id).forEach(function (rm) {
+        store.listNodes(rm.id).forEach(function (n) {
+          opts.push({ id: n.id, label: store.nodePath(n.id).join(' / ') });
+        });
       });
     });
     this.setData({ nodeOptions: opts });
@@ -35,25 +37,27 @@ Page({
       var it = store.getItem(q.id);
       if (!it) { wx.showToast({ title: '物品不存在', icon: 'none' }); return; }
       var iv = store.findInventoryByItem(it.id) || {};
-      var catI = Math.max(0, C.ITEM_CATEGORIES.indexOf(it.category));
+      var categories = ['未分类'].concat(C.withCurrent(C.ITEM_CATEGORIES, it.category));
+      var units = C.withCurrent(C.UNITS, iv.unit);
+      var catI = Math.max(0, categories.indexOf(it.category || '未分类'));
       var modeI = Math.max(0, C.TRACK_MODES.map(function (m) { return m.key; }).indexOf(it.trackingMode));
-      var unitI = Math.max(0, C.UNITS.indexOf(iv.unit || C.UNITS[0]));
+      var unitI = Math.max(0, units.indexOf(iv.unit || units[0]));
       var locI = Math.max(0, C.LOCATION_STATUS.map(function (s) { return s.key; }).indexOf(it.locationStatus));
       var nI = 0, hasN = !!it.currentNodeId;
       if (hasN) for (var j = 0; j < opts.length; j++) if (opts[j].id === it.currentNodeId) { nI = j; break; }
       var need = it.trackingMode === 'inventory' || it.trackingMode === 'hybrid';
       this.setData({
-        editing: true, id: q.id, formName: it.name, catIndex: catI,
+        editing: true, id: q.id, formName: it.name, categories: categories, catIndex: catI,
         modeIndex: modeI, needInventory: need,
         balance: iv.balance !== undefined ? String(iv.balance) : '',
-        unitIndex: unitI, threshold: iv.threshold ? String(iv.threshold) : '',
+        units: units, unitIndex: unitI, threshold: iv.threshold ? String(iv.threshold) : '',
         nodeIndex: nI, hasNode: hasN, locIndex: locI, note: it.note || '',
         photoPath: it.photoPath || ''
       });
     }
   },
 
-  onName: function (e) { this.setData({ formName: e.detail.value, formError: '' }); },
+  onName: function (e) { this.setData({ formName: e.detail.value, formError: '', nameError: false }); },
   onCat: function (e) { this.setData({ catIndex: Number(e.detail.value) }); },
   onMode: function (e) {
     var i = Number(e.detail.value);
@@ -86,7 +90,7 @@ Page({
     var nodeId = d.nodeOptions[d.nodeIndex].id;
     var opts = {
       name: (d.formName || '').trim(),
-      category: d.categories[d.catIndex],
+      category: d.categories[d.catIndex] === '未分类' ? '' : d.categories[d.catIndex],
       note: d.note, photoPath: d.photoPath,
       trackingMode: C.TRACK_MODES[d.modeIndex].key,
       currentNodeId: nodeId,
@@ -102,7 +106,7 @@ Page({
 
   validate: function () {
     var d = this.data;
-    if (!(d.formName || '').trim()) { this.setData({ formError: '请输入物品名称' }); return false; }
+    if (!(d.formName || '').trim()) { this.setData({ formError: '名称为必填项', nameError: true }); return false; }
     if (this.data.needInventory && Number(this.data.balance) < 0) {
       this.setData({ formError: '数量不能为负' }); return false;
     }

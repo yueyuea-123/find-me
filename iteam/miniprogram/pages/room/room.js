@@ -20,18 +20,11 @@ Page({
       var furn = store.listFurniture(r.id);
       var roomNodeIds = store.listNodes(r.id).map(function (n) { return n.id; });
       var items = store.listItems({ roomId: r.id });
-      var st = r.task.status;
-      var statusText = '未建模', statusClass = '';
-      if (st === 'processing') { statusText = '建模处理中'; statusClass = 'orange'; }
-      else if (st === 'failed') { statusText = '建模失败·可手动'; statusClass = 'red'; }
-      else if (st === 'candidate_ready') { statusText = '候选待确认'; statusClass = 'blue'; }
-      else if (st === 'ready') { statusText = '照片已就绪'; statusClass = 'green'; }
-      var dim = r.calibrated ? (r.width + '×' + r.depth + '×' + r.height + 'm') : '尺寸未定标（相对估算）';
+      var dim = r.calibrated ? (r.width + '×' + r.depth + '×' + r.height + ' m') : '尺寸未定标（相对估算）';
       return {
         id: r.id, name: r.name, dimText: dim,
         templateText: r.templateKey ? '场景模板' : '空白房间',
-        furnitureCount: furn.length, itemCount: items.length,
-        statusText: statusText, statusClass: statusClass
+        furnitureCount: furn.length, itemCount: items.length
       };
     });
     this.setData({ spaceName: sp ? sp.name : '未设置空间', rooms: rooms, hasSpace: !!sp });
@@ -73,6 +66,7 @@ Page({
   save: function () {
     var f = this.data;
     if (!(f.formName || '').trim()) { this.setData({ formError: '请输入房间名称' }); return; }
+    // 留空时由数据层写入默认 4×4×2.8m；填写时按布局输入使用
     var dims = { width: Number(f.formW) || 0, depth: Number(f.formD) || 0, height: Number(f.formH) || 0 };
     var r;
     if (f.editing) {
@@ -95,13 +89,23 @@ Page({
       return;
     }
     // CR-001 F-07：新建且选了模板时应用预置家具；模板缺失则降级空白房间，不阻断建房
+    var msg = f.editing ? '已保存' : '房间已创建';
     if (!f.editing && f.startTemplate) {
       var tr = store.applyRoomTemplate(r.data.id, f.startTemplate);
-      if (!tr.ok) wx.showToast({ title: '模板暂不可用，已建空白房间', icon: 'none' });
+      msg = tr.ok ? '模板家具已预置' : '模板暂不可用，已建空白房间';
     }
     this.setData({ showEditor: false });
-    wx.showToast({ title: '已保存', icon: 'success' });
+    wx.showToast({ title: msg, icon: 'success' });
     this.load();
+  },
+
+  // 演示口径：新建房间的两个明确起点（空白 / 卧室模板）
+  createRoom: function (e) {
+    var key = (e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.template) || '';
+    var patch = { startTemplate: key };
+    if (!key) patch.formW = patch.formD = patch.formH = '';
+    var self = this;
+    this.setData(patch, function () { self.save(); });
   },
 
   // 物理删除房间（用户确认口径）：不可恢复，须强提示；关联物品解绑置为位置未知

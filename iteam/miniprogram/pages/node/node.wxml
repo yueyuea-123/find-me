@@ -1,31 +1,36 @@
 <view class="page">
   <view class="card">
-    <view class="card-t">{{node.name}}</view>
-    <view class="card-s">路径：{{pathText}}</view>
+    <view class="card-s">{{pathText}}</view>
+    <view class="card-t" style="margin-top:6rpx">{{node.name}}</view>
+    <view class="row wrap" style="margin-top:12rpx">
+      <text class="tag gray">{{node.type}}</text>
+      <text class="tag green">用户确认事实</text>
+    </view>
     <view class="divider"></view>
     <view class="row wrap">
       <button class="btn sm" bindtap="rename">重命名</button>
       <button class="btn sm" bindtap="addSubNode">＋ 子节点</button>
       <button class="btn sm" bindtap="moveUp">↑上移</button>
       <button class="btn sm" bindtap="moveDown">↓下移</button>
-      <button class="btn sm danger" bindtap="remove">删除</button>
-    </view>
-  </view>
-
-  <view class="card" wx:if="{{subNodes.length>0}}">
-    <view class="card-t">下级位置</view>
-    <view class="node-item" wx:for="{{subNodes}}" wx:key="id" bindtap="openSub" data-id="{{item.id}}">
-      <view class="row between">
-        <view class="grow"><text class="strong">{{item.name}}</text> <text class="tag">{{item.type}}</text></view>
-        <text class="muted">▸</text>
-      </view>
+      <button class="btn sm danger" bindtap="remove">删除节点</button>
     </view>
   </view>
 
   <view class="card">
+    <view class="card-t">下级位置</view>
+      <view class="node-item" wx:for="{{subNodes}}" wx:key="id" bindtap="openSub" data-id="{{item.id}}">
+        <view class="row between">
+          <view class="grow"><text class="strong">{{item.name}}</text> <text class="tag">{{item.type}}</text></view>
+          <text class="muted">▸</text>
+        </view>
+      </view>
+      <view class="empty-line" wx:if="{{subNodes.length===0}}">无下级位置</view>
+    </view>
+
+  <view class="card">
     <view class="row between">
       <view class="card-t">此位置的物品（{{items.length}}）</view>
-      <button class="btn sm primary" bindtap="addItem">＋ 添加物品</button>
+      <button class="btn sm primary" bindtap="addItem">在此位置添加物品</button>
     </view>
     <view class="node-item" wx:for="{{items}}" wx:key="id" bindtap="openItem" data-id="{{item.id}}">
       <view class="row between">
@@ -36,6 +41,6 @@
         <text class="muted">▸</text>
       </view>
     </view>
-    <view class="empty-line" wx:if="{{items.length===0}}">此位置暂无物品</view>
+    <view class="empty-line" wx:if="{{items.length===0}}">该节点暂无物品</view>
   </view>
 </view>

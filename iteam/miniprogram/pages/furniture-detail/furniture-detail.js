@@ -65,7 +65,8 @@ Page({
     var f = this.data.furniture;
     if (!f) return;
     var self = this;
-    var vars = (C.FURNITURE_LIB[f.category] || {}).vars || ['默认', '木色原木'];
+    // 演示口径：仅在「默认 / 木色原木」间切换，不影响逻辑节点与物品关联
+    var vars = ['默认', '木色原木'];
     wx.showActionSheet({
       itemList: vars,
       success: function (res) {
@@ -73,7 +74,7 @@ Page({
         if (!model) return;
         var r = store.updateFurniture(f.id, { model: model });
         if (!r.ok) { wx.showToast({ title: '更换失败', icon: 'none' }); return; }
-        wx.showToast({ title: '外观已更换，关联不变', icon: 'success' });
+        wx.showToast({ title: '外观已更换，节点与物品关联不变', icon: 'success' });
         self.load();
       }
     });
@@ -91,7 +92,7 @@ Page({
         var r = store.removeFurniture(f.id);
         if (!r.ok) {
           if (r.error === 'HAS_LINKS') {
-            wx.showModal({ title: '无法删除', content: '家具下还有 ' + r.childNodes + ' 个节点 / ' + r.items + ' 件物品关联，须先迁移或归档。', showCancel: false });
+            wx.showModal({ title: '无法删除', content: '已被关联：' + r.items + ' 件物品 / ' + r.childNodes + ' 个节点，须先迁移或归档。', showCancel: false });
           } else wx.showToast({ title: '删除失败', icon: 'none' });
           return;
         }
@@ -112,7 +113,8 @@ Page({
         // 挂在该家具的"家具根节点"下
         var all = store.listNodes(self._roomId);
         var root = all.filter(function (n) { return n.furnitureId === f.id && n.type === '家具'; })[0];
-        var r = store.addNode(self._roomId, root ? root.id : '', res.content.trim(), '抽屉/隔层');
+        // 演示口径：家具根下新增「收纳盒」，收纳节点下新增「抽屉/隔层」
+        var r = store.addNode(self._roomId, root ? root.id : '', res.content.trim(), '收纳盒');
         if (r.ok) { wx.showToast({ title: '已添加', icon: 'success' }); self.load(); }
         else wx.showToast({ title: '添加失败', icon: 'none' });
       }

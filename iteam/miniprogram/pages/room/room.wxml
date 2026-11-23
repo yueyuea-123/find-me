@@ -1,33 +1,20 @@
-<view class="page">
-  <view class="row between" style="margin-bottom:20rpx">
-    <view>
-      <view class="strong" style="font-size:32rpx">{{spaceName}}</view>
-      <view class="muted small">{{rooms.length}} 个房间</view>
-    </view>
-    <button class="btn sm primary" bindtap="goSpaces">切换空间</button>
-  </view>
+<view class="page room-page">
+  <!-- 截图1：副标题「我的家 · 共 N 个房间」；导航栏标题已是「房间」 -->
+  <view class="room-subtitle">{{spaceName}} · 共 {{rooms.length}} 个房间</view>
 
-  <view class="card" wx:for="{{rooms}}" wx:key="id">
-    <view class="row" bindtap="enterRoom" data-id="{{item.id}}">
+  <!-- 截图1：房间卡片 = 图标 + 名称 + 尺寸·件数 + 场景模板/用户确认事实标签 + 右箭头，整卡进入三维房间页 -->
+  <view class="card room-card" wx:for="{{rooms}}" wx:key="id" bindtap="enterRoom" data-id="{{item.id}}">
+    <view class="row">
       <view class="room-icon">⌗</view>
-      <view class="grow" style="margin-left:20rpx">
+      <view class="grow" style="margin-left:24rpx">
         <view class="card-t">{{item.name}}</view>
-        <view class="card-s">{{item.dimText}} · {{item.furnitureCount}} 件家具 · {{item.itemCount}} 件物品</view>
-        <view class="row wrap" style="margin-top:12rpx">
-          <text class="tag {{item.statusClass}}">{{item.statusText}}</text>
+        <view class="card-s">{{item.dimText}} · {{item.furnitureCount}} 件家具</view>
+        <view class="row wrap" style="margin-top:14rpx">
           <text class="tag gray">{{item.templateText}}</text>
+          <text class="tag green">● 用户确认事实</text>
         </view>
       </view>
       <text class="muted">▸</text>
-    </view>
-    <view class="divider"></view>
-    <view class="row wrap">
-      <button class="btn sm primary" catchtap="enter3d" data-id="{{item.id}}">三维查看</button>
-      <button class="btn sm" catchtap="enterPhotos" data-id="{{item.id}}">房间照片</button>
-      <button class="btn sm" catchtap="enterFurniture" data-id="{{item.id}}">家具</button>
-      <button class="btn sm" catchtap="rename" data-id="{{item.id}}" data-name="{{item.name}}">改名</button>
-      <button class="btn sm" catchtap="archive" data-id="{{item.id}}" data-name="{{item.name}}">归档</button>
-      <button class="btn sm danger" catchtap="destroy" data-id="{{item.id}}" data-name="{{item.name}}">删除房间</button>
     </view>
   </view>
 
@@ -35,32 +22,28 @@
 
   <view class="state" wx:if="{{rooms.length===0}}">
     <text class="state-icon">⌂</text>
-    <text class="state-title">还没有房间</text>
-    <text class="state-desc" wx:if="{{hasSpace}}">新建房间后可上传照片、添加家具与收纳位置</text>
-    <text class="state-desc" wx:else>还没有空间，点击右下角「+」新建房间将自动创建默认空间</text>
+    <text class="state-title">还没有房间，先建一个吧</text>
+    <text class="state-desc" wx:if="{{hasSpace}}">新建房间后可添加家具与收纳位置</text>
+    <text class="state-desc" wx:else>还没有空间，点击下方「＋ 新建房间」将自动创建默认空间</text>
   </view>
 
-  <view class="fab" bindtap="openCreate">+</view>
+  <!-- 截图1：底部固定操作条「空间列表 / ＋ 新建房间」 -->
+  <view class="room-cta">
+    <button class="btn" bindtap="goSpaces">空间列表</button>
+    <button class="btn primary" bindtap="openCreate">＋ 新建房间</button>
+  </view>
 
   <view class="mask" wx:if="{{showEditor}}" bindtap="closeEditor"></view>
   <view class="sheet" wx:if="{{showEditor}}">
     <text class="sheet-title">{{editing?'编辑房间':'新建房间'}}</text>
     <view class="small muted" wx:if="{{!editing}}" style="margin:-12rpx 0 24rpx">填写宽 / 深 / 高作为布局输入，不承诺测量精度</view>
     <view class="form-error" wx:if="{{formError}}">{{formError}}</view>
-    <!-- CR-001 F-07：起点选择，仅新建时显示；模板为静态预置布置，家具落库后可自由编辑 -->
-    <view class="field" wx:if="{{!editing}}">
-      <text class="label">起点（可随时再调整家具）</text>
-      <view class="row" style="flex-wrap:wrap;gap:12rpx">
-        <view class="mode {{startTemplate===''?'on':''}}" data-key="" bindtap="setStart">空白房间</view>
-        <view class="mode {{startTemplate===item.key?'on':''}}" wx:for="{{templates}}" wx:key="key" data-key="{{item.key}}" bindtap="setStart">{{item.name}}（{{item.count}}件）</view>
-      </view>
-    </view>
     <view class="field">
       <text class="label">房间名称 <text class="req">*</text></text>
       <input class="input" placeholder="例如：主卧 / 客厅" value="{{formName}}" bindinput="onName" maxlength="20" />
     </view>
     <view class="field">
-      <text class="label">尺寸参照（可选，单位米；留空则按相对估算）</text>
+      <text class="label">尺寸参照（可选，单位米；留空按 4×4×2.8m）</text>
       <view class="row">
         <input class="input grow" style="margin-right:12rpx" type="number" placeholder="宽" value="{{formW}}" bindinput="onW" />
         <input class="input grow" style="margin-right:12rpx" type="number" placeholder="深" value="{{formD}}" bindinput="onD" />
@@ -69,7 +52,11 @@
     </view>
     <view class="sheet-actions">
       <button class="btn ghost" bindtap="closeEditor">取消</button>
-      <button class="btn primary" bindtap="save">保存</button>
+      <button class="btn primary" wx:if="{{editing}}" bindtap="save">保存</button>
+      <block wx:else>
+        <button class="btn primary" data-template="" bindtap="createRoom">创建空白房间</button>
+        <button class="btn" data-template="bedroom" bindtap="createRoom">用卧室模板</button>
+      </block>
     </view>
   </view>
 </view>

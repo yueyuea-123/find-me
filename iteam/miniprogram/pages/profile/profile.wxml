@@ -29,13 +29,14 @@
     <view class="card-t">数据管理</view>
     <view class="menu" bindtap="goBackup"><text>备份与恢复</text><text class="muted">{{backupCount}} 份 ▸</text></view>
     <view class="menu" wx:if="{{isAdmin}}" bindtap="goAdmin"><text>管理后台</text><text class="muted">▸</text></view>
-    <view class="menu" bindtap="resetDemo"><text>载入演示数据</text><text class="muted">▸</text></view>
+    <view class="menu" bindtap="resetDemo"><text>重置演示数据</text><text class="muted">▸</text></view>
     <view class="menu" bindtap="clearData"><text>清空本机数据</text><text class="muted">▸</text></view>
   </view>
 
   <view class="card">
     <view class="card-t">功能入口</view>
-    <view class="menu" bindtap="goSpaces"><text>空间管理</text><text class="muted">▸</text></view>
+    <view class="menu" bindtap="goSpaces"><text>空间与房间</text><text class="muted">▸</text></view>
+    <view class="menu" bindtap="goHistory"><text>全部位置历史</text><text class="muted">▸</text></view>
     <view class="menu" bindtap="goAlerts"><text>提醒中心</text><text class="muted">▸</text></view>
     <view class="menu" bindtap="goEnded"><text>已结束管理物品</text><text class="muted">▸</text></view>
     <view class="menu" bindtap="goPrivacy"><text>隐私与数据说明</text><text class="muted">▸</text></view>
@@ -43,6 +44,6 @@
 
   <view class="card">
     <view class="card-t">关于</view>
-    <view class="small muted">三维室内空间与家庭物品管理系统 · MVP<br/>版本 V1.2 · 依据产品方案 V1.2 / CR-001</view>
+    <view class="small muted">本页数据全部为模拟数据；真实版本的数据隔离、照片私有存储与备份恢复由后端实现，本演示不涉及。</view>
   </view>
 </view>

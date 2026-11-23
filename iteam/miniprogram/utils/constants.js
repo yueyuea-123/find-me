@@ -22,18 +22,25 @@ var MGMT_STATUS = [
   { key: 'ended', name: '已结束管理' }
 ];
 
-// 物品分类
-var ITEM_CATEGORIES = [
-  '服饰鞋包', '饰品配件', '证件卡片', '书籍文具', '电子数码', '工具五金',
-  '厨房用品', '卫浴清洁', '食品饮料', '药品健康', '母婴用品', '运动户外',
-  '玩具收藏', '家居布艺', '其他'
-];
+// 物品分类：以《MVP 可交互演示—界面与交互说明》§4.2 为准
+var ITEM_CATEGORIES = ['证件卡片', '家居布艺', '电子数码', '卫浴清洁', '书籍文具', '其他'];
 
 // 预设计量单位（TBD-007：不开放自定义，不自动换算）
-var UNITS = ['个', '件', '瓶', '盒', '包', '袋', '卷', '支', '双', '套', '千克', '升'];
+var UNITS = ['个', '件', '瓶', '包', '盒', '卷'];
+
+// 兼容旧数据的枚举补充：历史档案可能使用已下线的分类/单位，编辑时保留原值，不再作为新选项
+function withCurrent(list, current) {
+  var out = list.slice();
+  if (current && out.indexOf(current) < 0) out.push(current);
+  return out;
+}
 
 // 家具模型库（与三维场景程序化模型对应，模型与逻辑位置解耦 BR-009）
 // size: [宽, 高, 深]，单位米；vars 为可选外观档位
+// 模型库界面选项：演示口径 11 类；字典保留少量历史类别仅供旧数据取尺寸/渲染
+var FURNITURE_CATEGORIES = [
+  '床', '床头柜', '台灯', '窗帘', '沙发', '茶几', '电视柜', '衣柜', '书架', '收纳盒', '抽屉'
+];
 var FURNITURE_LIB = {
   '床':     { size: [1.7, 0.6, 2.0], vars: ['米色床品', '灰色床品'], icon: '🛏️' },
   '床头柜': { size: [0.55, 0.48, 0.42], vars: ['白色简约', '木色原木'], icon: '🗄️' },
@@ -59,11 +66,9 @@ var ROOM_TEMPLATES = {
   bedroom: {
     key: 'bedroom', name: '卧室',
     furniture: [
-      { category: '床', name: '双人床', x: -0.8, z: 0.6, rot: 0 },
-      { category: '床头柜', name: '床头柜', x: 0.1, z: 1.1, rot: 0 },
-      { category: '衣柜', name: '衣柜', x: 1.4, z: -1.0, rot: 0 },
-      { category: '窗帘', name: '窗帘', x: 0, z: -1.8, rot: 0 },
-      { category: '台灯', name: '台灯', x: 0.1, z: 1.1, rot: 0 }
+      { category: '床', name: '双人床', x: -1.2, z: 0.4, rot: 0 },
+      { category: '床头柜', name: '床头柜', x: -2, z: -0.4, rot: 0 },
+      { category: '窗帘', name: '落地窗', x: 0.4, z: -2, rot: 0 }
     ]
   },
   living: {
@@ -71,17 +76,14 @@ var ROOM_TEMPLATES = {
     furniture: [
       { category: '沙发', name: '三人沙发', x: 0, z: 1.2, rot: 0 },
       { category: '茶几', name: '茶几', x: 0, z: 0, rot: 0 },
-      { category: '电视柜', name: '电视柜', x: 0, z: -1.4, rot: 0 },
-      { category: '软包椅', name: '单人椅', x: 1.3, z: 0.4, rot: 1.57 },
-      { category: '书架', name: '书架', x: -1.6, z: -0.6, rot: 0 }
+      { category: '电视柜', name: '电视柜', x: 0, z: -1.4, rot: 0 }
     ]
   },
   bath: {
     key: 'bath', name: '卫生间',
     furniture: [
-      { category: '收纳盒', name: '浴室收纳盒', x: -0.9, z: -0.9, rot: 0 },
-      { category: '收纳盒', name: '清洁用品盒', x: -0.9, z: -0.3, rot: 0 },
-      { category: '抽屉', name: '镜柜抽屉', x: 0.9, z: -1.2, rot: 0 }
+      { category: '收纳盒', name: '浴室收纳盒', x: -0.8, z: -0.8, rot: 0 },
+      { category: '抽屉', name: '镜柜抽屉', x: 0.8, z: -1, rot: 0 }
     ]
   }
 };
@@ -122,6 +124,8 @@ module.exports = {
   MGMT_STATUS: MGMT_STATUS,
   ITEM_CATEGORIES: ITEM_CATEGORIES,
   UNITS: UNITS,
+  withCurrent: withCurrent,
+  FURNITURE_CATEGORIES: FURNITURE_CATEGORIES,
   FURNITURE_LIB: FURNITURE_LIB,
   ROOM_TEMPLATES: ROOM_TEMPLATES,
   NODE_TYPES: NODE_TYPES,

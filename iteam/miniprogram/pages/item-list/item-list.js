@@ -4,10 +4,11 @@ var C = require('../../utils/constants.js');
 
 Page({
   data: {
-    items: [], keyword: '', loading: false, hasFilter: false, includeEnded: false,
+    items: [], count: 0, keyword: '', quickFilter: 'all', loading: false, hasFilter: false, includeEnded: false,
     statusOptions: [{ key: '', name: '全部状态' }, { key: 'active', name: '日常管理' }, { key: 'ended', name: '已结束管理' }],
     stIndex: 0,
     catOptions: ['全部分类'].concat(C.ITEM_CATEGORIES), catIndex: 0,
+    quickOptions: [{ key: 'all', name: '全部' }, { key: 'unknown', name: '位置未知' }, { key: 'low', name: '低库存' }],
     locOptions: [{ key: '', name: '全部位置' }].concat(C.LOCATION_STATUS), locIndex: 0,
     spaceOptions: [], spaceIndex: 0,
     roomOptions: [], roomIndex: 0,
@@ -28,12 +29,18 @@ Page({
         store.listNodes(rm.id).forEach(function (n) { nodes.push({ id: n.id, label: store.nodePath(n.id).join(' / ') }); });
       });
     });
-    this.setData({ spaceOptions: spaces, roomOptions: rooms, nodeOptions: nodes });
+    // 兼容旧档案：历史分类追加到筛选项，避免筛选不到旧数据
+    var cats = ['全部分类'].concat(C.ITEM_CATEGORIES);
+    store.listItems({ includeEnded: true }).forEach(function (it) {
+      if (it.category && cats.indexOf(it.category) < 0) cats.push(it.category);
+    });
+    this.setData({ spaceOptions: spaces, roomOptions: rooms, nodeOptions: nodes, catOptions: cats });
   },
 
   load: function () {
     var d = this.data;
     var filters = { keyword: d.keyword, includeEnded: d.includeEnded };
+    if (d.quickFilter === 'unknown') filters.locationStatus = 'unknown';
     var st = d.statusOptions[d.stIndex].key;
     if (st) filters.managementStatus = st;
     if (d.catIndex > 0) filters.category = d.catOptions[d.catIndex];
@@ -45,10 +52,17 @@ Page({
     if (rm && rm.id) filters.roomId = rm.id;
     var nd = d.nodeOptions[d.nodeIndex];
     if (nd && nd.id) filters.currentNodeId = nd.id;
-    var hasFilter = !!(d.keyword || st || d.catIndex > 0 || loc || d.includeEnded ||
+    var hasFilter = !!(d.keyword || d.quickFilter !== 'all' || st || d.catIndex > 0 || loc || d.includeEnded ||
       (sp && sp.id) || (rm && rm.id) || (nd && nd.id));
 
-    var list = store.listItems(filters).map(function (it) {
+    var list = store.listItems(filters);
+    if (d.quickFilter === 'low') {
+      list = list.filter(function (it) {
+        var iv = store.findInventoryByItem(it.id);
+        return !!iv && iv.threshold > 0 && iv.balance <= iv.threshold;
+      });
+    }
+    list = list.map(function (it) {
       var stMap = { at_home: '在家', unknown: '位置未知', out: '外出', borrowed: '借出' };
       var modeMap = { location: '只记位置', inventory: '只记库存', hybrid: '位置+库存' };
       var path = it.currentNodeId ? store.nodePath(it.currentNodeId).join(' / ') : (stMap[it.locationStatus] || '未设置');
@@ -63,9 +77,10 @@ Page({
         locPath: path
       };
     });
-    this.setData({ items: list, hasFilter: hasFilter, loading: false });
+    this.setData({ items: list, count: list.length, hasFilter: hasFilter, loading: false });
   },
 
+  onQuickFilter: function (e) { this.setData({ quickFilter: e.currentTarget.dataset.key || 'all' }, this.load); },
   onKeyword: function (e) { this.setData({ keyword: e.detail.value }, this.load); },
   onStatus: function (e) { this.setData({ stIndex: Number(e.detail.value) }, this.load); },
   onCat: function (e) { this.setData({ catIndex: Number(e.detail.value) }, this.load); },

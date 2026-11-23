@@ -4,17 +4,19 @@ var C = require('../../utils/constants.js');
 
 Page({
   data: {
-    itemName: '', currentLocText: '', currentLocClass: '', currentPath: '',
+    itemName: '', currentLocText: '', currentLocClass: '', currentPath: '', targetPath: '未选择',
     statusList: C.LOCATION_STATUS, statusKey: 'at_home',
-    nodeOptions: [], nodeIndex: 0, note: '', borrowTo: '', dueDate: ''
+    nodeOptions: [{ id: '', label: '请选择具体位置' }], nodeIndex: 0, note: '', borrowTo: '', dueDate: ''
   },
   onLoad: function (q) {
     this._id = q.id || '';
     var opts = [{ id: '', label: '请选择具体位置' }];
-    var active = store.getActiveSpace();
-    store.listRooms(active ? active.id : '').forEach(function (rm) {
-      store.listNodes(rm.id).forEach(function (n) {
-        opts.push({ id: n.id, label: store.nodePath(n.id).join(' / ') });
+    // 跨空间列出节点（空间 → 房间 → 收纳节点），与演示目标位置树一致
+    store.listSpaces().forEach(function (sp) {
+      store.listRooms(sp.id).forEach(function (rm) {
+        store.listNodes(rm.id).forEach(function (n) {
+          opts.push({ id: n.id, label: sp.name + ' / ' + rm.name + ' / ' + store.nodePath(n.id).join(' / ') });
+        });
       });
     });
     this.setData({ nodeOptions: opts });
@@ -28,12 +30,23 @@ Page({
       currentLocText: stMap[it.locationStatus] || it.locationStatus,
       currentLocClass: it.locationStatus === 'at_home' ? 'green' : 'orange',
       currentPath: it.currentNodeId ? store.nodePath(it.currentNodeId).join(' / ') : (stMap[it.locationStatus] || '未设置'),
-      statusKey: it.locationStatus === 'at_home' ? 'at_home' : it.locationStatus,
+      targetPath: it.currentNodeId ? store.nodePath(it.currentNodeId).join(' / ') : '未选择',
+      statusKey: it.locationStatus,
       borrowTo: it.borrowTo || '', dueDate: it.dueDate || ''
     });
   },
-  chooseStatus: function (e) { this.setData({ statusKey: e.currentTarget.dataset.key }); },
-  onNode: function (e) { this.setData({ nodeIndex: Number(e.detail.value) }); },
+  chooseStatus: function (e) {
+    var key = e.currentTarget.dataset.key;
+    // 非在家状态清空已选节点，避免把节点位置带进外出/借出记录
+    this.setData({ statusKey: key, nodeIndex: key === 'at_home' ? this.data.nodeIndex : 0,
+      targetPath: key === 'at_home' ? this.data.targetPath : '未选择' });
+  },
+  onNode: function (e) {
+    var i = Number(e.detail.value);
+    var opt = this.data.nodeOptions[i] || {};
+    // 选择具体节点即视为「在家」，并回显完整路径
+    this.setData({ nodeIndex: i, statusKey: 'at_home', targetPath: opt.id ? opt.label : '未选择' });
+  },
   onNote: function (e) { this.setData({ note: e.detail.value }); },
   onBorrowTo: function (e) { this.setData({ borrowTo: e.detail.value }); },
   onDueDate: function (e) { this.setData({ dueDate: e.detail.value }); },
@@ -43,7 +56,7 @@ Page({
     var nodeId = d.statusKey === 'at_home' ? d.nodeOptions[d.nodeIndex].id : '';
     // demo 对齐：选择「在家」必须同时选定具体收纳节点；位置未知走独立状态入口
     if (d.statusKey === 'at_home' && !nodeId) {
-      wx.showToast({ title: '请选择目标位置', icon: 'none' }); return;
+      wx.showToast({ title: '选择「在家」需同时选定具体位置', icon: 'none' }); return;
     }
     var status = d.statusKey;
     var requestId = store.uid('req');
@@ -60,10 +73,9 @@ Page({
         self._submitting = false;
         if (!r.ok) { wx.showToast({ title: '失败：' + r.error, icon: 'none' }); return; }
         var typeName = {
-          first_confirm: '首次位置确认', move: '移动', out: '记录外出',
-          borrow: '记录借出', return: '记录归还'
-        }[r.eventType] || (r.unchanged || r.idempotent ? '已更新' : '已更新');
-        wx.showToast({ title: typeName, icon: 'success' });
+          first_confirm: '首次位置确认', move: '移动', out: '外出/借出', return: '带回/归还', end: '结束管理'
+        }[r.eventType] || '已更新';
+        wx.showToast({ title: '已确认：' + typeName + '，历史 +1', icon: 'success' });
         setTimeout(function () { wx.navigateBack(); }, 600);
       }
     });

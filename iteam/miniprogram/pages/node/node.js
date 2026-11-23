@@ -31,10 +31,11 @@ Page({
     if (!this.data.node) return;
     var self = this;
     wx.showModal({
-      title: '重命名节点', content: '输入新名称', editable: true,
-      placeholderText: this.data.node.name,
+      title: '重命名节点', content: this.data.node.name, editable: true,
+      placeholderText: this.data.node.name, confirmText: '保存',
       success: function (res) {
-        if (!res.confirm || !(res.content || '').trim()) return;
+        if (!res.confirm) return;
+        if (!(res.content || '').trim()) { wx.showToast({ title: '请输入名称', icon: 'none' }); return; }
         if (store.updateNode(self._id, { name: res.content.trim() }).ok) { wx.showToast({ title: '已保存', icon: 'success' }); self.load(); }
       }
     });
@@ -46,7 +47,7 @@ Page({
       title: '新增下级位置', content: '例如：收纳盒 A / 第二层隔板', editable: true, placeholderText: '节点名称',
       success: function (res) {
         if (!res.confirm || !(res.content || '').trim()) return;
-        var r = store.addNode(node.roomId, self._id, res.content.trim(), '收纳盒');
+        var r = store.addNode(node.roomId, self._id, res.content.trim(), '抽屉/隔层');
         if (r.ok) { wx.showToast({ title: '已添加', icon: 'success' }); self.load(); }
         else wx.showToast({ title: '添加失败：' + r.error, icon: 'none' });
       }
@@ -69,7 +70,7 @@ Page({
         var r = store.removeNode(self._id);
         if (!r.ok) {
           wx.showModal({ title: '无法删除', content: r.error === 'HAS_LINKS'
-            ? ('下有 ' + r.children + ' 个子节点、' + r.items + ' 件物品，请先处理关联。') : ('删除失败：' + r.error), showCancel: false });
+            ? ('含 ' + r.children + ' 个下级节点 / ' + r.items + ' 件物品，禁止删除') : ('删除失败：' + r.error), showCancel: false });
           return;
         }
         wx.showToast({ title: '已删除', icon: 'success' });

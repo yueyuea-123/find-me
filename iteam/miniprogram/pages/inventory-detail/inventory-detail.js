@@ -5,7 +5,7 @@ var C = require('../../utils/constants.js');
 Page({
   data: {
     name: '', balance: 0, unit: '个', threshold: 0, low: false, progress: 0,
-    units: C.UNITS, unitIndex: 0,
+    units: C.UNITS.slice(), unitIndex: 0,
     txTypes: C.INVENTORY_TX_TYPES, txType: 'in',
     amount: '', txNote: '', txs: []
   },
@@ -13,12 +13,12 @@ Page({
   onShow: function () {
     var it = store.getItem(this._id);
     var iv = store.findInventoryByItem(this._id);
-    if (!iv) { wx.showToast({ title: '该物品未启用库存', icon: 'none' }); return; }
+    if (!iv) { wx.showToast({ title: '该物品未启用库存跟踪', icon: 'none' }); return; }
     this.setData({
       name: it ? it.name : '', balance: iv.balance, unit: iv.unit,
       threshold: iv.threshold, low: iv.threshold > 0 && iv.balance <= iv.threshold,
       progress: Math.min(100, Math.max(0, Math.round(iv.balance / Math.max(1, (iv.threshold || 0) * 2) * 100))),
-      unitIndex: Math.max(0, C.UNITS.indexOf(iv.unit)),
+      units: C.withCurrent(C.UNITS, iv.unit), unitIndex: Math.max(0, C.withCurrent(C.UNITS, iv.unit).indexOf(iv.unit)),
       txs: this.mapTx()
     });
   },
@@ -48,7 +48,7 @@ Page({
   submitTx: function () {
     var d = this.data;
     var amount = Number(d.amount);
-    if (!(amount > 0)) { wx.showToast({ title: '请输入正数', icon: 'none' }); return; }
+    if (!(amount > 0)) { wx.showToast({ title: '数量必须为正数', icon: 'none' }); return; }
     if (d.txType === 'adjust' && !(d.txNote || '').trim()) {
       wx.showToast({ title: '请填写调整原因', icon: 'none' }); return;
     }
@@ -60,11 +60,14 @@ Page({
     });
     this._submitting = false;
     if (!r.ok) {
-      wx.showToast({ title: r.error === 'BELOW_ZERO' ? ('库存不足，当前 ' + r.balance) : (r.error === 'REASON_REQUIRED' ? '请填写调整原因' : '操作失败：' + r.error), icon: 'none' });
+      wx.showToast({ title: r.error === 'BELOW_ZERO'
+        ? ('库存不足：当前仅 ' + r.balance + ' ' + d.unit + '；纠错请走「调整」')
+        : (r.error === 'REASON_REQUIRED' ? '请填写调整原因' : '操作失败：' + r.error), icon: 'none' });
       return;
     }
     this.setData({ amount: '', txNote: '' });
-    wx.showToast({ title: '已记录', icon: 'success' });
+    var typeName = (C.INVENTORY_TX_TYPES.filter(function (t) { return t.key === d.txType; })[0] || {}).name || '库存';
+    wx.showToast({ title: typeName + '成功，余额 ' + r.balance, icon: 'success' });
     this.onShow();
   },
   saveSettings: function () {

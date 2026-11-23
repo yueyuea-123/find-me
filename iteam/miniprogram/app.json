@@ -68,6 +68,9 @@
       }
     ]
   },
+  "subpackages": [
+    { "root": "package3d", "name": "package3d", "pages": [] }
+  ],
   "sitemapLocation": "sitemap.json",
   "style": "v2",
   "lazyCodeLoading": "requiredComponents"

@@ -17,7 +17,8 @@
 
   <view class="card" wx:if="{{justCreated}}">
     <view class="card-t">档案已建立</view>
-    <view class="small muted">只需名称即可先建档；分类、照片、位置可随时补充，档案完善度会随之提高。</view>
+    <view class="small muted">下一步：{{nextHint}}</view>
+    <button class="btn sm primary" style="margin-top:16rpx" bindtap="goNext">{{nextBtn}}</button>
   </view>
 
   <view class="card">
@@ -49,7 +50,7 @@
     </view>
     <view class="row" style="margin-top:16rpx" wx:if="{{item.mgmt==='active'}}">
       <button class="btn sm primary" bindtap="goInventory">入库/消耗/调整</button>
-      <button class="btn sm" bindtap="goTx">交易记录</button>
+      <button class="btn sm" bindtap="goTx">查看交易流水</button>
     </view>
     <view class="row" style="margin-top:16rpx" wx:else>
       <button class="btn sm" bindtap="goTx">交易记录（只读）</button>
