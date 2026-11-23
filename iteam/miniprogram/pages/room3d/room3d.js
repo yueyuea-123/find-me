@@ -14,8 +14,8 @@ Page({
     furniture: [], selected: null, glError: '',
     bindings: null, // CR-001 F-03：当前选中模型的关联物品汇总
     // 模式1：浏览/编辑/收纳严格分权，提示随模式切换
-    hint: '点选查看家具 · 拖动空白旋转视角 · 双指缩放',
-    // 说明：编辑模式手势见 HINTS.edit —— 单指拖动移动、双指捏合缩放、双指扭转旋转、长按删除
+    hint: '点选查看家具 · 直接拖动家具摆放 · 拖空白旋转视角 · 双指缩放',
+    // 说明：编辑模式手势见 HINTS.edit —— 单指拖动移动、双指捏合缩放、点击按钮旋转、长按删除
     lib: (C.FURNITURE_CATEGORIES || []).map(function (k) {
       return { key: k, icon: (C.FURNITURE_LIB[k] || {}).icon || '▣' };
     })
@@ -23,8 +23,8 @@ Page({
 
   // 三种模式的窗口内提示（模式1）
   HINTS: {
-    browse: '点选查看家具 · 拖动空白旋转视角 · 双指缩放',
-    edit: '单指拖动移动 · 双指捏合缩放 / 扭转旋转 · 长按删除',
+    browse: '点选查看家具 · 直接拖动家具摆放 · 拖空白旋转视角 · 双指缩放',
+    edit: '单指拖动移动 · 双指捏合缩放 · 点按钮旋转 90° · 长按删除',
     store: '点家具进入收纳节点，拖动空白旋转视角'
   },
 
@@ -206,9 +206,10 @@ Page({
   _canvasXY: function (touch) { return this._touchPoint(touch); },
 
   // 模式1：浏览/编辑/收纳严格分权
-  //  浏览：点选家具=选中；拖空白=旋转视角；双指=缩放视角
-  //  编辑：单指拖家具=移动（跟手预览、抬手落盘）；双指捏合=缩放家具；双指扭转=旋转家具；长按家具=删除确认
+  //  浏览：点选家具=选中；按住家具拖=直接移动（自动切编辑模式）；拖空白=旋转视角；双指=缩放视角
+  //  编辑：单指拖家具=移动（跟手预览、抬手落盘）；双指捏合=缩放家具；旋转=点按钮每次90°；长按家具=删除确认
   //  收纳：点家具=进入该家具收纳节点；拖空白=旋转视角
+  //  真机注意：canvas 用 catchtouch* 阻止页面滚动抢走手势（见 room3d.wxml）
   onTouchStart: function (e) {
     if (!this._glRenderer || this.data.view !== '3d' || this.data.glError) return;
     this._syncCanvasRect();
@@ -235,31 +236,25 @@ Page({
         }, 600);
       }
     } else if (ts.length === 2) {
-      // 编辑模式：双指捏合缩放 + 扭转旋转选中家具；其他模式只缩放视角
+      // 编辑模式：双指捏合仅缩放选中家具（旋转已改为点击按钮，见 rotateFurniture）；其他模式缩放视角
       this._pinch = this._dist(ts);
-      this._pinchAngle = this._angle(ts);
+      this._pinchStart = this._pinch;   // 起始指距：家具缩放按相对起始的比例算，避免逐帧增量累积方向错乱
       if (this.data.mode === 'edit' && this.data.selected) {
         var rawSel = store.getFurniture(this.data.selected.id);
         this._scaleBase = this.data.selected;                       // 起始卡片尺寸（含 sz 文本）
-        this._rotBase = rawSel ? (rawSel.rotation || 0) : 0;        // 起始朝向（弧度）
         this._sizeBase = rawSel && rawSel.size ? {
           w: rawSel.size.w, h: rawSel.size.h, d: rawSel.size.d
         } : null;
-        this._twistFid = this.data.selected.id;
-        this._twistIdx = this._findIndexById(this._twistFid);
+        this._scaleFid = this.data.selected.id;
+        this._scaleIdx = this._findIndexById(this._scaleFid);
       } else {
-        this._scaleBase = null; this._sizeBase = null; this._twistFid = ''; this._twistIdx = -1;
+        this._scaleBase = null; this._sizeBase = null; this._scaleFid = ''; this._scaleIdx = -1;
       }
       this._moved = true; this._dragFid = '';
       this._clearLongPress();
     }
   },
   _clearLongPress: function () { if (this._lpTimer) { clearTimeout(this._lpTimer); this._lpTimer = null; } },
-  // 两指连线与屏幕 X 轴夹角（弧度）
-  _angle: function (ts) {
-    var a = this._touchPoint(ts[0]), b = this._touchPoint(ts[1]);
-    return Math.atan2(b.y - a.y, b.x - a.x);
-  },
   _findIndexById: function (id) {
     for (var i = 0; i < this._furniture.length; i++) if (this._furniture[i].id === id) return i;
     return -1;
@@ -272,8 +267,12 @@ Page({
       var p = this._touchPoint(ts[0]);
       var dx = p.x - this._sx, dy = p.y - this._sy;
       if (Math.abs(dx) + Math.abs(dy) > 5) { this._moved = true; this._clearLongPress(); }
-      if (this._moved && this._dragFid && this.data.mode === 'edit') {
-        // 编辑模式拖家具：累计像素位移一次换算成地面世界位移，内存预览不落盘
+      if (this._moved && this._dragFid && this.data.mode !== 'store') {
+        // 浏览/编辑模式按住家具均可拖动；浏览模式自动切到编辑，避免"提示说可拖、实际只转视角"
+        if (this.data.mode === 'browse') {
+          this.setData({ mode: 'edit', hint: this.HINTS.edit });
+        }
+        // 拖家具：累计像素位移一次换算成地面世界位移，内存预览不落盘
         if (!this._dragPx) this._dragPx = { x: 0, y: 0 };
         this._dragPx.x += dx; this._dragPx.y += dy;
         var w = this._safeGL('dragDelta', [this._dragPx.x, this._dragPx.y]);
@@ -307,22 +306,21 @@ Page({
     } else if (ts.length === 2 && this._pinch) {
       var d = this._dist(ts);
       var delta = this._pinch - d;
-      if (this.data.mode === 'edit' && this._sizeBase && this._twistFid) {
-        // 编辑双指：捏合按比例缩放 + 扭转改朝向，均只在内存预览，抬手一次性落盘
-        var factor = clampNum(delta * 0.004, -0.5, 0.5);
+      if (this.data.mode === 'edit' && this._sizeBase && this._scaleFid) {
+        // 编辑双指：按「当前指距 / 起始指距」比例缩放家具——张开变大、捏合变小，
+        // 与真机直觉一致；相对起始值计算，避免逐帧 delta 累积导致方向错乱。抬手落盘。
+        var ratio = (this._pinchStart > 0) ? (d / this._pinchStart) : 1;
+        var factor = clampNum(ratio - 1, -0.5, 0.5);
         var size = {
           w: clampNum(this._sizeBase.w * (1 + factor), 0.2, 4),
           h: clampNum(this._sizeBase.h * (1 + factor), 0.2, 4),
           d: clampNum(this._sizeBase.d * (1 + factor), 0.2, 4)
         };
-        var rot = this._rotBase + this._angleDelta(ts);
         // 预览尺寸：直接写 group.scale，不改 _raw（signature 不变 → 不重建实例）
-        this._safeGL('previewScale', [this._twistIdx, size]);
-        this._safeGL('previewRotate', [this._twistIdx, rot]);
-        this._previewSize = size; this._previewRot = rot;
-        // 卡片实时反映预览值
+        this._safeGL('previewScale', [this._scaleIdx, size]);
+        this._previewSize = size;
+        // 卡片实时反映预览尺寸
         this.setData({ selected: Object.assign({}, this.data.selected, {
-          rot: Math.round(rot * 180 / Math.PI),
           sz: fmtNum(size.w) + '×' + fmtNum(size.d) + '×' + fmtNum(size.h)
         }) });
       } else {
@@ -332,13 +330,22 @@ Page({
       this._safeRender();
     }
   },
-  // 相对起始的扭转角（归一化到 -π ~ π，避免跨 ±π 跳变）
-  _angleDelta: function (ts) {
-    if (this._pinchAngle === undefined) return 0;
-    var da = this._angle(ts) - this._pinchAngle;
-    while (da > Math.PI) da -= 2 * Math.PI;
-    while (da < -Math.PI) da += 2 * Math.PI;
-    return da;
+  // 点击按钮旋转选中家具：每次固定 90°，正顺时针 / 负逆时针
+  // 旋转改用按钮而非双指扭转，避免真机上扭转角度难以精确控制（只能近似 90° 档位）
+  rotateFurniture: function (e) {
+    if (!this.data.selected) { wx.showToast({ title: '请先点选模型', icon: 'none' }); return; }
+    var dir = Number((e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.dir) || 0);
+    if (!dir) return;
+    var fid = this.data.selected.id;
+    var f = store.getFurniture(fid);
+    if (!f) return;
+    var step = Math.PI / 2;                       // 90°
+    var rot = (f.rotation || 0) + dir * step;
+    rot = rot % (Math.PI * 2); if (rot < 0) rot += Math.PI * 2; // 归一化到 [0, 2π)
+    store.updateFurniture(fid, { rotation: Math.round(rot * 10000) / 10000 });
+    this._syncSceneToGL(); this.loadData();
+    this._safeRender();
+    wx.showToast({ title: dir > 0 ? '已顺时针旋转 90°' : '已逆时针旋转 90°', icon: 'none' });
   },
 
   onTouchEnd: function () {
@@ -352,27 +359,20 @@ Page({
       });
       wx.showToast({ title: '位置已保存', icon: 'none' });
       this._syncSceneToGL(); this.loadData();
-    } else if (this._previewSize || this._previewRot !== undefined) {
-      // 双指捏合/扭转抬手：尺寸与朝向一次性落盘
-      if (this._twistFid) {
-        var patch = {};
-        if (this._previewSize) patch.size = this._previewSize;
-        if (this._previewRot !== undefined) patch.rotation = this._previewRot;
-        if (patch.size || patch.rotation !== undefined) {
-          store.updateFurniture(this._twistFid, patch);
-          wx.showToast({ title: '已保存', icon: 'none' });
-          this._syncSceneToGL(); this.loadData();
-        }
-      }
+    } else if (this._previewSize && this._scaleFid) {
+      // 双指捏合抬手：尺寸一次性落盘（旋转改由按钮单独落盘）
+      store.updateFurniture(this._scaleFid, { size: this._previewSize });
+      wx.showToast({ title: '已保存', icon: 'none' });
+      this._syncSceneToGL(); this.loadData();
     } else if (!this._moved && !this._lpFired && this._sx !== undefined && this._hitIdx >= 0) {
       // 短按：浏览/编辑=仅选中（已在 touchstart 完成）；收纳=进入该家具收纳节点
       if (this.data.mode === 'store') this.goFurnitureNodes(this._furniture[this._hitIdx].id);
     }
     this._sx = this._sy = undefined;
-    this._pinch = null; this._pinchAngle = undefined; this._lpFired = false; this._dragFid = '';
+    this._pinch = null; this._pinchStart = 0; this._lpFired = false; this._dragFid = '';
     this._hitIdx = -1; this._dragPx = null; this._previewPos = null;
-    this._scaleBase = null; this._sizeBase = null; this._rotBase = 0;
-    this._previewSize = null; this._previewRot = undefined; this._twistFid = ''; this._twistIdx = -1;
+    this._scaleBase = null; this._sizeBase = null;
+    this._previewSize = null; this._scaleFid = ''; this._scaleIdx = -1;
   },
 
   // 拖动后把最新 raw 同步给渲染器（getData 返回 _raw 引用，updateFurniture 已落盘）

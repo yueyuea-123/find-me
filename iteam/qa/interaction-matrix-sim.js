@@ -85,16 +85,20 @@ const E = (mp, fn, arg) => mp.evaluate(fn, arg);
     }, off);
     ok('B3 浏览-双指缩放视角', b3>0, 'zoom次数=' + b3);
 
-    // B4 浏览-拖家具不移动位置
+    // B4 浏览-拖家具直接摆放（真机反馈：提示说可拖动却只旋转视角），并自动切编辑模式
     const b4 = await E(mp, arg => { const p=getCurrentPages().slice(-1)[0];
-      const idx=arg.idx, fid=p._furniture[idx].id;
+      const idx=arg.idx;
       const before=p.data.furniture[idx].px+'/'+p.data.furniture[idx].pz;
       const a={x:arg.cx,y:arg.cy,clientX:arg.cx+arg.left,clientY:arg.cy+arg.top}, b={x:arg.cx+60,y:arg.cy+40,clientX:arg.cx+60+arg.left,clientY:arg.cy+40+arg.top};
-      p.onTouchStart({touches:[a],changedTouches:[a]}); p.onTouchMove({touches:[b],changedTouches:[b]}); p.onTouchEnd({touches:[],changedTouches:[b]});
+      p.onTouchStart({touches:[a],changedTouches:[a]}); p.onTouchMove({touches:[b],changedTouches:[b]});
+      const midMode=p.data.mode;
+      p.onTouchEnd({touches:[],changedTouches:[b]});
       p.loadData();
-      return {before,after:p.data.furniture[idx].px+'/'+p.data.furniture[idx].pz};
+      return {before,after:p.data.furniture[idx].px+'/'+p.data.furniture[idx].pz,midMode};
     }, {cx:pts.hit.x, cy:pts.hit.y, idx:pts.hit.idx, ...off});
-    ok('B4 浏览-拖家具不移动', b4.before===b4.after, b4.before+' -> '+b4.after);
+    ok('B4 浏览-拖家具直接摆放', b4.before!==b4.after, b4.before+' -> '+b4.after);
+    ok('B5 浏览拖家具后自动切编辑模式', b4.midMode==='edit', 'mode=' + b4.midMode);
+    await setMode('browse'); // 后续用例从浏览模式重新起跑
 
     // ================= 编辑模式 =================
     await setMode('edit');
@@ -127,29 +131,38 @@ const E = (mp, fn, arg) => mp.evaluate(fn, arg);
     ok('E2 编辑-单指拖家具落盘移动', Math.abs(Number(e2.after.split('/')[0])-Number(e2.raw0.split('/')[0]))>0.01, e2.raw0+' -> '+e2.after);
     ok('X5 预览期卡片变化但库未变', e2.midCard!==e2.midRaw, 'card='+e2.midCard+' raw='+e2.midRaw);
 
-    // E3 编辑-双指捏合缩放家具
+    // E3 编辑-双指张开变大 / 捏合变小（方向须与真机直觉一致）
     const e3 = await E(mp, arg => { const p=getCurrentPages().slice(-1)[0];
-      const before=p.data.selected.sz;
+      const w0=parseFloat(p.data.selected.sz.split('×')[0]);
       const V=(cx,cy)=>({x:cx,y:cy,clientX:cx+arg.left,clientY:cy+arg.top});
-      const a1=V(100,100),a2=V(200,100),b1=V(60,100),b2p=V(240,100);
-      p.onTouchStart({touches:[a1,a2],changedTouches:[]}); p.onTouchMove({touches:[b1,b2p],changedTouches:[]});
-      const preview=p.data.selected.sz;
+      // 张开：指距 100 -> 240，家具应变大
+      p.onTouchStart({touches:[V(150,100),V(250,100)],changedTouches:[]});
+      p.onTouchMove({touches:[V(80,100),V(320,100)],changedTouches:[]});
+      const wOpen=parseFloat(p.data.selected.sz.split('×')[0]);
       p.onTouchEnd({touches:[],changedTouches:[]});
-      return {before,preview,after:p.data.selected&&p.data.selected.sz};
+      // 捏合：指距 240 -> 100，家具应变小
+      p.onTouchStart({touches:[V(80,100),V(320,100)],changedTouches:[]});
+      p.onTouchMove({touches:[V(150,100),V(250,100)],changedTouches:[]});
+      const wPinch=parseFloat(p.data.selected.sz.split('×')[0]);
+      p.onTouchEnd({touches:[],changedTouches:[]});
+      return {w0,wOpen,wPinch};
     }, off);
-    ok('E3 编辑-双指捏合缩放家具', e3.before!==e3.preview && e3.before!==e3.after, e3.before+' -> '+e3.after);
+    ok('E3 编辑-双指张开家具变大', e3.wOpen>e3.w0, e3.w0+' -> '+e3.wOpen);
+    ok('E7 编辑-双指捏合家具变小', e3.wPinch<e3.wOpen, e3.wOpen+' -> '+e3.wPinch);
 
-    // E4 编辑-双指扭转旋转家具
+    // E4 编辑-点击按钮旋转家具（每次90°，双指扭转已移除）
     const e4 = await E(mp, arg => { const p=getCurrentPages().slice(-1)[0];
       const before=p.data.selected.rot;
-      const V=(cx,cy)=>({x:cx,y:cy,clientX:cx+arg.left,clientY:cy+arg.top});
-      const a1=V(100,100),a2=V(200,100),b1=V(100,140),b2p=V(200,60);
-      p.onTouchStart({touches:[a1,a2],changedTouches:[]}); p.onTouchMove({touches:[b1,b2p],changedTouches:[]});
-      const preview=p.data.selected.rot;
-      p.onTouchEnd({touches:[],changedTouches:[]});
-      return {before,preview,after:p.data.selected&&p.data.selected.rot};
+      p.rotateFurniture({currentTarget:{dataset:{dir:1}}});
+      const after1=p.data.selected.rot;
+      const previewPreview = p._previewRot; // 应始终 undefined，扭转状态已移除
+      p.rotateFurniture({currentTarget:{dataset:{dir:-1}}});
+      return {before,after1,after2:p.data.selected.rot,previewPreview};
     }, off);
-    ok('E4 编辑-双指扭转旋转家具', e4.before!==e4.preview && e4.before!==e4.after, e4.before+'° -> '+e4.after+'°');
+    const e4Step = ((e4.after1 - e4.before) + 360) % 360;
+    ok('E4 编辑-点击按钮旋转90°且可逆', e4Step===90 && e4.after2===e4.before,
+      e4.before+'° -> '+e4.after1+'° -> '+e4.after2+'°');
+    ok('E5 扭转旋转状态已移除', e4.previewPreview===undefined);
 
     // E6 编辑-拖空白平移视角（打桩 pan）
     const e6 = await E(mp, arg => { const p=getCurrentPages().slice(-1)[0]; const gl=p._glRenderer;

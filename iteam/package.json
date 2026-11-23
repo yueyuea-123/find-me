@@ -7,7 +7,9 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node qa/drag-mode-test.js && node qa/pack-assets-test.js && node qa/vendor-style-compat-test.js && node qa/demo-align-verify.js && node qa/smoke-test.js && python3 qa/check_and_score.py",
+    "test:drag": "node qa/drag-mode-test.js",
+    "test:e2e": "node qa/interaction-matrix-sim.js && node qa/device-ac-test.js"
   },
   "keywords": [],
   "author": "",

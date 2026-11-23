@@ -19,7 +19,7 @@
   <block wx:if="{{view==='3d' && !glError}}">
     <view class="view3d">
       <canvas type="webgl" id="gl" class="glcanvas"
-        bindtouchstart="onTouchStart" bindtouchmove="onTouchMove" bindtouchend="onTouchEnd"></canvas>
+        catchtouchstart="onTouchStart" catchtouchmove="onTouchMove" catchtouchend="onTouchEnd"></canvas>
       <!-- 选中浮标：拖动时实时显示坐标，反馈留在窗口内 -->
       <view class="view3d-badge" wx:if="{{selected}}">已选：{{selected.name}} · X {{selected.px}} / Z {{selected.pz}}</view>
       <view class="canvas-hint">{{hint}}</view>
@@ -66,20 +66,25 @@
         <text class="muted">▸</text>
       </view>
 
-      <!-- 浏览模式：点选模型后提供明确的移动入口，保持浏览手势不变 -->
+      <!-- 浏览模式：点选模型后提供移动与旋转入口，无需切模式即可旋转 -->
       <view class="row wrap" style="margin-top:16rpx" wx:if="{{mode==='browse'}}">
         <button class="btn sm primary" bindtap="enterMoveMode">移动模型</button>
-        <text class="muted small" style="margin-left:12rpx">切换编辑模式后单指拖动模型</text>
+        <button class="btn sm" data-dir="-1" bindtap="rotateFurniture">↶ 90°</button>
+        <button class="btn sm" data-dir="1" bindtap="rotateFurniture">90° ↷</button>
       </view>
 
-      <!-- 编辑模式：手势直接操作家具（单指拖动=移动，双指捏合=缩放，双指扭转=旋转，长按=删除） -->
+      <!-- 编辑模式：单指拖动=移动，双指捏合=缩放，旋转走下方按钮（每次90°），长按=删除 -->
       <view class="ops-edit" wx:if="{{mode==='edit'}}">
         <view class="row wrap" style="margin-top:16rpx">
           <button class="btn sm primary" bindtap="editFurniture">编辑资料</button>
           <button class="btn sm" bindtap="addItemAtFurniture">添加物品</button>
           <button class="btn sm danger" bindtap="removeSelected">删除家具</button>
         </view>
-        <view class="note-inline">单指拖动移动 · 双指捏合缩放 · 双指扭转旋转 · 长按删除；越界自动钳制，不产生非法布局。</view>
+        <view class="row wrap" style="margin-top:12rpx">
+          <button class="btn sm" data-dir="-1" bindtap="rotateFurniture">↶ 逆时针 90°</button>
+          <button class="btn sm" data-dir="1" bindtap="rotateFurniture">顺时针 90° ↷</button>
+        </view>
+        <view class="note-inline">单指拖动移动 · 双指捏合缩放 · 点击按钮旋转（每次 90°）· 长按删除；越界自动钳制，不产生非法布局。</view>
       </view>
 
       <!-- 收纳模式：入口进入节点；候选确认 -->
