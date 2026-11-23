@@ -43,13 +43,13 @@ try {
     fetch('./vendor/threejs-miniprogram.js').then(r => r.text()),
     fetch('./vendor/gltf-loader.js').then(r => r.text()),
     fetch('./renderer.js').then(r => r.text()),
-    fetch('../assets/furniture/manifest.json').then(r => r.text())
+    fetch('../package3d-assets/furniture/manifest.json').then(r => r.text())
   ]);
   const [threeSrc, loaderSrc, rendererSrc] = srcs;
   window.__manifest = srcs[3];
   const manifest = JSON.parse(srcs[3]);
   for (const it of manifest.items) {
-    window.__buf[it.file] = await fetch('../assets/furniture/' + it.file).then(r => r.arrayBuffer());
+    window.__buf[it.file] = await fetch('../package3d-assets/furniture/' + it.file).then(r => r.arrayBuffer());
   }
   say('资源就绪: ' + manifest.items.length + ' 个 GLB');
 

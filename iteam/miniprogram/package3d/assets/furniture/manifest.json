@@ -1,8 +1,9 @@
 {
-  "version": "2.0",
+  "version": "3.0-white",
   "unit": "meter",
   "up": "Y",
-  "note": "Blender 5.3 程序化建模；尺寸顺序 [宽, 深, 高]；锚点为底面中心",
+  "material": "WhiteClay only, no image/texture",
+  "note": "Blender 程序化白膜；尺寸顺序 [宽,深,高]；锚点底面中心",
   "items": [
     {
       "key": "sofa",
@@ -19,9 +20,9 @@
         0
       ],
       "triangles": 528,
-      "bytes": 36116,
-      "version": "2.0",
-      "source": "Blender 5.3 procedural"
+      "bytes": 35360,
+      "version": "3.0-white",
+      "source": "Blender procedural white-clay (no textures)"
     },
     {
       "key": "bed",
@@ -38,9 +39,9 @@
         0
       ],
       "triangles": 264,
-      "bytes": 19356,
-      "version": "2.0",
-      "source": "Blender 5.3 procedural"
+      "bytes": 18796,
+      "version": "3.0-white",
+      "source": "Blender procedural white-clay (no textures)"
     },
     {
       "key": "chair",
@@ -57,9 +58,9 @@
         0
       ],
       "triangles": 308,
-      "bytes": 21744,
-      "version": "2.0",
-      "source": "Blender 5.3 procedural"
+      "bytes": 21384,
+      "version": "3.0-white",
+      "source": "Blender procedural white-clay (no textures)"
     },
     {
       "key": "table",
@@ -76,9 +77,9 @@
         0
       ],
       "triangles": 264,
-      "bytes": 18392,
-      "version": "2.0",
-      "source": "Blender 5.3 procedural"
+      "bytes": 18428,
+      "version": "3.0-white",
+      "source": "Blender procedural white-clay (no textures)"
     },
     {
       "key": "coffee",
@@ -95,9 +96,9 @@
         0
       ],
       "triangles": 308,
-      "bytes": 22284,
-      "version": "2.0",
-      "source": "Blender 5.3 procedural"
+      "bytes": 22120,
+      "version": "3.0-white",
+      "source": "Blender procedural white-clay (no textures)"
     },
     {
       "key": "wardrobe",
@@ -114,9 +115,9 @@
         0
       ],
       "triangles": 204,
-      "bytes": 14640,
-      "version": "2.0",
-      "source": "Blender 5.3 procedural"
+      "bytes": 14276,
+      "version": "3.0-white",
+      "source": "Blender procedural white-clay (no textures)"
     },
     {
       "key": "cabinet",
@@ -133,9 +134,9 @@
         0
       ],
       "triangles": 284,
-      "bytes": 20000,
-      "version": "2.0",
-      "source": "Blender 5.3 procedural"
+      "bytes": 19636,
+      "version": "3.0-white",
+      "source": "Blender procedural white-clay (no textures)"
     },
     {
       "key": "shelf",
@@ -152,9 +153,9 @@
         0
       ],
       "triangles": 1056,
-      "bytes": 62548,
-      "version": "2.0",
-      "source": "Blender 5.3 procedural"
+      "bytes": 61592,
+      "version": "3.0-white",
+      "source": "Blender procedural white-clay (no textures)"
     }
   ]
 }
