@@ -1,0 +1,1855 @@
+<!DOCTYPE html>
+<!--
+    Dwelling Lattice · 居所晶格
+    Built from the algorithmic-art viewer template.
+
+    FIXED (kept from template):
+    - Layout, Anthropic branding, seed navigation, actions
+    VARIABLE (this artwork):
+    - Isometric floor-plan algorithm, furniture arrival, item drift, badges
+-->
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dwelling Lattice · 居所晶格</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* Anthropic Brand Colors */
+        :root {
+            --anthropic-dark: #141413;
+            --anthropic-light: #faf9f5;
+            --anthropic-mid-gray: #b0aea5;
+            --anthropic-light-gray: #e8e6dc;
+            --anthropic-orange: #d97757;
+            --anthropic-blue: #6a9bcc;
+            --anthropic-green: #788c5d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--anthropic-light) 0%, #f5f3ee 100%);
+            min-height: 100vh;
+            color: var(--anthropic-dark);
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(20, 20, 19, 0.1);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .sidebar h1 {
+            font-family: 'Lora', serif;
+            font-size: 24px;
+            font-weight: 500;
+            color: var(--anthropic-dark);
+            margin-bottom: 8px;
+        }
+
+        .sidebar .subtitle {
+            color: var(--anthropic-mid-gray);
+            font-size: 14px;
+            margin-bottom: 32px;
+            line-height: 1.4;
+        }
+
+        /* Control Sections */
+        .control-section {
+            margin-bottom: 32px;
+        }
+
+        .control-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--anthropic-dark);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-section h3::before {
+            content: '•';
+            color: var(--anthropic-orange);
+            font-weight: bold;
+        }
+
+        /* Seed Controls */
+        .seed-input {
+            width: 100%;
+            background: var(--anthropic-light);
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin-bottom: 12px;
+            border: 1px solid var(--anthropic-light-gray);
+            text-align: center;
+        }
+
+        .seed-input:focus {
+            outline: none;
+            border-color: var(--anthropic-orange);
+            box-shadow: 0 0 0 2px rgba(217, 119, 87, 0.1);
+            background: white;
+        }
+
+        .seed-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .regen-button {
+            margin-bottom: 0;
+        }
+
+        /* Parameter Controls */
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--anthropic-dark);
+            margin-bottom: 8px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .slider-container input[type="range"] {
+            flex: 1;
+            height: 4px;
+            background: var(--anthropic-light-gray);
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--anthropic-orange);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            background: #c86641;
+        }
+
+        .slider-container input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: var(--anthropic-orange);
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .value-display {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: var(--anthropic-mid-gray);
+            min-width: 60px;
+            text-align: right;
+        }
+
+        /* Color Pickers */
+        .color-group {
+            margin-bottom: 16px;
+        }
+
+        .color-group label {
+            display: block;
+            font-size: 12px;
+            color: var(--anthropic-mid-gray);
+            margin-bottom: 4px;
+        }
+
+        .color-picker-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .color-picker-container input[type="color"] {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: none;
+            padding: 0;
+        }
+
+        .color-value {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: var(--anthropic-mid-gray);
+        }
+
+        /* Buttons */
+        .button {
+            background: var(--anthropic-orange);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+
+        .button:hover {
+            background: #c86641;
+            transform: translateY(-1px);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .button.secondary {
+            background: var(--anthropic-blue);
+        }
+
+        .button.secondary:hover {
+            background: #5a8bb8;
+        }
+
+        .button.tertiary {
+            background: var(--anthropic-green);
+        }
+
+        .button.tertiary:hover {
+            background: #6b7b52;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .button-row .button {
+            flex: 1;
+        }
+
+        /* Canvas Area */
+        .canvas-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 0;
+        }
+
+        #canvas-container {
+            width: 100%;
+            max-width: 1000px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(20, 20, 19, 0.1);
+            background: white;
+        }
+
+        #canvas-container canvas {
+            display: block;
+            width: 100% !important;
+            height: auto !important;
+        }
+
+        /* Loading State */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: var(--anthropic-mid-gray);
+        }
+
+        /* Responsive - Stack on mobile */
+        @media (max-width: 600px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+            }
+
+            .canvas-area {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Control Sidebar -->
+        <div class="sidebar">
+            <h1>Dwelling Lattice</h1>
+            <div class="subtitle">居所晶格 · 每一枚种子，都是一间尚未被居住的房间</div>
+
+            <!-- Seed Section (FIXED) -->
+            <div class="control-section">
+                <h3>Seed</h3>
+                <input type="number" id="seed-input" class="seed-input" value="20261124" onchange="updateSeed()">
+                <div class="seed-controls">
+                    <button class="button secondary" onclick="previousSeed()">← Prev</button>
+                    <button class="button secondary" onclick="nextSeed()">Next →</button>
+                </div>
+                <button class="button tertiary regen-button" onclick="randomSeedAndUpdate()">↻ Random</button>
+            </div>
+
+            <!-- Parameters Section -->
+            <div class="control-section">
+                <h3>Parameters</h3>
+
+                <div class="control-group">
+                    <label>Rooms · 房间数</label>
+                    <div class="slider-container">
+                        <input type="range" id="roomCount" min="3" max="9" step="1" value="6" oninput="updateParam('roomCount', this.value)">
+                        <span class="value-display" id="roomCount-value">6</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Furniture Density · 家具密度</label>
+                    <div class="slider-container">
+                        <input type="range" id="density" min="0.4" max="1.6" step="0.1" value="1.0" oninput="updateParam('density', this.value)">
+                        <span class="value-display" id="density-value">1.0</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Snap Grid · 吸附网格 (cm)</label>
+                    <div class="slider-container">
+                        <input type="range" id="snapGrid" min="2" max="25" step="1" value="5" oninput="updateParam('snapGrid', this.value)">
+                        <span class="value-display" id="snapGrid-value">5</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Items · 物品数</label>
+                    <div class="slider-container">
+                        <input type="range" id="itemCount" min="0" max="480" step="20" value="260" oninput="updateParam('itemCount', this.value)">
+                        <span class="value-display" id="itemCount-value">260</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Wall Height · 墙高 (cm)</label>
+                    <div class="slider-container">
+                        <input type="range" id="wallHeight" min="0" max="45" step="1" value="26" oninput="updateParam('wallHeight', this.value)">
+                        <span class="value-display" id="wallHeight-value">26</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Colors Section -->
+            <div class="control-section">
+                <h3>Colors</h3>
+
+                <div class="color-group">
+                    <label>Floor · 地面</label>
+                    <div class="color-picker-container">
+                        <input type="color" id="floorColor" value="#ece8dd" onchange="updateColor('floorColor', this.value)">
+                        <span class="color-value" id="floorColor-value">#ece8dd</span>
+                    </div>
+                </div>
+
+                <div class="color-group">
+                    <label>Wall · 墙体</label>
+                    <div class="color-picker-container">
+                        <input type="color" id="wallColor" value="#f6f2e8" onchange="updateColor('wallColor', this.value)">
+                        <span class="color-value" id="wallColor-value">#f6f2e8</span>
+                    </div>
+                </div>
+
+                <div class="color-group">
+                    <label>Accent · 强调色</label>
+                    <div class="color-picker-container">
+                        <input type="color" id="accentColor" value="#d97757" onchange="updateColor('accentColor', this.value)">
+                        <span class="color-value" id="accentColor-value">#d97757</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Section (FIXED) -->
+            <div class="control-section">
+                <h3>Actions</h3>
+                <div class="button-row">
+                    <button class="button" onclick="resetParameters()">Reset</button>
+                    <button class="button secondary" onclick="downloadPNG()">Download PNG</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Canvas Area -->
+        <div class="canvas-area">
+            <div id="canvas-container">
+                <div class="loading">Initializing generative art...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ═══════════════════════════════════════════════════════════════════════
+    // PARAMETERS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    let params = {
+        seed: 20261124,
+        roomCount: 6,
+        density: 1.0,
+        snapGrid: 5,
+        itemCount: 260,
+        wallHeight: 26,
+        floorColor: '#ece8dd',
+        wallColor: '#f6f2e8',
+        accentColor: '#d97757'
+    };
+
+    const defaultParams = Object.assign({}, params);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // WORLD CONSTANTS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    const CANVAS_W = 1200;
+    const CANVAS_H = 1200;
+    const PLAN_W = 1120;          // centimetres
+    const PLAN_D = 820;
+    const MIN_ROOM = 200;
+    const ISO_C = Math.cos(Math.PI / 6);
+    const ISO_S = Math.sin(Math.PI / 6);
+
+    const TYPE_LABELS = {
+        living: 'L I V I N G',
+        sleep: 'S L E E P',
+        kitchen: 'K I T C H E N',
+        bath: 'B A T H',
+        study: 'S T U D Y',
+        balcony: 'B A L C O N Y',
+        store: 'S T O R E'
+    };
+
+    // Catalogue: w = local width, d = local depth, h = height (cm)
+    const CATALOG = {
+        living: [
+            { kind: 'sofa',        w: 195, d: 88,  h: 78,  color: '#b3a58f' },
+            { kind: 'coffeeTable', w: 108, d: 58,  h: 40,  color: '#c2a07a' },
+            { kind: 'tvCabinet',   w: 150, d: 38,  h: 52,  color: '#9a8168' },
+            { kind: 'armchair',    w: 78,  d: 78,  h: 78,  color: '#a99b86' },
+            { kind: 'plant',       w: 44,  d: 44,  h: 108, color: '#8e9f7d' },
+            { kind: 'shelf',       w: 88,  d: 34,  h: 168, color: '#b09372' }
+        ],
+        sleep: [
+            { kind: 'bed',        w: 195, d: 150, h: 48,  color: '#c9c2b4' },
+            { kind: 'wardrobe',   w: 170, d: 58,  h: 195, color: '#a98d6c' },
+            { kind: 'nightstand', w: 44,  d: 42,  h: 52,  color: '#b89a78' },
+            { kind: 'shelf',      w: 82,  d: 32,  h: 160, color: '#b09372' }
+        ],
+        kitchen: [
+            { kind: 'counter',     w: 170, d: 58, h: 88,  color: '#c7b79d' },
+            { kind: 'fridge',      w: 68,  d: 66, h: 176, color: '#b9bcb6' },
+            { kind: 'diningTable', w: 135, d: 78, h: 74,  color: '#c2a07a' },
+            { kind: 'diningChair', w: 44,  d: 44, h: 84,  color: '#a88d6d' }
+        ],
+        bath: [
+            { kind: 'basin',       w: 78, d: 48, h: 82,  color: '#d3cec4' },
+            { kind: 'bathCabinet', w: 58, d: 38, h: 78,  color: '#b6a086' },
+            { kind: 'shelf',       w: 74, d: 30, h: 150, color: '#b09372' },
+            { kind: 'washer',      w: 58, d: 58, h: 84,  color: '#b9bcb6' }
+        ],
+        study: [
+            { kind: 'desk',        w: 120, d: 58, h: 74,  color: '#c2a07a' },
+            { kind: 'officeChair', w: 52,  d: 52, h: 88,  color: '#9aa3a8' },
+            { kind: 'bookshelf',   w: 110, d: 32, h: 185, color: '#a98d6c' },
+            { kind: 'cabinet',     w: 60,  d: 40, h: 78,  color: '#b6a086' }
+        ],
+        balcony: [
+            { kind: 'washer',         w: 58,  d: 58, h: 84,  color: '#b9bcb6' },
+            { kind: 'balconyCabinet', w: 110, d: 42, h: 92,  color: '#b6a086' },
+            { kind: 'shelf',          w: 74,  d: 30, h: 150, color: '#b09372' },
+            { kind: 'plant',          w: 44,  d: 44, h: 108, color: '#8e9f7d' }
+        ],
+        store: [
+            { kind: 'shelf',    w: 92, d: 36, h: 180, color: '#b09372' },
+            { kind: 'cabinet',  w: 64, d: 42, h: 80,  color: '#b6a086' },
+            { kind: 'boxStack', w: 52, d: 44, h: 66,  color: '#c7a98a' }
+        ]
+    };
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // STATE
+    // ═══════════════════════════════════════════════════════════════════════
+
+    let rooms = [];
+    let furniture = [];
+    let rugs = [];
+    let walls = [];
+    let items = [];
+    let drifters = [];
+    let drawables = [];
+
+    let viewScale = 0.65;
+    let originX = 0;
+    let originY = 0;
+    let startTime = 0;
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // SETUP / DRAW
+    // ═══════════════════════════════════════════════════════════════════════
+
+    function setup() {
+        const canvas = createCanvas(CANVAS_W, CANVAS_H);
+        canvas.parent('canvas-container');
+        pixelDensity(Math.min(2, window.devicePixelRatio || 1));
+        frameRate(30);
+        textFont('Poppins');
+        strokeJoin(ROUND);
+        strokeCap(ROUND);
+
+        const loading = document.querySelector('.loading');
+        if (loading) loading.style.display = 'none';
+
+        initializeSystem();
+    }
+
+    function draw() {
+        const t = (millis() - startTime) / 1000;
+        drawBackdrop();
+
+        const fade = 255 * easeOutCubic(constrain(t / 0.55, 0, 1));
+        drawPlanShadow(fade);
+        drawFloors(fade);
+        drawFloorGrid(fade);
+        drawRoomLabels(fade);
+        drawRugs(fade);
+        drawWallsAndFurniture(t);
+        drawDrifters(t);
+        drawItems(t);
+        drawBadges(t);
+        drawPlateTitle();
+        drawScaleBar();
+        drawCaption();
+    }
+
+    function initializeSystem() {
+        randomSeed(params.seed);
+        noiseSeed(params.seed);
+
+        startTime = millis();
+
+        buildPlan();
+        buildFurniture();
+        buildDrawables();
+        buildItems();
+
+        loop();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // PLAN GENERATION (BSP)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    function buildPlan() {
+        rooms = [];
+        rugs = [];
+        furniture = [];
+        walls = [];
+        items = [];
+        drifters = [];
+        drawables = [];
+
+        const leaves = [{ x0: 0, z0: 0, x1: PLAN_W, z1: PLAN_D }];
+        let guard = 0;
+
+        while (leaves.length < params.roomCount && guard++ < 200) {
+            let best = -1;
+            let bestArea = -1;
+            for (let i = 0; i < leaves.length; i++) {
+                const r = leaves[i];
+                if (!canSplit(r)) continue;
+                const area = (r.x1 - r.x0) * (r.z1 - r.z0);
+                if (area > bestArea) {
+                    bestArea = area;
+                    best = i;
+                }
+            }
+            if (best < 0) break;
+            const r = leaves.splice(best, 1)[0];
+            const halves = splitRoom(r);
+            leaves.push(halves[0], halves[1]);
+        }
+
+        leaves.sort((a, b) => {
+            const areaA = (a.x1 - a.x0) * (a.z1 - a.z0);
+            const areaB = (b.x1 - b.x0) * (b.z1 - b.z0);
+            return areaB - areaA;
+        });
+
+        // The largest room becomes the living room, the second the bedroom,
+        // the smallest the store. The middle programme is seeded.
+        const mid = ['kitchen', 'study', 'bath', 'balcony'];
+        shuffle(mid, true);
+        const types = [];
+        for (let i = 0; i < leaves.length; i++) {
+            if (i === 0) types.push('living');
+            else if (i === 1) types.push('sleep');
+            else if (i === leaves.length - 1 && leaves.length >= 3) types.push('store');
+            else types.push(mid[(i - 2) % mid.length]);
+        }
+
+        const base = color(params.floorColor);
+        const accent = color(params.accentColor);
+
+        rooms = leaves.map((l, i) => ({
+            x0: l.x0,
+            z0: l.z0,
+            x1: l.x1,
+            z1: l.z1,
+            type: types[i],
+            tint: lerpColor(base, accent, random(0, 0.055))
+        }));
+
+        computeView();
+    }
+
+    function canSplit(r) {
+        return (r.x1 - r.x0) >= 2 * MIN_ROOM || (r.z1 - r.z0) >= 2 * MIN_ROOM;
+    }
+
+    function splitRoom(r) {
+        const w = r.x1 - r.x0;
+        const d = r.z1 - r.z0;
+        let axis = w >= d ? 'x' : 'z';
+
+        if (axis === 'x' && w < 2 * MIN_ROOM) axis = 'z';
+        else if (axis === 'z' && d < 2 * MIN_ROOM) axis = 'x';
+
+        const other = axis === 'x' ? 'z' : 'x';
+        const otherLen = other === 'x' ? w : d;
+        if (random() < 0.25 && otherLen >= 2 * MIN_ROOM) axis = other;
+
+        const len = axis === 'x' ? w : d;
+        let cut = len * (0.42 + random() * 0.16);
+        cut = Math.round(cut / 10) * 10;
+        cut = constrain(cut, MIN_ROOM, len - MIN_ROOM);
+
+        if (axis === 'x') {
+            return [
+                { x0: r.x0, z0: r.z0, x1: r.x0 + cut, z1: r.z1 },
+                { x0: r.x0 + cut, z0: r.z0, x1: r.x1, z1: r.z1 }
+            ];
+        }
+        return [
+            { x0: r.x0, z0: r.z0, x1: r.x1, z1: r.z0 + cut },
+            { x0: r.x0, z0: r.z0 + cut, x1: r.x1, z1: r.z1 }
+        ];
+    }
+
+    function computeView() {
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        for (const x of [0, PLAN_W]) {
+            for (const z of [0, PLAN_D]) {
+                for (const y of [0, 48]) {
+                    const p = isoRaw(x, z, y);
+                    if (p.x < minX) minX = p.x;
+                    if (p.x > maxX) maxX = p.x;
+                    if (p.y < minY) minY = p.y;
+                    if (p.y > maxY) maxY = p.y;
+                }
+            }
+        }
+
+        viewScale = Math.min(
+            (CANVAS_W * 0.86) / (maxX - minX),
+            (CANVAS_H * 0.74) / (maxY - minY)
+        );
+
+        originX = CANVAS_W / 2 - ((minX + maxX) / 2) * viewScale;
+        originY = CANVAS_H / 2 - ((minY + maxY) / 2) * viewScale + 16;
+    }
+
+    function isoRaw(x, z, y) {
+        return {
+            x: (x - z) * ISO_C,
+            y: (x + z) * ISO_S - y
+        };
+    }
+
+    function isoProject(x, z, y) {
+        return {
+            x: originX + (x - z) * ISO_C * viewScale,
+            y: originY + ((x + z) * ISO_S - y) * viewScale
+        };
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // FURNITURE PLACEMENT
+    // ═══════════════════════════════════════════════════════════════════════
+
+    function buildFurniture() {
+        furniture = [];
+        rugs = [];
+
+        const g = Math.max(1, params.snapGrid);
+
+        for (const room of rooms) {
+            const inner = {
+                x0: room.x0 + 12,
+                z0: room.z0 + 12,
+                x1: room.x1 - 12,
+                z1: room.z1 - 12
+            };
+            const innerW = inner.x1 - inner.x0;
+            const innerD = inner.z1 - inner.z0;
+            if (innerW < 30 || innerD < 30) continue;
+
+            let target = Math.round((innerW * innerD) / 43000 * params.density);
+            target = constrain(target, 1, 7);
+
+            const deck = shuffle(CATALOG[room.type].slice(), true);
+            let placed = 0;
+            let deckIdx = 0;
+
+            for (let n = 0; n < target; n++) {
+                const spec = deck[deckIdx++ % deck.length];
+                let success = false;
+
+                for (let attempt = 0; attempt < 70 && !success; attempt++) {
+                    // Tall pieces belong against the two back walls. Placing
+                    // them at the near edge would curtain the room behind.
+                    const side = spec.h > 120
+                        ? (random() < 0.5 ? 0 : 1)
+                        : Math.floor(random(4));
+                    const alongX = side === 0 || side === 2;
+                    const fw = alongX ? spec.w : spec.d;
+                    const fd = alongX ? spec.d : spec.w;
+
+                    if (fw > innerW - 1 || fd > innerD - 1) continue;
+
+                    let cx, cz, rot;
+                    if (side === 0) {
+                        rot = 0;
+                        cx = random(inner.x0 + fw / 2, inner.x1 - fw / 2);
+                        cz = inner.z0 + fd / 2;
+                    } else if (side === 2) {
+                        rot = Math.PI;
+                        cx = random(inner.x0 + fw / 2, inner.x1 - fw / 2);
+                        cz = inner.z1 - fd / 2;
+                    } else if (side === 1) {
+                        rot = Math.PI * 1.5;
+                        cx = inner.x0 + fw / 2;
+                        cz = random(inner.z0 + fd / 2, inner.z1 - fd / 2);
+                    } else {
+                        rot = Math.PI / 2;
+                        cx = inner.x1 - fw / 2;
+                        cz = random(inner.z0 + fd / 2, inner.z1 - fd / 2);
+                    }
+
+                    cx = constrain(snapTo(cx, g), inner.x0 + fw / 2, inner.x1 - fw / 2);
+                    cz = constrain(snapTo(cz, g), inner.z0 + fd / 2, inner.z1 - fd / 2);
+
+                    if (overlapsAny(cx, cz, fw, fd, 10)) continue;
+
+                    addFurniture(room, spec, cx, cz, rot, fw, fd);
+                    placed++;
+                    success = true;
+                }
+
+                if (!success) {
+                    const rot = Math.floor(random(4)) * Math.PI / 2;
+                    const odd = Math.abs(Math.sin(rot)) > 0.5;
+                    const fw = odd ? spec.d : spec.w;
+                    const fd = odd ? spec.w : spec.d;
+                    if (fw <= innerW - 1 && fd <= innerD - 1) {
+                        const cx = constrain(
+                            snapTo(random(inner.x0 + fw / 2, inner.x1 - fw / 2), g),
+                            inner.x0 + fw / 2, inner.x1 - fw / 2
+                        );
+                        const cz = constrain(
+                            snapTo(random(inner.z0 + fd / 2, inner.z1 - fd / 2), g),
+                            inner.z0 + fd / 2, inner.z1 - fd / 2
+                        );
+                        if (!overlapsAny(cx, cz, fw, fd, 8)) {
+                            addFurniture(room, spec, cx, cz, rot, fw, fd);
+                            placed++;
+                        }
+                    }
+                }
+            }
+
+            if (placed === 0) {
+                const all = Object.keys(CATALOG).reduce((acc, k) => acc.concat(CATALOG[k]), []);
+                let spec = null;
+                for (const s of all) {
+                    if (s.w <= innerW - 1 && s.d <= innerD - 1) { spec = s; break; }
+                }
+                if (!spec) {
+                    spec = { kind: 'boxStack', w: Math.min(40, innerW - 2), d: Math.min(40, innerD - 2), h: 40, color: '#c7a98a' };
+                }
+                addFurniture(room, spec, (inner.x0 + inner.x1) / 2, (inner.z0 + inner.z1) / 2, 0, spec.w, spec.d);
+            }
+
+            // A rug is a floor garment, not an obstacle.
+            if ((room.type === 'living' || room.type === 'sleep') && random() < 0.66) {
+                const rw = Math.min(250, innerW * 0.64);
+                const rd = Math.min(170, innerD * 0.54);
+                if (rw > 90 && rd > 76) {
+                    rugs.push({
+                        cx: (inner.x0 + inner.x1) / 2 + random(-18, 18),
+                        cz: (inner.z0 + inner.z1) / 2 + random(-16, 16),
+                        w: rw,
+                        d: rd,
+                        rot: random() < 0.5 ? 0 : Math.PI / 2,
+                        color: lerpColor(color(params.floorColor), color(params.accentColor), 0.14 + random() * 0.06)
+                    });
+                }
+            }
+        }
+
+        furniture.forEach((f, i) => {
+            f.index = i;
+            f.count = 0;
+        });
+    }
+
+    function addFurniture(room, spec, cx, cz, rot, fw, fd) {
+        const f = {
+            kind: spec.kind,
+            w: spec.w,
+            d: spec.d,
+            h: spec.h,
+            color: spec.color,
+            cx: cx,
+            cz: cz,
+            rot: rot,
+            fw: fw,
+            fd: fd,
+            room: room,
+            sx: cx + random(-105, 105),
+            sz: cz + random(-85, 85),
+            index: 0,
+            count: 0
+        };
+
+        if (f.kind === 'shelf' || f.kind === 'bookshelf') {
+            f.books = makeBooks(f);
+        }
+        if (f.kind === 'plant') {
+            f.leaves = makeLeaves(f);
+        }
+
+        furniture.push(f);
+    }
+
+    function makeBooks(f) {
+        const levels = f.kind === 'bookshelf' ? 4 : 3;
+        const books = [];
+        const palette = ['#d97757', '#6a9bcc', '#788c5d', '#a98d6c', '#8f8577'];
+
+        for (let level = 0; level < levels; level++) {
+            const count = 3 + Math.floor(random(3));
+            let x = -f.w / 2 + 14;
+            for (let i = 0; i < count; i++) {
+                const bw = 5 + random(5);
+                if (x + bw > f.w / 2 - 12) break;
+                books.push({
+                    level: level,
+                    lx: x + bw / 2,
+                    w: bw,
+                    h: 16 + random(13),
+                    color: palette[Math.floor(random(palette.length))]
+                });
+                x += bw + 1.6 + random(2.4);
+            }
+        }
+        return books;
+    }
+
+    function makeLeaves(f) {
+        const leaves = [];
+        const greens = ['#8e9f7d', '#7c9068', '#a3b18f', '#6d8059'];
+        for (let i = 0; i < 8; i++) {
+            leaves.push({
+                lx: random(-f.w * 0.32, f.w * 0.32),
+                lz: random(-f.d * 0.32, f.d * 0.32),
+                ly: f.h * (0.36 + random(0.6)),
+                size: 10 + random(15),
+                color: greens[Math.floor(random(greens.length))]
+            });
+        }
+        return leaves;
+    }
+
+    function overlapsAny(cx, cz, fw, fd, pad) {
+        for (const f of furniture) {
+            const halfW = (fw + f.fw) / 2 + pad;
+            const halfD = (fd + f.fd) / 2 + pad;
+            if (Math.abs(cx - f.cx) < halfW && Math.abs(cz - f.cz) < halfD) return true;
+        }
+        return false;
+    }
+
+    function snapTo(v, g) {
+        return Math.round(v / g) * g;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // WALLS & DRAW ORDER
+    // ═══════════════════════════════════════════════════════════════════════
+
+    function buildDrawables() {
+        walls = [];
+        const seen = {};
+
+        function add(x1, z1, x2, z2) {
+            let ax = x1, az = z1, bx = x2, bz = z2;
+            if (ax > bx || (ax === bx && az > bz)) {
+                const tx = ax, tz = az;
+                ax = bx; az = bz; bx = tx; bz = tz;
+            }
+            const key = ax + ',' + az + ',' + bx + ',' + bz;
+            if (seen[key]) return;
+            seen[key] = true;
+            walls.push({ x1: ax, z1: az, x2: bx, z2: bz });
+        }
+
+        for (const r of rooms) {
+            add(r.x0, r.z0, r.x1, r.z0);
+            add(r.x1, r.z0, r.x1, r.z1);
+            add(r.x0, r.z1, r.x1, r.z1);
+            add(r.x0, r.z0, r.x0, r.z1);
+        }
+
+        drawables = [];
+        for (const w of walls) {
+            drawables.push({
+                kind: 'wall',
+                depth: (w.x1 + w.x2 + w.z1 + w.z2) / 2,
+                obj: w
+            });
+        }
+        for (const f of furniture) {
+            drawables.push({
+                kind: 'furn',
+                depth: f.cx + f.cz,
+                obj: f
+            });
+        }
+        drawables.sort((a, b) => a.depth - b.depth);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // ITEMS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    function buildItems() {
+        items = [];
+        drifters = [];
+
+        furniture.forEach(f => { f.count = 0; });
+
+        const hosts = furniture.filter(f => f.h > 8 && f.kind !== 'plant');
+        const unplacedN = Math.round(params.itemCount * 0.06);
+        const placedN = Math.max(0, params.itemCount - unplacedN);
+
+        if (hosts.length > 0) {
+            const weights = hosts.map(h => h.fw * h.fd);
+            const totalWeight = weights.reduce((a, b) => a + b, 0);
+
+            // Each piece has its own soft capacity, proportional to its
+            // footprint plus a seeded jitter. Counts should feel observed,
+            // not mechanically clamped to one number.
+            for (let i = 0; i < hosts.length; i++) {
+                const share = placedN * weights[i] / totalWeight;
+                hosts[i].cap = constrain(Math.round(share * 1.2 + 2 + random(0, 5)), 4, 26);
+            }
+
+            let totalCap = 0;
+            for (const h of hosts) totalCap += h.cap;
+            if (totalCap < placedN) {
+                const extra = Math.ceil((placedN - totalCap) / hosts.length);
+                for (const h of hosts) h.cap += extra;
+            }
+
+            for (let i = 0; i < placedN; i++) {
+                let host = null;
+
+                // Area-weighted selection, but no single piece of furniture
+                // may become a confetti pile. A home distributes its things.
+                for (let attempt = 0; attempt < 16; attempt++) {
+                    const candidate = weightedPick(hosts, weights);
+                    if (candidate.count < candidate.cap) {
+                        host = candidate;
+                        break;
+                    }
+                }
+                if (!host) {
+                    for (const h of hosts) {
+                        if (h.count < h.cap) { host = h; break; }
+                    }
+                }
+                if (!host) break;
+
+                host.count++;
+
+                const lx = random(-0.34, 0.34) * host.w;
+                const lz = random(-0.34, 0.34) * host.d;
+                const c = Math.cos(host.rot);
+                const s = Math.sin(host.rot);
+                const fx = host.cx + lx * c - lz * s;
+                const fz = host.cz + lx * s + lz * c;
+                const fy = host.h + 1.5 + random(0, 3);
+
+                items.push({
+                    fx: fx,
+                    fz: fz,
+                    fy: fy,
+                    sx: random(host.room.x0 - 50, host.room.x1 + 50),
+                    sz: random(host.room.z0 - 50, host.room.z1 + 50),
+                    sy: 150 + random(0, 190),
+                    depth: host.cx + host.cz,
+                    delay: 1.45 + host.index * 0.018 + random(0, 0.6),
+                    dur: 0.62 + random(0, 0.32),
+                    r: 1.5 + random(0, 1.0),
+                    col: itemColor()
+                });
+            }
+        }
+
+        for (let i = 0; i < unplacedN; i++) {
+            drifters.push({
+                x: random(70, PLAN_W - 70),
+                z: random(70, PLAN_D - 70),
+                y: 120 + random(0, 210),
+                phase: random(Math.PI * 2),
+                speed: random(0.12, 0.34),
+                r: 2.0 + random(0, 1.2),
+                col: itemColor()
+            });
+        }
+
+        items.sort((a, b) => a.depth - b.depth);
+    }
+
+    function weightedPick(list, weights) {
+        let total = 0;
+        for (const w of weights) total += w;
+        let r = random(total);
+        for (let i = 0; i < list.length; i++) {
+            r -= weights[i];
+            if (r <= 0) return list[i];
+        }
+        return list[list.length - 1];
+    }
+
+    function itemColor() {
+        const r = random();
+        if (r < 0.75) return color(params.accentColor);
+        if (r < 0.92) return color('#788c5d');
+        return color('#6a9bcc');
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // RENDERING — ATMOSPHERE & FLOOR
+    // ═══════════════════════════════════════════════════════════════════════
+
+    function drawBackdrop() {
+        background(250, 249, 245);
+        const ctx = drawingContext;
+        const g = ctx.createRadialGradient(
+            CANVAS_W * 0.5, CANVAS_H * 0.4, 90,
+            CANVAS_W * 0.5, CANVAS_H * 0.5, CANVAS_W * 0.78
+        );
+        g.addColorStop(0, 'rgba(255,255,255,0.92)');
+        g.addColorStop(0.6, 'rgba(250,249,245,0)');
+        g.addColorStop(1, 'rgba(232,230,220,0.5)');
+        ctx.save();
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+        ctx.restore();
+    }
+
+    function drawPlanShadow(fade) {
+        const pts = footprintPoints(PLAN_W / 2, PLAN_D / 2, PLAN_W, PLAN_D, 0, 0);
+        noStroke();
+
+        push();
+        translate(7, 28);
+        fill(24, 22, 18, 14 * fade / 255);
+        polygon(pts);
+        pop();
+
+        push();
+        translate(12, 44);
+        fill(24, 22, 18, 7 * fade / 255);
+        polygon(pts);
+        pop();
+    }
+
+    function drawFloors(fade) {
+        for (const r of rooms) {
+            const pts = footprintPoints(
+                (r.x0 + r.x1) / 2,
+                (r.z0 + r.z1) / 2,
+                r.x1 - r.x0,
+                r.z1 - r.z0,
+                0,
+                0
+            );
+
+            fillC(r.tint, fade);
+            noStroke();
+            polygon(pts);
+
+            noFill();
+            stroke(30, 28, 24, 18 * fade / 255);
+            strokeWeight(0.8);
+            polygon(pts);
+        }
+    }
+
+    function drawFloorGrid(fade) {
+        const step = Math.max(8, params.snapGrid * 4);
+
+        for (const r of rooms) {
+            stroke(30, 28, 24, 12 * fade / 255);
+            strokeWeight(0.65);
+            noFill();
+
+            for (let x = Math.ceil(r.x0 / step) * step; x < r.x1; x += step) {
+                if (x <= r.x0 + 0.2) continue;
+                const a = isoProject(x, r.z0, 0.25);
+                const b = isoProject(x, r.z1, 0.25);
+                line(a.x, a.y, b.x, b.y);
+            }
+            for (let z = Math.ceil(r.z0 / step) * step; z < r.z1; z += step) {
+                if (z <= r.z0 + 0.2) continue;
+                const a = isoProject(r.x0, z, 0.25);
+                const b = isoProject(r.x1, z, 0.25);
+                line(a.x, a.y, b.x, b.y);
+            }
+        }
+    }
+
+    function drawRoomLabels(fade) {
+        textAlign(CENTER, CENTER);
+        textSize(9.5);
+        noStroke();
+        for (const r of rooms) {
+            const p = isoProject((r.x0 + r.x1) / 2, (r.z0 + r.z1) / 2, 0.5);
+            fill(30, 28, 24, 64 * fade / 255);
+            text(TYPE_LABELS[r.type], p.x, p.y + 4);
+        }
+    }
+
+    function drawRugs(fade) {
+        for (const r of rugs) {
+            const pts = footprintPoints(r.cx, r.cz, r.w, r.d, r.rot, 0.6);
+            fillC(r.color, 150 * fade / 255);
+            noStroke();
+            polygon(pts);
+
+            noFill();
+            strokeC(params.accentColor, 45 * fade / 255);
+            strokeWeight(1);
+            polygon(pts);
+
+            const inner = footprintPoints(r.cx, r.cz, r.w - 20, r.d - 20, r.rot, 0.8);
+            strokeC(params.accentColor, 30 * fade / 255);
+            polygon(inner);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // RENDERING — WALLS & FURNITURE
+    // ═══════════════════════════════════════════════════════════════════════
+
+    function drawWallsAndFurniture(t) {
+        for (const d of drawables) {
+            if (d.kind === 'wall') drawWall(d.obj, t);
+            else drawFurniture(d.obj, t);
+        }
+    }
+
+    function drawWall(w, t) {
+        const rise = easeOutCubic(constrain((t - 0.04) / 0.75, 0, 1));
+        const h = params.wallHeight * rise;
+        if (h < 0.3) return;
+
+        const a = isoProject(w.x1, w.z1, 0);
+        const b = isoProject(w.x2, w.z2, 0);
+        const at = isoProject(w.x1, w.z1, h);
+        const bt = isoProject(w.x2, w.z2, h);
+
+        const alongX = Math.abs(w.x2 - w.x1) > Math.abs(w.z2 - w.z1);
+        const face = shade(params.wallColor, alongX ? -0.10 : -0.19);
+
+        noStroke();
+        fill(face);
+        quad(a.x, a.y, b.x, b.y, bt.x, bt.y, at.x, at.y);
+
+        const hb = h * 0.2;
+        const ab = isoProject(w.x1, w.z1, hb);
+        const bb = isoProject(w.x2, w.z2, hb);
+        fillC(shade(params.wallColor, -0.24), 85);
+        quad(a.x, a.y, b.x, b.y, bb.x, bb.y, ab.x, ab.y);
+
+        strokeC(shade(params.wallColor, -0.42), 155);
+        strokeWeight(1.05);
+        line(at.x, at.y, bt.x, bt.y);
+    }
+
+    function drawFurniture(f, t) {
+        const delay = 0.34 + f.index * 0.032;
+        const p = constrain((t - delay) / 0.9, 0, 1);
+        const e = easeInOutCubic(p);
+
+        const cx = lerp(f.sx, f.cx, e);
+        const cz = lerp(f.sz, f.cz, e);
+        const lift = (1 - e) * (205 + f.h * 0.5);
+
+        if (p > 0.001 && p < 1) drawSnapTarget(f, 1 - e);
+
+        // footprint shadow
+        const shadow = footprintPoints(cx, cz, f.fw * 1.03, f.fd * 1.03, 0, 0.2);
+        noStroke();
+        fill(24, 22, 18, 11 * e);
+        polygon(shadow);
+
+        const prevAlpha = drawingContext.globalAlpha;
+        drawingContext.globalAlpha = constrain(p * 5.5, 0, 1);
+
+        drawBody(f, cx, cz, lift);
+
+        drawingContext.globalAlpha = prevAlpha;
+    }
+
+    function drawSnapTarget(f, k) {
+        const pts = footprintPoints(f.cx, f.cz, f.fw, f.fd, 0, 0.45);
+        push();
+        noFill();
+        strokeC(params.accentColor, 115 * k);
+        strokeWeight(1);
+        drawingContext.setLineDash([5, 5]);
+        polygon(pts);
+        drawingContext.setLineDash([]);
+
+        const c = isoProject(f.cx, f.cz, 0.45);
+        strokeC(params.accentColor, 85 * k);
+        line(c.x - 7, c.y, c.x + 7, c.y);
+        line(c.x, c.y - 7, c.x, c.y + 7);
+        pop();
+    }
+
+    function drawBody(f, cx, cz, yOff) {
+        const c = f.color;
+        const w = f.w;
+        const d = f.d;
+        const h = f.h;
+
+        switch (f.kind) {
+            case 'sofa':
+            case 'armchair': {
+                const baseH = f.kind === 'sofa' ? 30 : 26;
+                const armW = f.kind === 'sofa' ? 16 : 12;
+                const backH = h - baseH;
+
+                boxAt(f, cx, cz, yOff, 0, 0, 0, w, d, baseH, c);
+                boxAt(f, cx, cz, yOff, 0, -d / 2 + 9, baseH, w - 2 * armW, 18, backH, shade(c, -0.14));
+                boxAt(f, cx, cz, yOff, -w / 2 + armW / 2, 0, baseH, armW, d * 0.82, h - baseH - 6, shade(c, -0.04));
+                boxAt(f, cx, cz, yOff, w / 2 - armW / 2, 0, baseH, armW, d * 0.82, h - baseH - 6, shade(c, -0.04));
+                boxAt(f, cx, cz, yOff, 0, d * 0.06, baseH, w - 2 * armW - 4, d * 0.56, 10, shade(c, 0.12));
+                break;
+            }
+
+            case 'bed': {
+                boxAt(f, cx, cz, yOff, 0, -d / 2 + 5, 0, w - 10, 10, h * 0.92, shade(c, -0.12));
+                boxAt(f, cx, cz, yOff, 0, 0, 0, w, d, 26, c);
+                boxAt(f, cx, cz, yOff, 0, 0, 26, w - 14, d - 14, 18, shade(c, 0.16));
+
+                const py = 44;
+                boxAt(f, cx, cz, yOff, -w * 0.22, -d / 2 + 24, py, w * 0.28, d * 0.22, 7, shade(c, 0.3));
+                boxAt(f, cx, cz, yOff, w * 0.22, -d / 2 + 24, py, w * 0.28, d * 0.22, 7, shade(c, 0.3));
+                boxAt(f, cx, cz, yOff, 0, d * 0.10, py - 1, w - 16, d * 0.46, 4,
+                    lerpColor(color(c), color(params.accentColor), 0.18));
+                break;
+            }
+
+            case 'coffeeTable':
+            case 'diningTable':
+            case 'desk': {
+                const topH = f.kind === 'desk' ? 7 : 6;
+                const legH = h - topH;
+                const lx = w / 2 - 8;
+                const lz = d / 2 - 8;
+
+                for (const sx of [-1, 1]) {
+                    for (const sz of [-1, 1]) {
+                        boxAt(f, cx, cz, yOff, sx * lx, sz * lz, 0, 7, 7, legH, shade(c, -0.18));
+                    }
+                }
+                boxAt(f, cx, cz, yOff, 0, 0, legH, w, d, topH, shade(c, 0.08));
+
+                if (f.kind === 'desk') {
+                    boxAt(f, cx, cz, yOff, w * 0.18, 0, legH - 16, w * 0.36, d - 16, 14, shade(c, -0.06));
+                }
+                break;
+            }
+
+            case 'diningChair':
+            case 'officeChair': {
+                const seatY = h - 42;
+
+                if (f.kind === 'officeChair') {
+                    boxAt(f, cx, cz, yOff, 0, 0, 0, 10, 10, seatY - 4, shade(c, -0.25));
+                    boxAt(f, cx, cz, yOff, 0, 0, 0, w * 0.62, d * 0.62, 5, shade(c, -0.3));
+                } else {
+                    for (const sx of [-1, 1]) {
+                        for (const sz of [-1, 1]) {
+                            boxAt(f, cx, cz, yOff, sx * (w / 2 - 5), sz * (d / 2 - 5), 0, 5, 5, seatY, shade(c, -0.2));
+                        }
+                    }
+                }
+                boxAt(f, cx, cz, yOff, 0, 0, seatY, w, d, 7, shade(c, 0.1));
+                boxAt(f, cx, cz, yOff, 0, -d / 2 + 5, seatY + 7, w, 7, 30, shade(c, -0.08));
+                break;
+            }
+
+            case 'shelf':
+            case 'bookshelf': {
+                boxAt(f, cx, cz, yOff, 0, -d / 2 + 3, 0, w, 6, h, shade(c, -0.1));
+                boxAt(f, cx, cz, yOff, -w / 2 + 5, 0, 0, 10, d, h, shade(c, -0.04));
+                boxAt(f, cx, cz, yOff, w / 2 - 5, 0, 0, 10, d, h, shade(c, -0.04));
+
+                const levels = f.kind === 'bookshelf' ? 4 : 3;
+                for (let i = 0; i < levels; i++) {
+                    const sy = 24 + (h - 46) * (i / (levels - 1));
+                    boxAt(f, cx, cz, yOff, 0, 0, sy, w - 20, d - 8, 4, shade(c, 0.04));
+                }
+
+                if (f.books) {
+                    for (const b of f.books) {
+                        const sy = 28 + (h - 46) * (b.level / (levels - 1));
+                        boxAt(f, cx, cz, yOff, b.lx, 0, sy, b.w, 16, b.h, b.color);
+                    }
+                }
+                break;
+            }
+
+            case 'plant': {
+                const potH = h * 0.34;
+                boxAt(f, cx, cz, yOff, 0, 0, 0, w * 0.62, d * 0.62, potH,
+                    lerpColor(color(c), color('#c98a6b'), 0.35));
+                drawLeaves(f, cx, cz, yOff);
+                break;
+            }
+
+            case 'boxStack': {
+                boxAt(f, cx, cz, yOff, -w * 0.10, -d * 0.08, 0, w * 0.8, d * 0.8, h * 0.55, shade(c, 0.02));
+                boxAt(f, cx, cz, yOff, w * 0.16, d * 0.10, h * 0.55, w * 0.5, d * 0.48, h * 0.4, shade(c, -0.1));
+                break;
+            }
+
+            case 'basin': {
+                boxAt(f, cx, cz, yOff, 0, 0, 0, w, d, h * 0.92, shade(c, -0.04));
+                boxAt(f, cx, cz, yOff, 0, 0, h * 0.92, w, d, h * 0.08, shade(c, 0.2));
+
+                const p = isoProject(cx, cz, h + 0.5 + yOff);
+                fillC(shade(c, 0.35), 255);
+                noStroke();
+                ellipse(p.x, p.y, w * viewScale * 0.34, d * viewScale * 0.20);
+                fillC(shade(c, -0.12), 255);
+                ellipse(p.x, p.y, w * viewScale * 0.24, d * viewScale * 0.13);
+                break;
+            }
+
+            case 'washer': {
+                boxAt(f, cx, cz, yOff, 0, 0, 0, w, d, h, c);
+                boxAt(f, cx, cz, yOff, 0, 0, h - 4, w - 6, d - 6, 4, shade(c, 0.22));
+
+                const p = isoProject(cx, cz, h + 0.3 + yOff);
+                noFill();
+                strokeC(shade(c, -0.32), 180);
+                strokeWeight(1.2);
+                ellipse(p.x, p.y, w * viewScale * 0.30, d * viewScale * 0.16);
+                break;
+            }
+
+            case 'fridge': {
+                boxAt(f, cx, cz, yOff, 0, 0, 0, w, d, h, c);
+                boxAt(f, cx, cz, yOff, 0, 0, h - 4, w - 4, d - 4, 4, shade(c, 0.2));
+
+                if (faceVisible(f, 0, 1)) {
+                    const a = lp(f, cx, cz, 0, d / 2 + 0.4, h * 0.62, yOff);
+                    const b = lp(f, cx, cz, w * 0.5, d / 2 + 0.4, h * 0.62, yOff);
+                    strokeC(shade(c, -0.3), 70);
+                    strokeWeight(0.8);
+                    line(a.x, a.y, b.x, b.y);
+                }
+                break;
+            }
+
+            case 'nightstand':
+            case 'cabinet':
+            case 'tvCabinet':
+            case 'wardrobe':
+            case 'bathCabinet':
+            case 'balconyCabinet':
+            case 'counter': {
+                boxAt(f, cx, cz, yOff, 0, 0, 0, w, d, h, c);
+                boxAt(f, cx, cz, yOff, 0, 0, h - 4, w - 5, d - 5, 4, shade(c, 0.16));
+
+                if (faceVisible(f, 0, 1)) {
+                    const px0 = -w / 2 + 8;
+                    const px1 = w / 2 - 8;
+                    const py0 = 9;
+                    const py1 = h - 9;
+
+                    if (f.kind === 'wardrobe') {
+                        frontPanel(f, cx, cz, yOff, px0, -2, py0, py1, shade(c, 0.05));
+                        frontPanel(f, cx, cz, yOff, 2, px1, py0, py1, shade(c, 0.05));
+
+                        for (const sx of [-1, 1]) {
+                            const hp = lp(f, cx, cz, sx * 4.5, d / 2 + 1.2, h * 0.55, yOff);
+                            fillC(shade(c, -0.35), 160);
+                            noStroke();
+                            circle(hp.x, hp.y, 2.4);
+                        }
+                    } else {
+                        frontPanel(f, cx, cz, yOff, px0, px1, py0, py1, shade(c, 0.035));
+
+                        const hp = lp(f, cx, cz, w / 2 - 15, d / 2 + 1.2, h * 0.55, yOff);
+                        fillC(shade(c, -0.35), 140);
+                        noStroke();
+                        circle(hp.x, hp.y, 2.2);
+                    }
+                }
+                break;
+            }
+
+            default:
+                boxAt(f, cx, cz, yOff, 0, 0, 0, w, d, h, c);
+        }
+    }
+
+    function drawLeaves(f, cx, cz, yOff) {
+        const c = Math.cos(f.rot);
+        const s = Math.sin(f.rot);
+
+        for (const leaf of f.leaves) {
+            const wx = cx + leaf.lx * c - leaf.lz * s;
+            const wz = cz + leaf.lx * s + leaf.lz * c;
+            const p = isoProject(wx, wz, leaf.ly + yOff);
+            fillC(leaf.color, 215);
+            noStroke();
+            circle(p.x, p.y, leaf.size);
+        }
+    }
+
+    // Isometric box helper
+    function boxAt(f, cx, cz, yOff, lx, lz, y, w, d, h, col) {
+        const cosR = Math.cos(f.rot);
+        const sinR = Math.sin(f.rot);
+        const corners = [[-w / 2, -d / 2], [w / 2, -d / 2], [w / 2, d / 2], [-w / 2, d / 2]];
+
+        const B = [];
+        const T = [];
+
+        for (const corner of corners) {
+            const px = corner[0];
+            const pz = corner[1];
+            const wx = cx + lx + px * cosR - pz * sinR;
+            const wz = cz + lz + px * sinR + pz * cosR;
+            B.push(isoProject(wx, wz, y + yOff));
+            T.push(isoProject(wx, wz, y + h + yOff));
+        }
+
+        const normals = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+
+        for (let i = 0; i < 4; i++) {
+            const nx = normals[i][0];
+            const nz = normals[i][1];
+            const wnx = nx * cosR - nz * sinR;
+            const wnz = nx * sinR + nz * cosR;
+            if (wnx + wnz <= 0.0001) continue;
+
+            const j = (i + 1) % 4;
+            const faceCol = Math.abs(wnx) >= Math.abs(wnz) ? shade(col, -0.15) : shade(col, -0.27);
+
+            fill(faceCol);
+            noStroke();
+            quad(B[i].x, B[i].y, B[j].x, B[j].y, T[j].x, T[j].y, T[i].x, T[i].y);
+
+            noFill();
+            stroke(30, 28, 24, 16);
+            strokeWeight(0.65);
+            quad(B[i].x, B[i].y, B[j].x, B[j].y, T[j].x, T[j].y, T[i].x, T[i].y);
+        }
+
+        fillC(shade(col, 0.17), 255);
+        noStroke();
+        quad(T[0].x, T[0].y, T[1].x, T[1].y, T[2].x, T[2].y, T[3].x, T[3].y);
+
+        noFill();
+        stroke(30, 28, 24, 18);
+        strokeWeight(0.65);
+        quad(T[0].x, T[0].y, T[1].x, T[1].y, T[2].x, T[2].y, T[3].x, T[3].y);
+    }
+
+    function faceVisible(f, nx, nz) {
+        const c = Math.cos(f.rot);
+        const s = Math.sin(f.rot);
+        const wnx = nx * c - nz * s;
+        const wnz = nx * s + nz * c;
+        return wnx + wnz > 0.0001;
+    }
+
+    function lp(f, cx, cz, lx, lz, y, yOff) {
+        const c = Math.cos(f.rot);
+        const s = Math.sin(f.rot);
+        const wx = cx + lx * c - lz * s;
+        const wz = cz + lx * s + lz * c;
+        return isoProject(wx, wz, y + yOff);
+    }
+
+    // A flat door / drawer panel sitting just proud of the front face.
+    function frontPanel(f, cx, cz, yOff, lx0, lx1, y0, y1, col) {
+        const z = f.d / 2 + 0.55;
+        const p1 = lp(f, cx, cz, lx0, z, y0, yOff);
+        const p2 = lp(f, cx, cz, lx1, z, y0, yOff);
+        const p3 = lp(f, cx, cz, lx1, z, y1, yOff);
+        const p4 = lp(f, cx, cz, lx0, z, y1, yOff);
+
+        fillC(col, 255);
+        noStroke();
+        quad(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p4.x, p4.y);
+
+        noFill();
+        strokeC(shade(col, -0.28), 75);
+        strokeWeight(0.7);
+        quad(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p4.x, p4.y);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // RENDERING — ITEMS, BADGES, ANNOTATIONS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    function drawItems(t) {
+        noStroke();
+
+        for (const it of items) {
+            const p = constrain((t - it.delay) / it.dur, 0, 1);
+            if (p <= 0) continue;
+
+            const e = easeInOutCubic(p);
+            const x = lerp(it.sx, it.fx, e);
+            const z = lerp(it.sz, it.fz, e);
+            const y = lerp(it.sy, it.fy, e) + Math.sin(Math.PI * e) * 34;
+            const pt = isoProject(x, z, y);
+
+            fillC(it.col, 185 * p);
+            circle(pt.x, pt.y, it.r * 2);
+        }
+    }
+
+    function drawDrifters(t) {
+        noFill();
+        for (const d of drifters) {
+            const sway = Math.sin(t * d.speed + d.phase);
+            const x = d.x + sway * 16;
+            const z = d.z + Math.cos(t * d.speed * 0.8 + d.phase) * 12;
+            const y = d.y + Math.sin(t * d.speed * 1.3 + d.phase * 1.7) * 7;
+            const pt = isoProject(x, z, y);
+
+            strokeC(d.col, 105);
+            strokeWeight(0.9);
+            circle(pt.x, pt.y, d.r * 2);
+        }
+    }
+
+    function drawBadges(t) {
+        for (const f of furniture) {
+            if (!f.count) continue;
+
+            const appear = 2.65 + f.index * 0.018;
+            const a = easeOutCubic(constrain((t - appear) / 0.5, 0, 1));
+            if (a <= 0.01) continue;
+
+            const p = isoProject(f.cx, f.cz, f.h + 15);
+            const label = String(f.count);
+
+            textFont('Poppins');
+            textSize(11);
+            const tw = textWidth(label);
+            const bw = tw + 27;
+            const bh = 18;
+            const x = constrain(p.x, bw / 2 + 8, CANVAS_W - bw / 2 - 8);
+            const y = constrain(p.y, bh / 2 + 8, CANVAS_H - bh / 2 - 8);
+
+            noStroke();
+            fill(250, 249, 245, 238 * a);
+            rect(x - bw / 2, y - bh / 2, bw, bh, 9, 9);
+
+            noFill();
+            strokeC(params.accentColor, 85 * a);
+            strokeWeight(0.8);
+            rect(x - bw / 2, y - bh / 2, bw, bh, 9, 9);
+
+            noStroke();
+            fillC(params.accentColor, 235 * a);
+            circle(x - bw / 2 + 9, y, 4);
+
+            fill(20, 20, 19, 190 * a);
+            textAlign(LEFT, CENTER);
+            text(label, x - bw / 2 + 15, y + 0.5);
+        }
+    }
+
+    function drawPlateTitle() {
+        noStroke();
+        fillC(params.accentColor, 215);
+        rect(36, 46, 26, 2.5);
+
+        fill(20, 20, 19, 150);
+        textFont('Lora');
+        textSize(20);
+        textAlign(LEFT, TOP);
+        text('Dwelling Lattice', 36, 57);
+
+        fill(20, 20, 19, 92);
+        textFont('Poppins');
+        textSize(9.5);
+        text('居所晶格  ·  A GENERATIVE FLOOR PLAN', 37, 85);
+    }
+
+    function drawScaleBar() {
+        const z = PLAN_D + 46;
+        const a = isoProject(0, z, 0);
+        const b = isoProject(100, z, 0);
+
+        stroke(30, 28, 24, 110);
+        strokeWeight(1.3);
+        line(a.x, a.y, b.x, b.y);
+        line(a.x, a.y - 5, a.x, a.y + 5);
+        line(b.x, b.y - 5, b.x, b.y + 5);
+
+        noStroke();
+        fill(30, 28, 24, 110);
+        textSize(9.5);
+        textAlign(CENTER, TOP);
+        text('1 m', (a.x + b.x) / 2, (a.y + b.y) / 2 + 6);
+    }
+
+    function drawCaption() {
+        noStroke();
+        fill(30, 28, 24, 95);
+        textFont('Courier New');
+        textSize(10);
+        textAlign(LEFT, BOTTOM);
+        text(
+            'SEED ' + params.seed +
+            '   ·   ' + rooms.length + ' ROOMS' +
+            '   ·   ' + furniture.length + ' PIECES' +
+            '   ·   ' + params.itemCount + ' ITEMS' +
+            '   ·   SNAP ' + params.snapGrid + ' CM',
+            34, CANVAS_H - 28
+        );
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // DRAWING UTILITIES
+    // ═══════════════════════════════════════════════════════════════════════
+
+    function footprintPoints(cx, cz, w, d, rot, y) {
+        const c = Math.cos(rot);
+        const s = Math.sin(rot);
+        const corners = [[-w / 2, -d / 2], [w / 2, -d / 2], [w / 2, d / 2], [-w / 2, d / 2]];
+
+        return corners.map(corner => {
+            const px = corner[0];
+            const pz = corner[1];
+            return isoProject(cx + px * c - pz * s, cz + px * s + pz * c, y);
+        });
+    }
+
+    function polygon(pts) {
+        beginShape();
+        for (const p of pts) vertex(p.x, p.y);
+        endShape(CLOSE);
+    }
+
+    function fillC(c, a) {
+        const col = color(c);
+        fill(red(col), green(col), blue(col), a);
+    }
+
+    function strokeC(c, a) {
+        const col = color(c);
+        stroke(red(col), green(col), blue(col), a);
+    }
+
+    function shade(c, amt) {
+        const base = color(c);
+        if (amt >= 0) return lerpColor(base, color(255, 255, 255), amt);
+        return lerpColor(base, color(20, 20, 19), -amt);
+    }
+
+    function easeInOutCubic(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    function easeOutCubic(t) {
+        return 1 - Math.pow(1 - t, 3);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // UI CONTROL HANDLERS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    const PARAM_IDS = ['roomCount', 'density', 'snapGrid', 'itemCount', 'wallHeight'];
+    const COLOR_IDS = ['floorColor', 'wallColor', 'accentColor'];
+
+    function updateParam(paramName, value) {
+        const v = parseFloat(value);
+        if (isNaN(v)) return;
+
+        params[paramName] = v;
+
+        const display = document.getElementById(paramName + '-value');
+        if (display) {
+            display.textContent = paramName === 'density' ? v.toFixed(1) : String(Math.round(v));
+        }
+
+        initializeSystem();
+    }
+
+    function updateColor(colorId, value) {
+        params[colorId] = value;
+
+        const display = document.getElementById(colorId + '-value');
+        if (display) display.textContent = value;
+
+        initializeSystem();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // SEED CONTROL FUNCTIONS (FIXED)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    function updateSeedDisplay() {
+        const input = document.getElementById('seed-input');
+        if (input) input.value = params.seed;
+    }
+
+    function updateSeed() {
+        const input = document.getElementById('seed-input');
+        const newSeed = parseInt(input.value, 10);
+        if (newSeed && newSeed > 0) {
+            params.seed = newSeed;
+            initializeSystem();
+        } else {
+            updateSeedDisplay();
+        }
+    }
+
+    function previousSeed() {
+        params.seed = Math.max(1, params.seed - 1);
+        updateSeedDisplay();
+        initializeSystem();
+    }
+
+    function nextSeed() {
+        params.seed = params.seed + 1;
+        updateSeedDisplay();
+        initializeSystem();
+    }
+
+    function randomSeedAndUpdate() {
+        params.seed = Math.floor(Math.random() * 999999) + 1;
+        updateSeedDisplay();
+        initializeSystem();
+    }
+
+    function resetParameters() {
+        params = Object.assign({}, defaultParams);
+        syncUI();
+        initializeSystem();
+    }
+
+    function downloadPNG() {
+        saveCanvas('dwelling-lattice-' + params.seed, 'png');
+    }
+
+    function syncUI() {
+        for (const id of PARAM_IDS) {
+            const el = document.getElementById(id);
+            if (el) el.value = params[id];
+
+            const display = document.getElementById(id + '-value');
+            if (display) {
+                display.textContent = id === 'density'
+                    ? Number(params[id]).toFixed(1)
+                    : String(Math.round(params[id]));
+            }
+        }
+
+        for (const id of COLOR_IDS) {
+            const el = document.getElementById(id);
+            if (el) el.value = params[id];
+
+            const display = document.getElementById(id + '-value');
+            if (display) display.textContent = params[id];
+        }
+
+        updateSeedDisplay();
+    }
+
+    window.addEventListener('load', function () {
+        updateSeedDisplay();
+    });
+    </script>
+</body>
+</html>
