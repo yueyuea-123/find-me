@@ -1,0 +1,161 @@
+{
+  "version": "3.0-white",
+  "unit": "meter",
+  "up": "Y",
+  "material": "WhiteClay only, no image/texture",
+  "note": "Blender 程序化白膜；尺寸顺序 [宽,深,高]；锚点底面中心",
+  "items": [
+    {
+      "key": "sofa",
+      "name": "沙发",
+      "file": "sofa.glb",
+      "size": [
+        2.0,
+        0.9,
+        0.8
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 528,
+      "bytes": 35360,
+      "version": "3.0-white",
+      "source": "Blender procedural white-clay (no textures)"
+    },
+    {
+      "key": "bed",
+      "name": "床",
+      "file": "bed.glb",
+      "size": [
+        1.5,
+        2.0,
+        0.5
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 264,
+      "bytes": 18796,
+      "version": "3.0-white",
+      "source": "Blender procedural white-clay (no textures)"
+    },
+    {
+      "key": "chair",
+      "name": "椅子",
+      "file": "chair.glb",
+      "size": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 308,
+      "bytes": 21384,
+      "version": "3.0-white",
+      "source": "Blender procedural white-clay (no textures)"
+    },
+    {
+      "key": "table",
+      "name": "桌",
+      "file": "table.glb",
+      "size": [
+        1.4,
+        0.8,
+        0.75
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 264,
+      "bytes": 18428,
+      "version": "3.0-white",
+      "source": "Blender procedural white-clay (no textures)"
+    },
+    {
+      "key": "coffee",
+      "name": "茶几",
+      "file": "coffee.glb",
+      "size": [
+        1.0,
+        0.6,
+        0.4
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 308,
+      "bytes": 22120,
+      "version": "3.0-white",
+      "source": "Blender procedural white-clay (no textures)"
+    },
+    {
+      "key": "wardrobe",
+      "name": "衣柜",
+      "file": "wardrobe.glb",
+      "size": [
+        1.2,
+        0.6,
+        2.0
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 204,
+      "bytes": 14276,
+      "version": "3.0-white",
+      "source": "Blender procedural white-clay (no textures)"
+    },
+    {
+      "key": "cabinet",
+      "name": "斗柜",
+      "file": "cabinet.glb",
+      "size": [
+        1.0,
+        0.45,
+        0.9
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 284,
+      "bytes": 19636,
+      "version": "3.0-white",
+      "source": "Blender procedural white-clay (no textures)"
+    },
+    {
+      "key": "shelf",
+      "name": "书柜",
+      "file": "shelf.glb",
+      "size": [
+        0.9,
+        0.35,
+        1.8
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 1056,
+      "bytes": 61592,
+      "version": "3.0-white",
+      "source": "Blender procedural white-clay (no textures)"
+    }
+  ]
+}

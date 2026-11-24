@@ -74,14 +74,16 @@ if (m) {
   const fnSrc = m[0];
   const codeLines = fnSrc.split('\n').filter(l => l.trim().indexOf('//') !== 0).join('\n');
   ok(codeLines.indexOf('home_isometric.jpg') < 0, 'furnitureThumb 不再回落整屋图 home_isometric.jpg');
-  // 注入 HIFI_ROOT 常量后在隔离作用域执行
+  // 阶段三：注入 HIFI_ROOT（原交付稿图）与 FURN_ROOT（6 件样板真实缩略图）后隔离执行
   const HIFI_ROOT = '/images/hifi/';
-  const furnitureThumb = new Function('HIFI_ROOT', 'return (' + fnSrc.replace('function furnitureThumb', 'function') + ')')(HIFI_ROOT);
-  ok(furnitureThumb({ name: '双人床', category: '床' }) === '', '双人床返回空（走 icon 占位）');
+  const FURN_ROOT = '/images/furniture/';
+  const furnitureThumb = new Function('HIFI_ROOT', 'FURN_ROOT', 'return (' + fnSrc.replace('function furnitureThumb', 'function') + ')')(HIFI_ROOT, FURN_ROOT);
+  ok(/furniture\/bed\.jpg/.test(furnitureThumb({ name: '双人床', category: '床' })), '双人床用真实样板缩略图（阶段三）');
   ok(furnitureThumb({ name: '落地窗', category: '窗帘' }) === '', '落地窗返回空（走 icon 占位）');
   ok(furnitureThumb({ name: '床头柜', category: '床头柜' }) === '', '床头柜返回空（不再误匹配书柜图）');
-  ok(/sofa\.jpg/.test(furnitureThumb({ name: '三人沙发', category: '沙发' })), '沙发仍用专属缩略图');
-  ok(/tv_console\.jpg/.test(furnitureThumb({ name: '电视柜', category: '电视柜' })), '电视柜仍用专属缩略图');
+  ok(/furniture\/sofa\.jpg/.test(furnitureThumb({ name: '三人沙发', category: '沙发' })), '沙发用真实样板缩略图');
+  ok(/furniture\/wardrobe\.jpg/.test(furnitureThumb({ name: '四门衣柜', category: '衣柜' })), '衣柜用真实样板缩略图');
+  ok(/tv_console\.jpg/.test(furnitureThumb({ name: '电视柜', category: '电视柜' })), '未做样板的电视柜仍用原专属缩略图');
 }
 ok(wxml.indexOf('hifi-card-icon') >= 0 && wxml.indexOf('{{item.icon}}') >= 0,
   'WXML 用 icon 占位替代错误缩略图');

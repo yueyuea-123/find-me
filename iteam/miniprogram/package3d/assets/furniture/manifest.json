@@ -1,9 +1,9 @@
 {
-  "version": "3.0-white",
+  "version": "4.0-mixed-sample",
   "unit": "meter",
   "up": "Y",
-  "material": "WhiteClay only, no image/texture",
-  "note": "Blender 程序化白膜；尺寸顺序 [宽,深,高]；锚点底面中心",
+  "material": "6 colored PBR samples + 2 white-clay legacy",
+  "note": "彩色样板 6 件（沙发/床/书桌/茶几/衣柜/置物架）+ 白膜 2 件（椅子/斗柜）；尺寸顺序 [宽,深,高]；锚点底面中心；换模型不动物品绑定",
   "items": [
     {
       "key": "sofa",
@@ -19,10 +19,10 @@
         0,
         0
       ],
-      "triangles": 528,
-      "bytes": 35360,
-      "version": "3.0-white",
-      "source": "Blender procedural white-clay (no textures)"
+      "triangles": 1580,
+      "bytes": 88096,
+      "version": "sample-1.0",
+      "source": "Blender procedural sample (colored PBR)"
     },
     {
       "key": "bed",
@@ -38,10 +38,10 @@
         0,
         0
       ],
-      "triangles": 264,
-      "bytes": 18796,
-      "version": "3.0-white",
-      "source": "Blender procedural white-clay (no textures)"
+      "triangles": 1256,
+      "bytes": 67328,
+      "version": "sample-1.0",
+      "source": "Blender procedural sample (colored PBR)"
     },
     {
       "key": "chair",
@@ -76,10 +76,10 @@
         0,
         0
       ],
-      "triangles": 264,
-      "bytes": 18428,
-      "version": "3.0-white",
-      "source": "Blender procedural white-clay (no textures)"
+      "triangles": 1168,
+      "bytes": 63396,
+      "version": "sample-1.0",
+      "source": "Blender procedural sample (colored PBR)"
     },
     {
       "key": "coffee",
@@ -95,10 +95,10 @@
         0,
         0
       ],
-      "triangles": 308,
-      "bytes": 22120,
-      "version": "3.0-white",
-      "source": "Blender procedural white-clay (no textures)"
+      "triangles": 544,
+      "bytes": 34544,
+      "version": "sample-1.0",
+      "source": "Blender procedural sample (colored PBR)"
     },
     {
       "key": "wardrobe",
@@ -114,10 +114,10 @@
         0,
         0
       ],
-      "triangles": 204,
-      "bytes": 14276,
-      "version": "3.0-white",
-      "source": "Blender procedural white-clay (no textures)"
+      "triangles": 972,
+      "bytes": 51172,
+      "version": "sample-1.0",
+      "source": "Blender procedural sample (colored PBR)"
     },
     {
       "key": "cabinet",
@@ -152,10 +152,10 @@
         0,
         0
       ],
-      "triangles": 1056,
-      "bytes": 61592,
-      "version": "3.0-white",
-      "source": "Blender procedural white-clay (no textures)"
+      "triangles": 1620,
+      "bytes": 77892,
+      "version": "sample-1.0",
+      "source": "Blender procedural sample (colored PBR)"
     }
   ]
 }

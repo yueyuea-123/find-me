@@ -16,16 +16,23 @@ var ROT_QUICK_DEG = 90;   // 快捷旋转
 // 高保真资产映射：交付稿 assets/ 的缩略图与家具/物品 ID 关联（视觉规范 §6）。
 // 图片仅用于列表缩略，三维模型仍由 package3d 按 category 加载，二者不互相替代。
 var HIFI_ROOT = '/images/hifi/';
+// 阶段三：6 件样板家具的真实渲染缩略图（与 package3d 彩色模型一一对应）。
+// 图片只用于列表/卡片缩略，三维模型仍由 package3d 按 key 加载，二者不互相替代。
+var FURN_ROOT = '/images/furniture/';
 function furnitureThumb(f) {
   var n = (f.name || '') + ' ' + (f.category || '');
-  // 只映射确有专属单件缩略图的类别；无专属图时返回空串，由页面用 icon 占位，
-  // 不再错误回落到整屋图 home_isometric.jpg（那会让「双人床/落地窗」显示成整套房效果）。
-  if (/沙发|sofa/i.test(n)) return HIFI_ROOT + 'sofa.jpg';
+  // 有专属真实缩略图的类别优先命中；注意「床头柜」含「床」，须先于「床」判断。
+  if (/床头柜/.test(n)) return '';
+  if (/沙发|sofa/i.test(n)) return FURN_ROOT + 'sofa.jpg';
+  if (/床|bed/i.test(n)) return FURN_ROOT + 'bed.jpg';
+  if (/书桌|餐桌|桌|table/i.test(n)) return FURN_ROOT + 'table.jpg';
+  if (/茶几|coffee/i.test(n)) return FURN_ROOT + 'coffee.jpg';
+  if (/衣柜|wardrobe/i.test(n)) return FURN_ROOT + 'wardrobe.jpg';
+  if (/置物架|书架|书柜|shelf/i.test(n)) return FURN_ROOT + 'shelf.jpg';
+  // 其余类别沿用原交付稿缩略图；无图时返回空串，由页面用 icon 占位，
+  // 不回落到整屋图 home_isometric.jpg（那会让「双人床/落地窗」显示成整套房效果）。
   if (/躺椅/i.test(n)) return HIFI_ROOT + 'sofa.jpg';
   if (/电视|tv|影音/i.test(n)) return HIFI_ROOT + 'tv_console.jpg';
-  if (/茶几|coffee/i.test(n)) return HIFI_ROOT + 'living_room.jpg';
-  if (/餐桌|书桌|table/i.test(n)) return HIFI_ROOT + 'living_room.jpg';
-  if (/书架/i.test(n)) return HIFI_ROOT + 'cabinet.jpg';
   if (/绿植|植物|plant/i.test(n)) return HIFI_ROOT + 'plant.jpg';
   return '';
 }
@@ -77,9 +84,13 @@ Page({
   onLoad: function (q) { this.setData({ roomId: q.id || '', sceneMode: 'loading' }); },
   onShow: function () {
     this.loadData();
-    // canvas 位于 wx:if 块内，onReady 时可能未挂载；onShow 后补一次初始化（带重试）
+    // 从详情页返回时：仅当处于三维家具视图才补初始化。
+    // 若停在物品视图，canvas 根本不存在，盲目 _initGL 会重试 10 次后把 view 降级成 list，
+    // 导致返回房间后三维彻底消失（用户反馈「点物品再返回后无三维视图」的根因之一）。
     var self = this;
-    setTimeout(function () { self._initGL(); }, 60);
+    setTimeout(function () {
+      if (self.data.viewTab === 'furniture' && self.data.view === '3d' && !self.data.glError) self._initGL();
+    }, 60);
   },
   onUnload: function () { this._clearLongPress(); this._glRenderer = null; this._glInitStarted = false; },
   // 分段页面可滚动：canvas 位置随滚动变化，重新取 rect 供触摸坐标换算
@@ -603,20 +614,29 @@ Page({
     this._safeRender();
   },
   // ---- V1.3 §8 家具视图 / 物品视图切换（不改变数据）----
+  // canvas 位于 wx:if 块内：切到物品视图会被销毁。必须同步清空渲染器与初始化锁，
+  // 否则返回时 _initGL 被 _glRenderer/_glInitStarted 挡住不重建 → 三维空白、触摸选中失效、无法编辑/添加家具。
+  _resetGLForHidden: function () {
+    this._glRenderer = null;
+    this._glCanvas = null;
+    this._glInitStarted = false;
+  },
   switchViewTab: function (e) {
     var tab = (e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.tab) || 'furniture';
     if (tab === this.data.viewTab) return;
     if (tab === 'item') {
       this._loadSpaceItems();
+      this._resetGLForHidden();  // canvas 即将被 wx:if 销毁，释放渲染器
       this.setData({ viewTab: 'item', sceneMode: 'itemView' });
     } else {
       this.setData({ viewTab: 'furniture', sceneMode: 'view' }, this._initGL.bind(this));
     }
   },
   _loadSpaceItems: function () {
-    var room = this._room;
-    var sid = room && room.spaceId;
-    var list = store.listItems({ spaceId: sid }).map(function (it) {
+    // 已进入具体房间，只展示该房间的物品（按 nodes.roomId 聚合），不再混入同空间其他房间/未定位物品。
+    // 用户反馈：进主卧却看到客厅/未定位的物品，属口径错误；改为房间级过滤。
+    var rid = this.data.roomId || (this._room && this._room.id);
+    var list = store.listItems({ roomId: rid }).map(function (it) {
       var node = it.currentNodeId ? store.getNode(it.currentNodeId) : null;
       var owner = node && node.furnitureId ? store.getFurniture(node.furnitureId) : null;
       var iv = store.findInventoryByItem(it.id);
@@ -633,6 +653,14 @@ Page({
   openSpaceItem: function (e) {
     var id = e.currentTarget.dataset.id;
     if (id) wx.navigateTo({ url: '/pages/item-detail/item-detail?id=' + id });
+  },
+  // 物品视图 → 返回三维房间：切回家具视图并重挂 canvas（用户反馈物品页只能回主页，无回房间入口）
+  backToRoom: function () {
+    this.setData({ viewTab: 'furniture', sceneMode: 'view' }, this._initGL.bind(this));
+  },
+  // 物品视图 → 添加家具：回家具视图并展开模型库，避免"点添加家具没反应"（原按钮在三维 dock，物品视图不可见）
+  addFurnitureFromItemView: function () {
+    this.setData({ viewTab: 'furniture', sceneMode: 'view', showLib: true }, this._initGL.bind(this));
   },
 
   // 拖动后把最新 raw 同步给渲染器（getData 返回 _raw 引用，updateFurniture 已落盘）
@@ -760,13 +788,11 @@ Page({
   _doRemoveFurniture: function (id) {
     var r = store.removeFurniture(id);
     if (!r.ok) {
-      if (r.error === 'HAS_LINKS') {
-        wx.showModal({ title: '无法删除', content: '该家具下仍有 ' + r.items + ' 件物品 / ' + r.childNodes
-          + ' 个收纳节点。物品记录不会被删除，请先把它们移到其他位置后再删除家具。', showCancel: false });
-      } else wx.showToast({ title: '删除失败：' + r.error, icon: 'none' });
+      wx.showToast({ title: '删除失败：' + (r.error || '未知'), icon: 'none' });
       return;
     }
-    wx.showToast({ title: '家具已删除，物品记录未受影响', icon: 'success' });
+    var tip = r.migratedItems > 0 ? ('家具已删除，' + r.migratedItems + ' 件物品转入未放置') : '家具已删除';
+    wx.showToast({ title: tip, icon: 'success' });
     if (this.data.selected && this.data.selected.id === id) this.setData({ selected: null, bindings: null });
     this.loadData();
   },
@@ -783,7 +809,7 @@ Page({
     wx.showModal({
       title: '删除家具',
       content: '确认删除「' + ((f && f.name) || '该家具') + '」？'
-        + (b.items.length ? '该家具关联 ' + b.items.length + ' 件物品，删除会被阻断，需先迁移存放位置。' : '删除后不可恢复。'),
+        + (b.items.length ? '该家具关联 ' + b.items.length + ' 件物品，删除后这些物品将转入该空间「未放置」区（不会丢失），稍后需你重新指定家具或改为空间直挂。' : '删除后不可恢复。'),
       confirmText: '删除', confirmColor: '#BE5F44',
       success: function (res) { if (res.confirm) self._doRemoveFurniture(id); }
     });

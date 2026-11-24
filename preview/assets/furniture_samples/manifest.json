@@ -1,0 +1,122 @@
+{
+  "version": "sample-1.0",
+  "unit": "meter",
+  "up": "Y",
+  "note": "样板件：沿用色板/尺寸/锚点，重做造型与材质；未接入主包",
+  "items": [
+    {
+      "key": "sofa",
+      "name": "沙发",
+      "file": "sofa.glb",
+      "size": [
+        2.0,
+        0.9,
+        0.8
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 1580,
+      "bytes": 88096,
+      "version": "sample-1.0",
+      "source": "Blender procedural sample"
+    },
+    {
+      "key": "bed",
+      "name": "床",
+      "file": "bed.glb",
+      "size": [
+        1.5,
+        2.0,
+        0.5
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 1256,
+      "bytes": 67328,
+      "version": "sample-1.0",
+      "source": "Blender procedural sample"
+    },
+    {
+      "key": "table",
+      "name": "书桌",
+      "file": "table.glb",
+      "size": [
+        1.4,
+        0.8,
+        0.75
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 1168,
+      "bytes": 63396,
+      "version": "sample-1.0",
+      "source": "Blender procedural sample"
+    },
+    {
+      "key": "coffee",
+      "name": "茶几",
+      "file": "coffee.glb",
+      "size": [
+        1.0,
+        0.6,
+        0.4
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 544,
+      "bytes": 34544,
+      "version": "sample-1.0",
+      "source": "Blender procedural sample"
+    },
+    {
+      "key": "wardrobe",
+      "name": "衣柜",
+      "file": "wardrobe.glb",
+      "size": [
+        1.2,
+        0.6,
+        2.0
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 972,
+      "bytes": 51172,
+      "version": "sample-1.0",
+      "source": "Blender procedural sample"
+    },
+    {
+      "key": "shelf",
+      "name": "置物架",
+      "file": "shelf.glb",
+      "size": [
+        0.9,
+        0.35,
+        1.8
+      ],
+      "anchor": [
+        0,
+        0,
+        0
+      ],
+      "triangles": 1620,
+      "bytes": 77892,
+      "version": "sample-1.0",
+      "source": "Blender procedural sample"
+    }
+  ]
+}
