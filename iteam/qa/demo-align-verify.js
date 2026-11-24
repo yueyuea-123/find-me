@@ -4,7 +4,16 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..', 'miniprogram');
-const read = p => fs.readFileSync(path.join(root, p), 'utf8');
+// 阶段2c 起 room3d 页代码按块拆到同目录模块（mixin 合并进 Page）：
+// 读取 room3d 下任一 .js 时聚合该目录全部 .js，保证拆分不漏检。
+function read(p) {
+  if (/^pages\/room3d\/[^/]+\.js$/.test(p)) {
+    const dir = path.join(root, 'pages', 'room3d');
+    return fs.readdirSync(dir).filter(f => f.endsWith('.js')).sort()
+      .map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
+  }
+  return fs.readFileSync(path.join(root, p), 'utf8');
+}
 const checks = [];
 function has(file, needle, desc) {
   const text = read(file);

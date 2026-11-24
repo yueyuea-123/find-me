@@ -22,8 +22,20 @@ DEFAULT_OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'quality-
 
 def rel(*a): return os.path.join(MP, *a)
 def read(*a):
+    # 阶段2c 起 room3d 页代码按块拆到同目录模块（mixin 合并进 Page）：
+    # 读取 room3d 下任一 .js 时聚合该目录全部 .js，事件绑定/方法定义跨文件可发现。
+    p = rel(*a)
+    if len(a) == 1 and re.match(r'pages/room3d/[^/]+\.js$', a[0]) and os.path.isdir(rel('pages', 'room3d')):
+        parts = []
+        d = rel('pages', 'room3d')
+        for f in sorted(os.listdir(d)):
+            if f.endswith('.js'):
+                try:
+                    with open(os.path.join(d, f), 'r', encoding='utf-8') as fh: parts.append(fh.read())
+                except Exception: pass
+        if parts: return '\n'.join(parts)
     try:
-        with open(rel(*a), 'r', encoding='utf-8') as f: return f.read()
+        with open(p, 'r', encoding='utf-8') as f: return f.read()
     except Exception: return ''
 
 
