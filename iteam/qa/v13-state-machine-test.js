@@ -116,8 +116,8 @@ ok('VIEW 相机操作不标 dirty', pView.data.isDirty === false);
 const pOnFurniture = makePage(0);
 dragBlank(pOnFurniture, TP(100, 100), TP(180, 150));
 const pos2 = store.getFurniture(fid).position;
-ok('VIEW 家具上拖动不移动家具（A 方案不直接拖动）', pos2.x === pos0.x && pos2.z === pos0.z);
-ok('VIEW 家具上按下不转成相机拖动', pOnFurniture._calls.orbit === 0, 'orbit=' + pOnFurniture._calls.orbit);
+ok('阶段二 VIEW 家具上拖动会直接移动家具', pos2.x !== pos0.x || pos2.z !== pos0.z);
+ok('阶段二 VIEW 家具上按下不转成相机拖动', pOnFurniture._calls.orbit === 0, 'orbit=' + pOnFurniture._calls.orbit);
 
 // ---- 2. 双指缩放相机，不改家具尺寸 ----
 const pPinch = makePage(0);
@@ -247,9 +247,14 @@ const pItem = makePage(0);
 const itemsBefore = JSON.stringify(store.listItems().map(i => i.id));
 pItem.switchViewTab({ currentTarget: { dataset: { tab: 'item' } } });
 ok('切到物品视图 sceneMode=itemView', pItem.data.sceneMode === 'itemView', pItem.data.sceneMode);
-ok('物品列表仅当前空间', pItem.data.spaceItems.every(it => {
-  const real = store.getItem(it.id); return real && real.spaceId === (pItem._room && pItem._room.spaceId);
+ok('物品列表仅当前房间（按 nodes.roomId 聚合）', pItem.data.spaceItems.every(it => {
+  const real = store.getItem(it.id);
+  if (!real || !real.currentNodeId) return false;
+  const node = store.getNode(real.currentNodeId);
+  return !!node && node.roomId === pItem.data.roomId;
 }));
+ok('物品列表与 store 房间口径一致', pItem.data.spaceItems.length === store.listItems({ roomId: pItem.data.roomId }).length,
+  'ui=' + pItem.data.spaceItems.length + ' store=' + store.listItems({ roomId: pItem.data.roomId }).length);
 ok('物品项含归属文案', pItem.data.spaceItems.every(it => typeof it.furnitureName === 'string' && typeof it.locText === 'string'));
 const hasUnknown = pItem.data.spaceItems.some(it => it.locText === '未设置位置');
 ok('未绑定位置显示「未设置位置」', hasUnknown || pItem.data.spaceItems.every(it => it.locText !== '未设置位置'),

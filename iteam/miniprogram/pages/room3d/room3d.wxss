@@ -43,6 +43,14 @@
   background: #FFFFFF; color: #58734F; border: 1rpx solid #ECE9E3; border-radius: 999rpx;
   padding: 8rpx 20rpx; font-size: 22rpx;
 }
+/* 三维家具数量角标：定位在模型顶部，偏移使角标中心落在家具上方 */
+.furn-badge {
+  position: absolute; z-index: 3; transform: translate(-50%, -100%);
+  background: rgba(88, 115, 79, 0.94); color: #FFFFFF;
+  border-radius: 999rpx; padding: 4rpx 14rpx; font-size: 20rpx; line-height: 1.5;
+  white-space: nowrap; pointer-events: none;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.18);
+}
 .canvas-hint {
   position: absolute; left: 24rpx; right: 140rpx; bottom: 24rpx; z-index: 2;
   text-align: left; font-size: 20rpx; color: #8B8E87; pointer-events: none;
@@ -99,7 +107,13 @@
 }
 .hifi-tab.on { background: #6F8966; color: #FFFFFF; }
 .hifi-cards { display: flex; flex-direction: row; white-space: nowrap; margin-top: 24rpx; }
-.hifi-card { display: inline-block; width: 180rpx; margin-right: 16rpx; }
+.hifi-card { display: inline-block; width: 180rpx; margin-right: 16rpx; position: relative; }
+/* 家具卡片数量角标：浮在缩略图右上角，与三维场景角标同口径 */
+.hifi-card-count {
+  position: absolute; right: 10rpx; top: 10rpx; z-index: 2;
+  background: rgba(88, 115, 79, 0.94); color: #FFFFFF;
+  border-radius: 999rpx; padding: 2rpx 12rpx; font-size: 18rpx; line-height: 1.5;
+}
 .hifi-card-img {
   width: 180rpx; height: 130rpx; box-sizing: border-box; border-radius: 18rpx;
   background: #F0EFEB; border: 3rpx solid transparent;
@@ -125,6 +139,16 @@
 
 /* ---------- 物品视图（高保真 06-我的物品 双列卡片） ---------- */
 .hifi-itemview { padding: 16rpx 24rpx 40rpx; }
+/* 物品视图操作条：返回房间 / 添加家具 */
+.hifi-itemops { display: flex; flex-direction: row; margin-bottom: 20rpx; }
+.hifi-op {
+  flex: 1; text-align: center; padding: 18rpx 0; margin-right: 16rpx;
+  background: #FFFFFF; border: 1rpx solid #ECE9E3; border-radius: 999rpx;
+  font-size: 26rpx; font-weight: 600; color: #58734F;
+}
+.hifi-op:last-child { margin-right: 0; }
+.hifi-op.primary { background: #58734F; color: #FFFFFF; border-color: #58734F; }
+.hifi-op:active { opacity: 0.85; }
 .hifi-search {
   height: 72rpx; line-height: 72rpx; padding: 0 28rpx; box-sizing: border-box;
   background: #F0EFEB; border-radius: 36rpx; font-size: 24rpx; color: #8B8E87;

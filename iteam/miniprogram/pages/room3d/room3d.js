@@ -10,6 +10,7 @@ function clampNum(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 function fmtNum(v) { return String(Math.round((Number(v) || 0) * 100) / 100); }
 // V1.3 §5.1/§5.2：首版步长固定 5cm、旋转 15°（90° 快捷）
 var MOVE_STEP_M = 0.05;   // 5cm，米
+var GRID_M = 0.05;        // 拖动落盘网格吸附步长 5cm，与按钮步进一致
 var ROT_STEP_DEG = 15;    // 度
 var ROT_QUICK_DEG = 90;   // 快捷旋转
 
@@ -53,6 +54,7 @@ Page({
   data: {
     roomId: '', roomName: '', dimText: '', view: '3d',
     furniture: [], selected: null, glError: '',
+    furnitureBadges: [], // 三维家具数量角标 [{id,x,y,n}]，随重绘刷新
     bindings: null, // 当前选中模型关联物品汇总（名称在 _decorateBindings 组装）
     // ---- V1.3 场景状态机（sceneMode 为唯一状态源，见 §6 / 状态图）----
     // loading/view/selected/move/rotate/dimension/saving/saveError/itemView
@@ -289,7 +291,28 @@ Page({
       return null;
     }
   },
-  _safeRender: function () { if (this.data.view === '3d' && !this.data.glError) this._safeGL('render'); },
+  _safeRender: function () {
+    if (this.data.view === '3d' && !this.data.glError) {
+      this._safeGL('render');
+      this._syncBadges();
+    }
+  },
+  // 数量角标：把每件家具的有效物品数投到其模型顶部的屏幕位置。
+  // 只提示数量，不把物品画成三维模型；坐标随拖动/转视角/缩放实时更新。
+  _syncBadges: function () {
+    if (!this._glRenderer || typeof this._glRenderer.projectAll !== 'function') return;
+    var pts = this._safeGL('projectAll') || [];
+    var self = this;
+    var badges = [];
+    pts.forEach(function (p) {
+      var row = self._furniture && self._furniture[p.index];
+      if (!row || !p.visible) return;
+      // 只显示有物品的家具；数量为 0 不显示，避免画面杂乱
+      if (!(row.bindCount > 0)) return;
+      badges.push({ id: row.id, x: p.x, y: p.y, n: row.bindCount });
+    });
+    this.setData({ furnitureBadges: badges });
+  },
 
   // 缓存 canvas 在视口中的位置：内嵌窗口不再从屏幕左上角开始，pick 需减去此偏移
   _syncCanvasRect: function () {
@@ -388,10 +411,11 @@ Page({
   },
   _canvasXY: function (touch) { return this._touchPoint(touch); },
 
-  // ---- V1.3 §3 浏览与选中手势 ----
-  //   VIEW/SELECTED：空白单指拖动=旋转相机；双指=缩放相机；点家具=选中；点空白=取消选中。
-  //   默认不直接拖动家具（A 方案）。编辑子模式下 canvas 手势全部禁用，只能用明确按钮。
-  //   触摸开始命中家具时锁定为「家具点击」，同一次手势不得转成相机拖动。
+  // ---- 交互手势（阶段二重做，推翻 V1.3 A 方案「命中即锁死为点击」）----
+  //   单指：命中家具→直接拖动（跟手，抬手落盘）；空白→旋转相机。
+  //   双指：张开/捏合缩放视图，旋转手势旋转选中家具；方向按钮降为精确微调备选。
+  //   短按家具仍=选中并打开底部抽屉（找物主路径不变）。编辑子模式下手势禁用，只能用按钮。
+  //   网格吸附 GRID_M：抬手落盘时按 5cm 对齐，拖动过程保持平滑不吸附。
   onTouchStart: function (e) {
     if (!this._glRenderer || this.data.view !== '3d' || this.data.glError || this._editing()) return;
     this._syncCanvasRect();
@@ -402,11 +426,38 @@ Page({
       this._sx = p.x; this._sy = p.y;
       this._moved = false;
       this._hitIdx = (idx !== null && idx >= 0 && this._furniture[idx]) ? idx : -1;
-      // 命中家具 → 锁定为家具点击，禁止本次手势转相机；空白 → 相机拖动待命
+      // 命中家具：记录当前世界坐标为拖动基线；空白：相机拖动待命
+      if (this._hitIdx >= 0) {
+        var row = this._furniture[this._hitIdx];
+        var raw = row._raw || store.getFurniture(row.id) || {};
+        var pos = raw.position || { x: 0, y: 0, z: 0 };
+        this._dragBase = { x: pos.x || 0, z: pos.z || 0 };
+        // 操作前完整快照，供抬手落盘后写入撤销栈
+        this._dragBefore = {
+          position: JSON.parse(JSON.stringify(pos)),
+          rotation: raw.rotation || 0,
+          size: JSON.parse(JSON.stringify(raw.size || { w: 0.6, d: 0.6, h: 0.6 }))
+        };
+        this._safeGL('setSelected', [this._hitIdx]);
+      } else {
+        this._dragBase = null; this._dragBefore = null;
+      }
     } else if (ts.length === 2) {
-      // 双指仅缩放相机，不改变家具尺寸（V1.3 §3.1）
+      // 双指：缩放视图 + 记录旋转基线；本手势不再当作家具点击/拖动
       this._pinch = this._dist(ts);
+      this._pinchAngle = this._angle(ts);
       this._moved = true;
+      this._hitIdx = -1;
+      this._dragBase = null;
+      var srow = this.data.selected;
+      if (srow) {
+        var sraw = store.getFurniture(srow.id) || {};
+        this._spinBefore = {
+          position: JSON.parse(JSON.stringify(sraw.position || { x: 0, y: 0, z: 0 })),
+          rotation: sraw.rotation || 0,
+          size: JSON.parse(JSON.stringify(sraw.size || { w: 0.6, d: 0.6, h: 0.6 }))
+        };
+      } else this._spinBefore = null;
     }
   },
   _clearLongPress: function () { if (this._lpTimer) { clearTimeout(this._lpTimer); this._lpTimer = null; } },
@@ -422,17 +473,48 @@ Page({
       var p = this._touchPoint(ts[0]);
       var dx = p.x - this._sx, dy = p.y - this._sy;
       if (Math.abs(dx) + Math.abs(dy) > 5) this._moved = true;
-      // 空白拖动：仅旋转相机；家具上按下则不移动家具、也不转视角（手势已锁定）
-      if (this._moved && this._hitIdx < 0) {
-        this._safeGL('orbit', [dx, dy]);
+      if (this._moved) {
+        if (this._hitIdx >= 0 && this._dragBase) {
+          // 命中家具且已拖动：屏幕位移换算为地面世界位移，实时预览（只在内存改模型）
+          var d = this._safeGL('dragDelta', [dx, dy]) || { dx: 0, dz: 0 };
+          var target = {
+            x: this._dragBase.x + d.dx,
+            z: this._dragBase.z + d.dz
+          };
+          var moved = this._safeGL('previewMove', [this._hitIdx, target.x, target.z]);
+          if (moved) {
+            this._dragTo = moved; // 记录最终坐标，抬手落盘
+            var row = this._furniture[this._hitIdx];
+            if (row) { row.px = moved.x.toFixed(2); row.pz = moved.z.toFixed(2); }
+            this.setData({ selected: this._selectedCard(row) });
+          }
+        } else if (this._hitIdx < 0) {
+          // 空白拖动：旋转相机
+          this._safeGL('orbit', [dx, dy]);
+        }
       }
       this._sx = p.x; this._sy = p.y;
       this._safeRender();
     } else if (ts.length === 2 && this._pinch) {
-      var d = this._dist(ts);
-      // 双指张开→放大视图，捏合→缩小视图；不改变家具尺寸
-      this._safeGL('zoom', [this._pinch - d]);
-      this._pinch = d;
+      var d2 = this._dist(ts);
+      // 双指张开→放大视图，捏合→缩小视图（不写家具数据）
+      this._safeGL('zoom', [this._pinch - d2]);
+      this._pinch = d2;
+      // 双指旋转：有选中家具时旋转它（增量=本帧角度差），只做内存预览，抬手落盘
+      var ang = this._angle(ts);
+      if (this.data.selected && this._pinchAngle !== undefined) {
+        var da = ang - this._pinchAngle;
+        // 角度跨越 ±π 时取最短路径，避免跳变
+        if (da > Math.PI) da -= Math.PI * 2;
+        if (da < -Math.PI) da += Math.PI * 2;
+        var rotIdx = this._findIndexById(this.data.selected.id);
+        if (rotIdx >= 0) {
+          this._spinTo = (this._spinTo || 0) + da; // 累计旋转弧度，抬手落盘
+          this._safeGL('previewRotate', [rotIdx, this._spinTo]);
+          this._moved = true;
+        }
+      }
+      this._pinchAngle = ang;
       this._safeRender();
     }
   },
@@ -443,9 +525,48 @@ Page({
       // 短按家具：选中并打开底部抽屉（业务规则 §3.2）；短按空白：取消选中
       if (this._hitIdx >= 0) { this.selectIndex(this._hitIdx); this.openSheet(); }
       else this.clearSel();
+    } else {
+      // 拖动/旋转抬手：一次性落盘，写入撤销栈，保持「拖动中不写数据」
+      var changed = false;
+      if (this._dragTo && this._hitIdx >= 0) {
+        var row = this._furniture[this._hitIdx];
+        if (row) {
+          var gx = Math.round(this._dragTo.x / GRID_M) * GRID_M; // 网格吸附 5cm
+          var gz = Math.round(this._dragTo.z / GRID_M) * GRID_M;
+          var base = this._dragBase || { x: 0, z: 0 };
+          var r = store.transformFurniture(row.id, { type: 'move', dx: gx - base.x, dz: gz - base.z });
+          if (r.ok) {
+            this._pushUndo(row.id, this._dragBefore); // 撤销栈：回退到本次拖动前
+            changed = true;
+          }
+        }
+      }
+      if (this._spinTo && this.data.selected) {
+        var sr = store.transformFurniture(this.data.selected.id, { type: 'rotate', dr: this._spinTo });
+        if (sr.ok) { this._pushUndo(this.data.selected.id, this._spinBefore); changed = true; }
+      }
+      if (changed) {
+        this._syncSceneToGL();
+        this.loadData();
+      }
     }
     this._sx = this._sy = undefined;
-    this._pinch = null; this._hitIdx = -1; this._moved = false;
+    this._pinch = null; this._pinchAngle = undefined;
+    this._hitIdx = -1; this._moved = false;
+    this._dragBase = null; this._dragTo = null; this._dragBefore = null;
+    this._spinTo = 0; this._spinBefore = null;
+  },
+
+  // 撤销栈：记录本次操作前的状态，结构与 undoScene/onBack 一致（id/position/rotation/size）
+  _pushUndo: function (id, before) {
+    this._undoStack = this._undoStack || [];
+    this._undoStack.push({
+      id: id,
+      position: JSON.parse(JSON.stringify((before && before.position) || { x: 0, y: 0, z: 0 })),
+      rotation: (before && before.rotation) || 0,
+      size: JSON.parse(JSON.stringify((before && before.size) || { w: 0.6, d: 0.6, h: 0.6 }))
+    });
+    this.setData({ isDirty: true });
   },
 
   // ---- V1.3 §5.1 移动：方向按钮，固定步长 5cm，不直接拖动 ----
@@ -845,6 +966,11 @@ Page({
     var a = this._touchPoint(ts[0]), b = this._touchPoint(ts[1]);
     var dx = a.x - b.x, dy = a.y - b.y;
     return Math.sqrt(dx * dx + dy * dy);
+  },
+  // 双指连线角度（弧度），用于旋转手势；与 _dist 同一对触点
+  _angle: function (ts) {
+    var a = this._touchPoint(ts[0]), b = this._touchPoint(ts[1]);
+    return Math.atan2(b.y - a.y, b.x - a.x);
   },
 
   selectIndex: function (idx) {

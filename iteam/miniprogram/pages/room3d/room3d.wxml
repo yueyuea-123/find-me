@@ -36,7 +36,12 @@
   <!-- ============ 物品视图（V1.3 §8）：高保真 06-我的物品 双列卡片 ============ -->
   <block wx:elif="{{viewTab==='item'}}">
     <view class="hifi-itemview">
-      <view class="hifi-search">⌕&nbsp; 搜索当前空间物品 · {{spaceItems.length}} 件</view>
+      <!-- 物品视图操作条：返回三维房间 / 添加家具（原死胡同，用户反馈无返回与新增入口） -->
+      <view class="hifi-itemops">
+        <view class="hifi-op" bindtap="backToRoom">‹ 返回房间</view>
+        <view class="hifi-op primary" bindtap="addFurnitureFromItemView">＋ 添加家具</view>
+      </view>
+      <view class="hifi-search">⌕&nbsp; {{roomName}}物品 · {{spaceItems.length}} 件</view>
       <view class="hifi-grid">
         <view class="hifi-itemcard" wx:for="{{spaceItems}}" wx:key="id" data-id="{{item.id}}" bindtap="openSpaceItem">
           <image class="hifi-itemimg" src="{{item.thumb}}" mode="aspectFill"/>
@@ -47,7 +52,7 @@
         </view>
       </view>
       <view class="state" wx:if="{{spaceItems.length===0}}">
-        <text class="state-title">该空间暂无物品</text>
+        <text class="state-title">{{roomName}}暂无物品</text>
         <text class="state-desc">可在家具上建档并指定收纳位置</text>
       </view>
     </view>
@@ -58,6 +63,9 @@
     <view class="hifi-stage">
       <canvas type="webgl" id="gl" class="glcanvas"
         catchtouchstart="onTouchStart" catchtouchmove="onTouchMove" catchtouchend="onTouchEnd"></canvas>
+      <!-- 数量角标：浮在对应家具模型顶部，只提示“内有 N 件”，点家具仍弹面板看物品 -->
+      <cover-view class="furn-badge" wx:for="{{furnitureBadges}}" wx:key="id"
+        style="left:{{item.x}}px;top:{{item.y}}px">内有 {{item.n}} 件</cover-view>
       <!-- 左上空间胶囊 -->
       <cover-view class="hifi-stage-tag">{{roomName}} · 3D</cover-view>
       <!-- 右侧悬浮相机键：视角预设循环 / 复位 / 适配（对齐高保真三枚悬浮键） -->
@@ -118,6 +126,7 @@
             <text class="hifi-card-model">{{item.model}}</text>
           </view>
           <view class="hifi-card-name">{{item.name}}</view>
+          <view class="hifi-card-count" wx:if="{{item.bindCount>0}}">{{item.bindCount}} 件</view>
         </view>
       </scroll-view>
       <view class="hifi-emptycards" wx:else>房间还是空的，添加第一件家具开始布置</view>

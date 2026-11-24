@@ -567,6 +567,30 @@ function createRoomRenderer(canvas, getData, opts) {
       applyFrustum();
     },
     render: function () { syncScene(); draw(); },
+    // 阶段二数量角标：把每件家具顶部中心投影到画布像素坐标，供页面用 cover-view 浮层定位。
+    // 与 pick 同一套 Box3 + project 口径；返回 [{index,x,y,visible}]，x/y 为 canvas 像素。
+    projectAll: function () {
+      // 页面把 canvas.width/height 设为 CSS 像素，触摸坐标也是 CSS 像素，故这里同口径不再除 dpr。
+      var w = canvas.width || 1, h = canvas.height || 1;
+      var out = [];
+      for (var i = 0; i < instances.length; i++) {
+        var inst = instances[i];
+        var box = new THREE.Box3().setFromObject(inst.group);
+        var top = new THREE.Vector3(
+          (box.min.x + box.max.x) / 2,
+          box.max.y,
+          (box.min.z + box.max.z) / 2
+        );
+        top.project(camera);
+        out.push({
+          index: inst.index,
+          x: Math.round((top.x + 1) / 2 * w),
+          y: Math.round((1 - top.y) / 2 * h),
+          visible: top.z > -1 && top.z < 1
+        });
+      }
+      return out;
+    },
     // 屏幕投影包围盒拾取：与原渲染器同口径，规避 r108 适配版 Raycaster 对 GLB 实例失效的问题
     pick: function (x, y) {
       var w = canvas.width || 1, h = canvas.height || 1;

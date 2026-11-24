@@ -119,14 +119,16 @@ ok('V1.3 拖空白调用 orbit 转视角', pBlank._calls.orbit > 0, 'orbit=' + p
 ok('V1.3 拖空白不调用 pan', pBlank._calls.pan === 0, 'pan=' + pBlank._calls.pan);
 ok('V1.3 拖空白不移动家具', posBefore.x === posAfter.x && posBefore.z === posAfter.z);
 
-// ---- 2. V1.3：默认不直接拖动家具（A 方案简化操作）----
+// ---- 2. 阶段二：恢复直接拖拽（推翻 A 方案「命中即锁死为点击」）----
 const pDrag = makePage(0);
 const dBefore = JSON.parse(JSON.stringify(store.getFurniture(fid).position));
 drag(pDrag);
 const dAfter = store.getFurniture(fid).position;
-ok('V1.3 家具上拖动不移动家具', Math.abs(dAfter.x - dBefore.x) < 0.001 && Math.abs(dAfter.z - dBefore.z) < 0.001,
+ok('直接拖拽：家具上拖动会移动家具', Math.abs(dAfter.x - dBefore.x) > 0.001 || Math.abs(dAfter.z - dBefore.z) > 0.001,
   dBefore.x + '/' + dBefore.z + ' -> ' + dAfter.x + '/' + dAfter.z);
-ok('V1.3 家具上拖动不转成相机拖动', pDrag._calls.orbit === 0, 'orbit=' + pDrag._calls.orbit);
+ok('直接拖拽：家具上拖动不转成相机拖动', pDrag._calls.orbit === 0, 'orbit=' + pDrag._calls.orbit);
+ok('直接拖拽：拖动调用 previewMove 预览', pDrag._calls.previewMove > 0, 'previewMove=' + pDrag._calls.previewMove);
+ok('直接拖拽：抬手落盘后标脏待保存', pDrag.data.isDirty === true);
 ok('V1.3 状态机使用 sceneMode 字段', def.data.sceneMode === 'loading');
 
 // ---- 3. 短按家具=选中，不跳建档（规范 §5.2 由卡片发起添加） ----
@@ -178,14 +180,15 @@ const pNew = makePage(0);
 global.__lastNav = ''; global.__sheetIndex = 1; pNew.chooseAddItem();
 ok('选「新建物品」进入建档页并预选节点', /^\/pages\/item-edit\/item-edit\?nodeId=/.test(global.__lastNav), global.__lastNav || '(无跳转)');
 
-// ---- 7. 删除保护：提示物品归属、不静默丢记录 ----
+// ---- 7. 删除转未放置：物品记录不丢失、家具被删除、物品锚点转为 unplaced（基线 §2.3） ----
 const pDel = makePage(0);
 const linkedFurniture = store.listFurniture(roomId).filter(f => store.bindingsOfFurniture(f.id).items.length > 0)[0];
 if (linkedFurniture) {
   const linkedIds = store.bindingsOfFurniture(linkedFurniture.id).items.map(i => i.id);
   pDel._doRemoveFurniture(linkedFurniture.id);
   const stillThere = linkedIds.every(id => !!store.getItem(id));
-  ok('删除有关联家具不丢失物品记录', stillThere && !!store.getFurniture(linkedFurniture.id));
+  const allUnplaced = linkedIds.every(id => (store.getItem(id) || {}).anchorType === 'unplaced');
+  ok('删除有关联家具后物品不丢失且转入未放置', stillThere && allUnplaced && !store.getFurniture(linkedFurniture.id));
 }
 
 // ---- 8. 家具库按需展开 ----
