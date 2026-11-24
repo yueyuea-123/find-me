@@ -6,8 +6,29 @@
     <view class="hifi-capsule" bindtap="roomMenu"><text>·</text><text>·</text><text>·</text><text class="hifi-dot">◉</text></view>
   </view>
 
+  <!-- 房间长宽调整：房间管理菜单入口，二维表单改尺寸即重建三维（不做三维内拖墙手势） -->
+  <block wx:if="{{showRoomSize}}">
+    <view class="degrade-page">
+      <view class="degrade-tip">
+        <view class="strong">调整「{{roomName}}」长宽</view>
+        <view class="small muted">修改后三维空间按新尺寸重建；若家具超出新边界，将自动收回房间内。</view>
+      </view>
+      <view class="card">
+        <view class="dimrow">
+          <view class="dimcell"><view class="muted small">长</view><input class="diminput" type="number" data-field="w" value="{{roomSizeW}}" bindinput="onRoomSizeInput" placeholder="cm"/></view>
+          <view class="dimcell"><view class="muted small">宽</view><input class="diminput" type="number" data-field="d" value="{{roomSizeD}}" bindinput="onRoomSizeInput" placeholder="cm"/></view>
+        </view>
+        <view class="small muted" style="margin-top:8rpx">单位厘米（cm），范围 50–5000</view>
+      </view>
+      <view class="row" style="margin-top:24rpx">
+        <button class="btn primary" bindtap="applyRoomSize">应用</button>
+        <button class="btn" bindtap="cancelRoomSize">取消</button>
+      </view>
+    </view>
+  </block>
+
   <!-- 从已有物品中选择并绑定到当前家具：独立整页，确保打开即见（规范 §5.2） -->
-  <block wx:if="{{showBindPicker}}">
+  <block wx:elif="{{showBindPicker}}">
     <view class="degrade-page">
       <view class="degrade-tip">
         <view class="strong">绑定到「{{bindTargetName}}」</view>

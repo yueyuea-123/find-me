@@ -45,6 +45,9 @@ Page(Object.assign({
     // 物品业务规则 V1.0 §3.2：点击家具打开底部抽屉，三维场景作为背景保持可见
     sheetOpen: false, sheetCollapsed: false,
     sheetNodes: [], activeNodeId: '', activeNodePath: '', nodeItems: [],
+    // 房间长宽调整（房间管理菜单入口，二维表单式改尺寸，三维场景自动重建）
+    showRoomSize: false,
+    roomSizeW: '', roomSizeD: '', // 长/宽输入（cm）
     lib: (C.FURNITURE_CATEGORIES || []).map(function (k) {
       return { key: k, icon: (C.FURNITURE_LIB[k] || {}).icon || '▣' };
     })
@@ -224,16 +227,56 @@ Page(Object.assign({
   roomMenu: function () {
     var self = this;
     wx.showActionSheet({
-      itemList: ['房间照片', '家具管理', '重命名房间', '归档房间', '删除房间'],
+      itemList: ['房间照片', '家具管理', '调整长宽', '重命名房间', '归档房间', '删除房间'],
       success: function (res) {
         var i = res.tapIndex;
         if (i === 0) wx.navigateTo({ url: '/pages/photos/photos?id=' + self.data.roomId });
         else if (i === 1) wx.navigateTo({ url: '/pages/furniture-detail/furniture-detail?roomId=' + self.data.roomId });
-        else if (i === 2) self.renameRoom();
-        else if (i === 3) self.archiveRoom();
-        else if (i === 4) self.destroyRoom();
+        else if (i === 2) self.openRoomSize();
+        else if (i === 3) self.renameRoom();
+        else if (i === 4) self.archiveRoom();
+        else if (i === 5) self.destroyRoom();
       }
     });
+  },
+  // ---- 房间长宽调整（二维表单式：改数据即重建三维，不做三维内拖墙手势）----
+  // 评估报告 N-01 五处冲突的解法：入口收进房间管理菜单后，①手势冻结/②pick 墙命中/
+  // ③墙编辑态三处冲突自然消失；④撤销不入家具撤销栈（等同改名，立即生效）；
+  // ⑤updateRoom 尺寸变化重建 layout 即期望行为。越界家具由 store 钳制（D-04）。
+  openRoomSize: function () {
+    var room = this._room || {};
+    this.setData({
+      showRoomSize: true,
+      roomSizeW: String(Math.round((room.width || 4) * 100)),
+      roomSizeD: String(Math.round((room.depth || 4) * 100))
+    });
+  },
+  onRoomSizeInput: function (e) {
+    var field = (e.currentTarget.dataset.field) || '';
+    if (field === 'w' || field === 'd') {
+      var p = {}; p['roomSize' + field.toUpperCase()] = e.detail.value; this.setData(p);
+    }
+  },
+  cancelRoomSize: function () { this.setData({ showRoomSize: false }); },
+  applyRoomSize: function () {
+    var w = Number(this.data.roomSizeW), d = Number(this.data.roomSizeD);
+    if (!(w > 0 && d > 0)) { wx.showToast({ title: '长宽须大于 0', icon: 'none' }); return; }
+    // 边界：0.5m ~ 50m（米制渲染有效下限 0.5，见 renderer updateRoomGeometry）
+    if (Math.max(w, d) > 5000 || Math.min(w, d) < 50) {
+      wx.showToast({ title: '长宽须在 50–5000 cm', icon: 'none' }); return;
+    }
+    var r = store.updateRoom(this.data.roomId, {
+      width: Math.round(w) / 100, depth: Math.round(d) / 100
+    });
+    if (!r.ok) { wx.showToast({ title: '保存失败：' + (r.error || '未知'), icon: 'none' }); return; }
+    this.setData({ showRoomSize: false });
+    this.loadData();            // 重新装配页面数据（含房间新尺寸回显）
+    this._syncSceneToGL();      // 家具 _raw 同步；renderer.updateRoomGeometry 检测尺寸变化自动重建场景
+    this._safeRender();
+    var tip = r.clampedFurniture > 0
+      ? ('房间已调整，' + r.clampedFurniture + ' 件家具已收回边界内')
+      : '房间已调整';
+    wx.showToast({ title: tip, icon: 'none' });
   },
   renameRoom: function () {
     var self = this;

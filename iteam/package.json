@@ -7,7 +7,7 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "node qa/v13-state-machine-test.js && node qa/drag-mode-test.js && node qa/renderer-signature-contract-test.js && node qa/store-domain-barrel-test.js && node qa/item-rules-sheet-test.js && node qa/pack-assets-test.js && node qa/vendor-style-compat-test.js && node qa/demo-align-verify.js && node qa/smoke-test.js && node qa/p1-item-experience-test.js && node qa/v12-interaction-test.js && node qa/user-journey-sim.js && node qa/model-switch-test.js && node qa/room-item-view-test.js && node qa/stage2-drag-badge-test.js && node qa/stage4-room-template-test.js && python3 qa/check_and_score.py",
+    "test": "node qa/v13-state-machine-test.js && node qa/drag-mode-test.js && node qa/renderer-signature-contract-test.js && node qa/store-domain-barrel-test.js && node qa/room-resize-test.js && node qa/item-rules-sheet-test.js && node qa/pack-assets-test.js && node qa/vendor-style-compat-test.js && node qa/demo-align-verify.js && node qa/smoke-test.js && node qa/p1-item-experience-test.js && node qa/v12-interaction-test.js && node qa/user-journey-sim.js && node qa/model-switch-test.js && node qa/room-item-view-test.js && node qa/stage2-drag-badge-test.js && node qa/stage4-room-template-test.js && python3 qa/check_and_score.py",
     "test:drag": "node qa/drag-mode-test.js",
     "test:v13": "node qa/v13-state-machine-test.js",
     "test:sheet": "node qa/item-rules-sheet-test.js",

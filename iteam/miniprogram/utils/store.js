@@ -331,13 +331,36 @@ function updateRoom(id, patch) {
       return !x.archived && x.id !== id && x.spaceId === rm.spaceId && x.name === patch.name;
     })) return { ok: false, error: 'ROOM_NAME_DUPLICATE' };
   }
-  ['width', 'depth', 'height'].forEach(function (k) { if (patch[k] !== undefined) rm[k] = Number(patch[k]) || 0; });
+  // 尺寸校验：width/depth/height 传入时必须为正数（拒绝 0/负值破坏 layout 与钳制边界）
+  var sizeInvalid = ['width', 'depth', 'height'].some(function (k) {
+    return patch[k] !== undefined && !(Number(patch[k]) > 0);
+  });
+  if (sizeInvalid) return { ok: false, error: 'INVALID_SIZE' };
+  ['width', 'depth', 'height'].forEach(function (k) { if (patch[k] !== undefined) rm[k] = Number(patch[k]); });
   if (patch.name !== undefined) rm.name = patch.name;
   if (patch.width !== undefined || patch.depth !== undefined) rm.calibrated = !!(rm.width && rm.depth);
   // CR-001 F-01：手动编辑字段；尺寸变化时同步空白布局（保留已有 layout 时仅更新地面/墙/视角尺寸）
   ensureRoomFields(rm);
   var dimsChanged = patch.width !== undefined || patch.depth !== undefined || patch.height !== undefined;
-  if (dimsChanged) rm.layout = makeLayout(rm);
+  var clampedFurniture = 0;
+  if (dimsChanged) {
+    rm.layout = makeLayout(rm);
+    // 房间缩小后越界的家具自动钳回边界（保留半个家具尺寸；家具大于房间时钳到房间中心），
+    // 避免家具悬空在墙外（评估报告 D-04 连带项）。表单式修改立即生效，不进家具撤销栈。
+    var halfW = (rm.width || 20) / 2, halfD = (rm.depth || 20) / 2;
+    d.furniture.forEach(function (f) {
+      if (f.roomId !== id) return;
+      var size = f.size || { w: 0.6, d: 0.6 };
+      var pos = f.position || { x: 0, y: 0, z: 0 };
+      var nx = clampCenter(pos.x || 0, -halfW + size.w / 2, halfW - size.w / 2);
+      var nz = clampCenter(pos.z || 0, -halfD + size.d / 2, halfD - size.d / 2);
+      if (Math.abs(nx - (pos.x || 0)) > 1e-6 || Math.abs(nz - (pos.z || 0)) > 1e-6) {
+        f.position = { x: round2(nx), y: pos.y || 0, z: round2(nz) };
+        f.updatedAt = now();
+        clampedFurniture++;
+      }
+    });
+  }
   if (patch.source !== undefined && ['manual', 'template', 'legacy_photo'].indexOf(patch.source) >= 0) rm.source = patch.source;
   if (patch.templateKey !== undefined) rm.templateKey = String(patch.templateKey || '');
   if (patch.layout !== undefined && patch.layout && typeof patch.layout === 'object') rm.layout = clone(patch.layout);
@@ -352,7 +375,8 @@ function updateRoom(id, patch) {
     }
   }
   rm.updatedAt = now();
-  var r = commit(); return r.ok ? { ok: true, data: clone(rm) } : r;
+  var r = commit();
+  return r.ok ? { ok: true, data: clone(rm), clampedFurniture: clampedFurniture } : r;
 }
 function archiveRoom(id) {
   var d = load(), rm = findById(d.rooms, id);
