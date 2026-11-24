@@ -126,7 +126,7 @@ Page({
       patch.dimH = fmtNum((s.h || 0) * 100);
     }
     this.setData(patch);
-    this._safeGL('setSelected', [this._findIndexById(sel.id)]);
+    this._withGL(function (gl) { return gl.setSelected(this._findIndexById(sel.id)); });
     this._safeRender();
   },
   // 「取消」：回滚本次编辑到基线，回到 selected，不改 dirty 之外的历史
@@ -278,22 +278,29 @@ Page({
     // 编辑子模式下仅保留该家具选中；VIEW 模式不主动高亮（进入 selected 才显示）
     if (!sel || !this._glRenderer || this.data.sceneMode === 'view' || this.data.sceneMode === 'loading') return;
     for (var i = 0; i < this._furniture.length; i++) {
-      if (this._furniture[i].id === sel.id) { this._safeGL('setSelected', [i]); return; }
+      if (this._furniture[i].id === sel.id) { this._withGL(function (gl) { return gl.setSelected(i); }); return; }
     }
   },
 
-  _safeGL: function (fn, args) {
-    if (!this._glRenderer || typeof this._glRenderer[fn] !== 'function') return null;
-    try { return this._glRenderer[fn].apply(this._glRenderer, args || []); }
+  // 显式引用调用渲染器（阶段2a，评估 3D-02）：方法名写死在调用点，改名可被
+  // qa/renderer-signature-contract-test.js 静态发现；catch 兜底真实 WebGL 异常并整体降级列表。
+  _withGL: function (fn, fallback) {
+    var gl = this._glRenderer;
+    if (!gl) return fallback === undefined ? null : fallback;
+    try { return fn.call(this, gl); }
     catch (e) {
       this._glRenderer = null;
       this.setData({ glError: '三维渲染异常，已切换列表', view: 'list' });
       return null;
     }
   },
+  // ⚠ 已废弃（阶段2a）：页面代码一律走 _withGL 显式调用；仅保留给 qa 自动化探针使用
+  _safeGL: function (fn, args) {
+    return this._withGL(function (gl) { return gl[fn].apply(gl, args || []); });
+  },
   _safeRender: function () {
     if (this.data.view === '3d' && !this.data.glError) {
-      this._safeGL('render');
+      this._withGL(function (gl) { return gl.render(); });
       this._syncBadges();
     }
   },
@@ -301,7 +308,7 @@ Page({
   // 只提示数量，不把物品画成三维模型；坐标随拖动/转视角/缩放实时更新。
   _syncBadges: function () {
     if (!this._glRenderer || typeof this._glRenderer.projectAll !== 'function') return;
-    var pts = this._safeGL('projectAll') || [];
+    var pts = this._withGL(function (gl) { return gl.projectAll(); }) || [];
     var self = this;
     var badges = [];
     pts.forEach(function (p) {
@@ -422,7 +429,7 @@ Page({
     var ts = e.touches;
     if (ts.length === 1) {
       var p = this._canvasXY(ts[0]);
-      var idx = this._safeGL('pick', [p.x, p.y]);
+      var idx = this._withGL(function (gl) { return gl.pick(p.x, p.y); });
       this._sx = p.x; this._sy = p.y;
       this._moved = false;
       this._hitIdx = (idx !== null && idx >= 0 && this._furniture[idx]) ? idx : -1;
@@ -438,7 +445,7 @@ Page({
           rotation: raw.rotation || 0,
           size: JSON.parse(JSON.stringify(raw.size || { w: 0.6, d: 0.6, h: 0.6 }))
         };
-        this._safeGL('setSelected', [this._hitIdx]);
+        this._withGL(function (gl) { return gl.setSelected(this._hitIdx); });
       } else {
         this._dragBase = null; this._dragBefore = null;
       }
@@ -476,12 +483,12 @@ Page({
       if (this._moved) {
         if (this._hitIdx >= 0 && this._dragBase) {
           // 命中家具且已拖动：屏幕位移换算为地面世界位移，实时预览（只在内存改模型）
-          var d = this._safeGL('dragDelta', [dx, dy]) || { dx: 0, dz: 0 };
+          var d = this._withGL(function (gl) { return gl.dragDelta(dx, dy); }) || { dx: 0, dz: 0 };
           var target = {
             x: this._dragBase.x + d.dx,
             z: this._dragBase.z + d.dz
           };
-          var moved = this._safeGL('previewMove', [this._hitIdx, target.x, target.z]);
+          var moved = this._withGL(function (gl) { return gl.previewMove(this._hitIdx, target.x, target.z); });
           if (moved) {
             this._dragTo = moved; // 记录最终坐标，抬手落盘
             var row = this._furniture[this._hitIdx];
@@ -490,7 +497,7 @@ Page({
           }
         } else if (this._hitIdx < 0) {
           // 空白拖动：旋转相机
-          this._safeGL('orbit', [dx, dy]);
+          this._withGL(function (gl) { return gl.orbit(dx, dy); });
         }
       }
       this._sx = p.x; this._sy = p.y;
@@ -498,7 +505,7 @@ Page({
     } else if (ts.length === 2 && this._pinch) {
       var d2 = this._dist(ts);
       // 双指张开→放大视图，捏合→缩小视图（不写家具数据）
-      this._safeGL('zoom', [this._pinch - d2]);
+      this._withGL(function (gl) { return gl.zoom(this._pinch - d2); });
       this._pinch = d2;
       // 双指旋转：有选中家具时旋转它（增量=本帧角度差），只做内存预览，抬手落盘
       var ang = this._angle(ts);
@@ -510,7 +517,7 @@ Page({
         var rotIdx = this._findIndexById(this.data.selected.id);
         if (rotIdx >= 0) {
           this._spinTo = (this._spinTo || 0) + da; // 累计旋转弧度，抬手落盘
-          this._safeGL('previewRotate', [rotIdx, this._spinTo]);
+          this._withGL(function (gl) { return gl.previewRotate(rotIdx, this._spinTo); });
           this._moved = true;
         }
       }
@@ -726,11 +733,11 @@ Page({
   },
 
   // ---- V1.3 §3.1 相机：复位 / 适配 / 视角预设；相机变化不标 dirty ----
-  resetView: function () { this._safeGL('reset'); this.setData({ cameraPreset: 'isometric' }); this._safeRender(); },
-  fitView: function () { this._safeGL('fit'); this._safeRender(); },
+  resetView: function () { this._withGL(function (gl) { return gl.reset(); }); this.setData({ cameraPreset: 'isometric' }); this._safeRender(); },
+  fitView: function () { this._withGL(function (gl) { return gl.fit(); }); this._safeRender(); },
   setPreset: function (e) {
     var name = (e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.preset) || 'isometric';
-    this._safeGL('setPreset', [name]);
+    this._withGL(function (gl) { return gl.setPreset(name); });
     this.setData({ cameraPreset: name });
     this._safeRender();
   },
@@ -976,7 +983,7 @@ Page({
   selectIndex: function (idx) {
     var f = this._furniture[idx];
     if (!f) return;
-    this._safeGL('setSelected', [idx]);
+    this._withGL(function (gl) { return gl.setSelected(idx); });
     this.setData({
       selected: this._selectedCard(f),
       bindings: this._decorateBindings(f.id),
@@ -1007,7 +1014,7 @@ Page({
         var r = store.updateFurniture(f.id, { model: model });
         if (!r.ok) { wx.showToast({ title: '更换失败', icon: 'none' }); return; }
         self.loadData();               // 刷新 _furniture 与 selected（_raw.model 更新）
-        self._safeGL('setSelected', [self._findIndexById(f.id)]);
+        self._withGL(function (gl) { return gl.setSelected(self._findIndexById(f.id)); });
         self._safeRender();            // signature 变化 → 重建模型，外观可见
         wx.showToast({ title: '已换为「' + model + '」，关联不变', icon: 'none' });
       }
@@ -1015,7 +1022,7 @@ Page({
   },
   clearSel: function () {
     if (this.data.sceneMode !== 'selected' && this.data.sceneMode !== 'view') return;
-    this._safeGL('setSelected', [-1]);
+    this._withGL(function (gl) { return gl.setSelected(-1); });
     this.setData({ selected: null, bindings: null, sheetOpen: false, sheetCollapsed: false, sceneMode: 'view' });
     this._safeRender();
   },
