@@ -112,12 +112,16 @@ ok('D2 页面 store.<name> 用法全部已导出（' + Object.keys(used).length 
   unknownUse.length ? '未导出却被使用:' + unknownUse.join(',') : '');
 
 // ---------- D3. 数据层 require 单一入口 ----------
+// 判定口径：require 目标的基础文件名恰为 store.js 且非 utils/store.js 才算绕过数据层入口；
+// 同目录模块（如 pages/room3d/scene-state-store.js）文件名含 store 但不是数据层，不算违规。
 var badRequire = [];
 walkJs(MP).forEach(function (f) {
   if (f.indexOf('utils' + path.sep + 'store.js') >= 0) return;
   var t = fs.readFileSync(f, 'utf8');
   (t.match(/require\((['"])([^'"]*)\1\)/g) || []).forEach(function (m) {
-    if (/store/i.test(m) && m.indexOf('store.js') >= 0 && !/utils\/store\.js|utils\\store\.js/.test(m)) badRequire.push(path.relative(MP, f) + ' → ' + m);
+    var target = m.replace(/^require\((['"])/, '').replace(/['"]\)$/, '');
+    var base = target.split(/[\/\\]/).pop();
+    if (base === 'store.js' && !/utils\/store\.js|utils\\store\.js/.test(m)) badRequire.push(path.relative(MP, f) + ' → ' + m);
   });
 });
 ok('D3 数据层 require 只走 utils/store.js', badRequire.length === 0, badRequire.length ? badRequire.join(' | ') : '');

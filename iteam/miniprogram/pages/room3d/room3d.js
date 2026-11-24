@@ -11,51 +11,19 @@ var glLifecycle = require('./gl-lifecycle.js');
 var badgesSync = require('./badges-sync.js');
 var sheetController = require('./sheet-controller.js');
 var selectionController = require('./selection-controller.js');
+var sceneStateStore = require('./scene-state-store.js');
 var rendererFactory = null;
-function clampNum(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-// 尺寸展示：保留两位小数并去掉无意义的尾随 0，避免缩放后出现长串小数
-function fmtNum(v) { return String(Math.round((Number(v) || 0) * 100) / 100); }
+var helpers = require('./helpers.js');
+var clampNum = helpers.clampNum;
+var fmtNum = helpers.fmtNum;
+var furnitureThumb = helpers.furnitureThumb;
+var itemThumb = helpers.itemThumb;
 // V1.3 §5.1/§5.2：首版步长固定 5cm、旋转 15°（90° 快捷）
 var MOVE_STEP_M = 0.05;   // 5cm，米
 var GRID_M = 0.05;        // 拖动落盘网格吸附步长 5cm，与按钮步进一致
 var ROT_STEP_DEG = 15;    // 度
 var ROT_QUICK_DEG = 90;   // 快捷旋转
 
-// 高保真资产映射：交付稿 assets/ 的缩略图与家具/物品 ID 关联（视觉规范 §6）。
-// 图片仅用于列表缩略，三维模型仍由 package3d 按 category 加载，二者不互相替代。
-var HIFI_ROOT = '/images/hifi/';
-// 阶段三：6 件样板家具的真实渲染缩略图（与 package3d 彩色模型一一对应）。
-// 图片只用于列表/卡片缩略，三维模型仍由 package3d 按 key 加载，二者不互相替代。
-var FURN_ROOT = '/images/furniture/';
-function furnitureThumb(f) {
-  var n = (f.name || '') + ' ' + (f.category || '');
-  // 有专属真实缩略图的类别优先命中；注意「床头柜」含「床」，须先于「床」判断。
-  if (/床头柜/.test(n)) return '';
-  if (/沙发|sofa/i.test(n)) return FURN_ROOT + 'sofa.jpg';
-  if (/床|bed/i.test(n)) return FURN_ROOT + 'bed.jpg';
-  if (/书桌|餐桌|桌|table/i.test(n)) return FURN_ROOT + 'table.jpg';
-  if (/茶几|coffee/i.test(n)) return FURN_ROOT + 'coffee.jpg';
-  if (/衣柜|wardrobe/i.test(n)) return FURN_ROOT + 'wardrobe.jpg';
-  if (/置物架|书架|书柜|shelf/i.test(n)) return FURN_ROOT + 'shelf.jpg';
-  // 其余类别沿用原交付稿缩略图；无图时返回空串，由页面用 icon 占位，
-  // 不回落到整屋图 home_isometric.jpg（那会让「双人床/落地窗」显示成整套房效果）。
-  if (/躺椅/i.test(n)) return HIFI_ROOT + 'sofa.jpg';
-  if (/电视|tv|影音/i.test(n)) return HIFI_ROOT + 'tv_console.jpg';
-  if (/绿植|植物|plant/i.test(n)) return HIFI_ROOT + 'plant.jpg';
-  return '';
-}
-function itemThumb(it) {
-  var n = it.name || '';
-  if (/保温杯|水壶|瓶|bottle/i.test(n)) return HIFI_ROOT + 'bottle.jpg';
-  if (/马克杯|杯子|mug|cup/i.test(n)) return HIFI_ROOT + 'mug.jpg';
-  if (/耳机|headphone/i.test(n)) return HIFI_ROOT + 'headphones.jpg';
-  if (/笔记本|书|note|book/i.test(n)) return HIFI_ROOT + 'notebook.jpg';
-  if (/绿植|植物|plant/i.test(n)) return HIFI_ROOT + 'plant.jpg';
-  if (/纸巾|纸|tissue/i.test(n)) return HIFI_ROOT + 'tissue.jpg';
-  if (/洗衣液|清洁|detergent/i.test(n)) return HIFI_ROOT + 'detergent.jpg';
-  if (/电池|battery/i.test(n)) return HIFI_ROOT + 'battery.jpg';
-  return '/images/default-goods-image.png';
-}
 
 Page(Object.assign({
   data: {
@@ -166,63 +134,14 @@ Page(Object.assign({
   // 角度归一化到 [0,360)
   _normDeg: function (d) { d = Math.round(d) % 360; return d < 0 ? d + 360 : d; },
 
-  _selectedCard: function (row) {
-    return {
-      id: row.id, name: row.name, px: row.px, pz: row.pz,
-      rot: row.rot, sz: row.sz, status: row.status,
-      bindCount: store.bindingsOfFurniture(row.id).items.length
-    };
-  },
+  // _selectedCard 已迁移至 ./scene-state-store.js（阶段2c SceneStateStore 块第四迁）
 
-  // 绑定汇总补展示名（store 只回 items，展示用 itemNames 在此组装，不改数据层）
-  _decorateBindings: function (furnitureId) {
-    if (!furnitureId) return null;
-    var b = store.bindingsOfFurniture(furnitureId);
-    b.itemNames = (b.items || []).map(function (it) { return it.name; }).join('、');
-    return b;
-  },
+  // _decorateBindings 已迁移至 ./scene-state-store.js（阶段2c SceneStateStore 块第四迁）
 
   // _sheetNodes/_refreshSheet/openSheet/closeSheet/toggleSheet/chooseNode/openNodeItem
   // 已迁移至 ./sheet-controller.js（阶段2c SheetController 块第二迁，mixin 合并进 Page）
 
-  loadData: function () {
-    var room = store.getRoom(this.data.roomId);
-    if (!room) { wx.showToast({ title: '房间不存在', icon: 'none' }); return; }
-    var list = store.listFurniture(this.data.roomId).map(function (f) {
-      var lib = C.FURNITURE_LIB[f.category] || {};
-      return {
-        id: f.id, name: f.name, category: f.category, icon: lib.icon || '▣',
-        thumb: furnitureThumb(f),
-        model: f.model, status: f.status, confidence: f.confidence,
-        px: (f.position.x || 0).toFixed(2), pz: (f.position.z || 0).toFixed(2),
-        rot: Math.round((f.rotation || 0) * 180 / Math.PI),
-        sz: fmtNum(f.size && f.size.w) + '×' + fmtNum(f.size && f.size.d) + '×' + fmtNum(f.size && f.size.h),
-        bindCount: store.bindingsOfFurniture(f.id).items.length,
-        _raw: f
-      };
-    });
-    this._room = room;
-    this._furniture = list;
-    // 选中态：优先保持当前选中；否则保持规范 V1.0 兼容（默认第一件，demo 对齐依赖此串）
-    var selected = this.data.selected, selRow = null;
-    if (selected) {
-      for (var si = 0; si < list.length; si++) if (list[si].id === selected.id) { selRow = list[si]; break; }
-    }
-    if (!selRow && list.length) selRow = list[0];
-    var dim = room.calibrated ? (room.width + '×' + room.depth + '×' + room.height + ' m') : '尺寸未定标（相对估算）';
-    this.setData({
-      roomName: room.name, dimText: dim, furniture: list,
-      selected: selRow ? this._selectedCard(selRow) : null,
-      bindings: this._decorateBindings(selRow ? selRow.id : '')
-    });
-    // 底部 dock 的「物品（N）」徽标需要实时数量；只加载数据，不切换视图/状态
-    this._loadSpaceItems();
-    // 抽屉内容跟随选中家具刷新；打开状态由用户点击控制，loadData 不擅自弹面板
-    this._refreshSheet(selRow ? selRow.id : '');
-    // 同步选中态到渲染器：高亮环与卡片选中态一致
-    this._syncSelectionToGL();
-    this._safeRender();
-  },
+  // loadData 已迁移至 ./scene-state-store.js（阶段2c SceneStateStore 块第四迁，mixin 合并进 Page）
 
   // _syncSelectionToGL 已迁移至 ./selection-controller.js（阶段2c SelectionController 块第三迁）
 
@@ -686,24 +605,7 @@ Page(Object.assign({
       this.setData({ viewTab: 'furniture', sceneMode: 'view' }, this._initGL.bind(this));
     }
   },
-  _loadSpaceItems: function () {
-    // 已进入具体房间，只展示该房间的物品（按 nodes.roomId 聚合），不再混入同空间其他房间/未定位物品。
-    // 用户反馈：进主卧却看到客厅/未定位的物品，属口径错误；改为房间级过滤。
-    var rid = this.data.roomId || (this._room && this._room.id);
-    var list = store.listItems({ roomId: rid }).map(function (it) {
-      var node = it.currentNodeId ? store.getNode(it.currentNodeId) : null;
-      var owner = node && node.furnitureId ? store.getFurniture(node.furnitureId) : null;
-      var iv = store.findInventoryByItem(it.id);
-      return {
-        id: it.id, name: it.name, photoPath: it.photoPath || '', category: it.category || '',
-        thumb: it.photoPath || itemThumb(it),
-        qty: iv ? fmtNum(iv.balance) + (iv.unit || '') : '',
-        furnitureName: owner ? owner.name : '',
-        locText: node ? store.nodePath(it.currentNodeId).join(' / ') : '未设置位置'
-      };
-    });
-    this.setData({ spaceItems: list });
-  },
+  // _loadSpaceItems 已迁移至 ./scene-state-store.js（阶段2c SceneStateStore 块第四迁）
   openSpaceItem: function (e) {
     var id = e.currentTarget.dataset.id;
     if (id) wx.navigateTo({ url: '/pages/item-detail/item-detail?id=' + id });
@@ -717,13 +619,7 @@ Page(Object.assign({
     this.setData({ viewTab: 'furniture', sceneMode: 'view', showLib: true }, this._initGL.bind(this));
   },
 
-  // 拖动后把最新 raw 同步给渲染器（getData 返回 _raw 引用，updateFurniture 已落盘）
-  _syncSceneToGL: function () {
-    for (var i = 0; i < this._furniture.length; i++) {
-      var f = store.getFurniture(this._furniture[i].id);
-      if (f) this._furniture[i]._raw = f;
-    }
-  },
+  // _syncSceneToGL 已迁移至 ./scene-state-store.js（阶段2c SceneStateStore 块第四迁）
 
   // chooseAddItem/addItemAtFurniture/_targetNodeId/_rootNodeId/openBindPicker/closeBindPicker/
   // addItemFromPicker/bindExistingItem/toggleLib/addFromLib 已迁移至 ./sheet-controller.js
@@ -891,4 +787,4 @@ Page(Object.assign({
       }
     });
   }
-}, badgesSync, sheetController, selectionController));
+}, badgesSync, sheetController, selectionController, sceneStateStore));
