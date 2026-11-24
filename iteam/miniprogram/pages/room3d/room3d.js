@@ -4,6 +4,7 @@
 // 三维渲染来自 package3d 分包（Three.js r108 + GLB 资产），按需引入；业务写仍落 store。
 var store = require('../../utils/store.js');
 var C = require('../../utils/constants.js');
+var glLifecycle = require('./gl-lifecycle.js');
 var rendererFactory = null;
 function clampNum(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 // 尺寸展示：保留两位小数并去掉无意义的尾随 0，避免缩放后出现长串小数
@@ -94,7 +95,7 @@ Page({
       if (self.data.viewTab === 'furniture' && self.data.view === '3d' && !self.data.glError) self._initGL();
     }, 60);
   },
-  onUnload: function () { this._clearLongPress(); this._glRenderer = null; this._glInitStarted = false; },
+  onUnload: function () { this._clearLongPress(); glLifecycle.reset(this); },
   // 分段页面可滚动：canvas 位置随滚动变化，重新取 rect 供触摸坐标换算
   onPageScroll: function () { this._syncCanvasRect(); },
 
@@ -289,7 +290,7 @@ Page({
     if (!gl) return fallback === undefined ? null : fallback;
     try { return fn.call(this, gl); }
     catch (e) {
-      this._glRenderer = null;
+      glLifecycle.reset(this);
       this.setData({ glError: '三维渲染异常，已切换列表', view: 'list' });
       return null;
     }
@@ -344,9 +345,9 @@ Page({
         self.setData({ glError: '无法获取 canvas 节点，请使用基础库 2.9+', view: 'list' });
         return;
       }
-      self._glInitStarted = true; // 加锁：分包异步加载期间不让第二个调用进来
+      glLifecycle.beginInit(self); // 加锁：分包异步加载期间不让第二个调用进来
       var canvas = res[0].node;
-      self._glCanvas = canvas;
+      glLifecycle.setCanvas(self, canvas);
       self._glRect = { left: 0, top: 0, width: res[0].width, height: res[0].height };
       self._load3D(canvas, res[0]);
     });
@@ -400,7 +401,7 @@ Page({
     canvas.width = Math.max(1, Math.floor(sizeInfo.width));
     canvas.height = Math.max(1, Math.floor(sizeInfo.height));
     r.resize(canvas.width, canvas.height);
-    this._glRenderer = r;
+    glLifecycle.attachRenderer(this, r);
     this._syncCanvasRect();
     this._syncSelectionToGL();
     this._safeRender();
@@ -745,9 +746,7 @@ Page({
   // canvas 位于 wx:if 块内：切到物品视图会被销毁。必须同步清空渲染器与初始化锁，
   // 否则返回时 _initGL 被 _glRenderer/_glInitStarted 挡住不重建 → 三维空白、触摸选中失效、无法编辑/添加家具。
   _resetGLForHidden: function () {
-    this._glRenderer = null;
-    this._glCanvas = null;
-    this._glInitStarted = false;
+    glLifecycle.reset(this);
   },
   switchViewTab: function (e) {
     var tab = (e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.tab) || 'furniture';
@@ -849,7 +848,7 @@ Page({
     if (!sel) return;
     if (!this._targetNodeId(sel.id)) { wx.showToast({ title: '该家具暂无收纳节点', icon: 'none' }); return; }
     // 绑定面板用 wx:if 替换三维块，canvas 将被销毁：释放引用便于返回时重建
-    this._glRenderer = null; this._glCanvas = null; this._glInitStarted = false;
+    glLifecycle.reset(this);
     var fid = sel.id;
     var statusText = { at_home: '在家·位置未知', unknown: '位置未知', out: '外出', borrowed: '借出' };
     var list = store.listItems().map(function (it) {
@@ -867,7 +866,7 @@ Page({
     var self = this;
     this.setData({ showBindPicker: false, bindableItems: [] }, function () {
       // canvas 随 wx:if 重建，重新初始化渲染器；失败会自动降级列表
-      self._glInitStarted = false;
+      glLifecycle.unlockInit(self);
       setTimeout(function () { self._initGL(); }, 60);
     });
   },
@@ -1031,7 +1030,7 @@ Page({
     var v = e.currentTarget.dataset.v;
     if (v === this.data.view) return;
     if (v === 'list') {
-      this._glRenderer = null; this._glCanvas = null; this._glInitStarted = false;
+      glLifecycle.reset(this);
       this.setData({ view: 'list' });
     } else {
       this.setData({ view: '3d' }, this._initGL.bind(this));

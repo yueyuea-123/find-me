@@ -132,6 +132,15 @@ ok(reflectCalls === 0,
   '页面无残留 _safeGL 字符串反射调用点',
   '残留 ' + reflectCalls + ' 处（页面代码应走 _withGL；_safeGL 仅保留为 qa 探针适配器）');
 
+// ---------- 6.5 渲染锁只经 GLLifecycle 管理（阶段2d，评估 3D-03） ----------
+const glLifecycleSrc = fs.readFileSync(path.join(MP, 'pages', 'room3d', 'gl-lifecycle.js'), 'utf8');
+ok(/reset: function|unlockInit: function/.test(glLifecycleSrc), 'gl-lifecycle.js 管理器存在（reset/unlockInit/beginInit/setCanvas/attachRenderer）');
+const directLock = (room3dSrc.match(/[.\w]\s*_gl(?:Renderer|Canvas|InitStarted)\s*=\s*[^=]/g) || []).length;
+ok(directLock === 0,
+  'room3d 页无渲染锁直接赋值（三把锁全部经 glLifecycle）',
+  '残留 ' + directLock + ' 处直接赋值：应改走 glLifecycle.reset/unlockInit/beginInit/setCanvas/attachRenderer');
+ok(/glLifecycle\.require|require\('\.\/gl-lifecycle\.js'\)/.test(room3dSrc), 'room3d 引入 gl-lifecycle 模块');
+
 // ---------- 7. module.exports 面不变 ----------
 ok(/module\.exports\s*=\s*\{[^}]*createRoomRenderer/.test(rendererSrc),
   'renderer.js 对外导出 createRoomRenderer');
