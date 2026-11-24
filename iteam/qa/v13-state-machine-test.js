@@ -273,7 +273,11 @@ ok('相机操作全程不标 dirty', pCam.data.isDirty === false);
 
 // ---- 13. 静态口径：WXML 覆盖状态图所有面板与按钮 ----
 const wxml = fs.readFileSync(path.join(MP, 'pages/room3d/room3d.wxml'), 'utf8');
-const jsSrc = fs.readFileSync(path.join(MP, 'pages/room3d/room3d.js'), 'utf8');
+// 阶段2c 七块拆分后页面代码分布在 pages/room3d/ 全部 .js（第 6 个聚合改造，同八·补9~12 口径）
+const jsSrc = fs.readdirSync(path.join(MP, 'pages/room3d'))
+  .filter(f => f.endsWith('.js'))
+  .map(f => fs.readFileSync(path.join(MP, 'pages/room3d', f), 'utf8'))
+  .join('\n');
 ok('画布仍使用 catchtouch 拦截', /catchtouchstart="onTouchStart"/.test(wxml) && /catchtouchmove="onTouchMove"/.test(wxml));
 ['openManage', 'enterMove', 'enterRotate', 'enterDimension', 'saveScene', 'undoScene', 'switchViewTab',
  'moveStep', 'rotateStep', 'applyDimension', 'cancelEdit', 'finishEdit', 'fitView', 'setPreset']

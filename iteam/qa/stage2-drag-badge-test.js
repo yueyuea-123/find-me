@@ -179,7 +179,11 @@ ok('撤销回到拖动前位置', Math.abs(posUndo.x - posPre.x) < 0.001 && Math
   `${posPre.x}/${posPre.z} -> ${posUndo.x}/${posUndo.z}`);
 
 // ---- 7. 静态口径 ----
-const jsSrc = fs.readFileSync(path.join(MP, 'pages/room3d/room3d.js'), 'utf8');
+// 阶段2c 七块拆分后页面代码分布在 pages/room3d/ 全部 .js（聚合改造，同八·补9~12 口径）
+const jsSrc = fs.readdirSync(path.join(MP, 'pages/room3d'))
+  .filter(f => f.endsWith('.js'))
+  .map(f => fs.readFileSync(path.join(MP, 'pages/room3d', f), 'utf8'))
+  .join('\n');
 const wxml = fs.readFileSync(path.join(MP, 'pages/room3d/room3d.wxml'), 'utf8');
 const rend = fs.readFileSync(path.join(MP, 'package3d/renderer.js'), 'utf8');
 ok('页面调用 dragDelta/previewMove 实现直接拖拽（阶段2a 显式引用）', /gl\.dragDelta\(/.test(jsSrc) && /gl\.previewMove\(/.test(jsSrc));

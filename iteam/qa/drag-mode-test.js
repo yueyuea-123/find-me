@@ -201,7 +201,11 @@ ok('再次点按收起库', pLib.data.showLib === false);
 
 // ---- 9. 静态口径：canvas 手势拦截 + V1.3 相机/状态机入口 ----
 const wxml = fs.readFileSync(path.join(MP, 'pages/room3d/room3d.wxml'), 'utf8');
-const jsSrc = fs.readFileSync(path.join(MP, 'pages/room3d/room3d.js'), 'utf8');
+// 阶段2c 七块拆分后页面代码分布在 pages/room3d/ 全部 .js（聚合改造，同八·补9~12 口径）
+const jsSrc = fs.readdirSync(path.join(MP, 'pages/room3d'))
+  .filter(f => f.endsWith('.js'))
+  .map(f => fs.readFileSync(path.join(MP, 'pages/room3d', f), 'utf8'))
+  .join('\n');
 ok('canvas 使用 catchtouchstart/move/end', /catchtouchstart="onTouchStart"/.test(wxml) && /catchtouchmove="onTouchMove"/.test(wxml) && /catchtouchend="onTouchEnd"/.test(wxml));
 ok('V1.3 提示声明空白转视角', /空白处拖动转视角/.test(jsSrc));
 ok('V1.3 页面调用 orbit 转视角、不调用 pan', /gl\.orbit\(/.test(jsSrc) && !/gl\.pan\(/.test(jsSrc));
