@@ -1,8 +1,13 @@
-// 三维房间交互矩阵验证（单一主视图 / 固定等距视角，基准：交互设计规范 V1.0）
-// 运行前提：微信开发者工具已打开本项目且自动化端口 9420 已开启（cli auto --auto-port 9420）
-// 运行方式：node qa/interaction-matrix-sim.js（在项目根目录执行）
+// 三维房间交互矩阵验证（直接拖拽主路径，基准：客厅三维空间交互与开发设计规范 V1.4）
+// 运行前提：微信开发者工具已打开本项目且自动化端口 9420 已开启（cli auto --project <iteam> --auto-port 9420）
+// 运行方式：node qa/interaction-matrix-sim.js（在 iteam 目录执行）
 // 说明：automator 的 Element 触摸坐标语义不可靠，测试直接调用页面触摸方法并传模拟事件；
-//       打桩渲染器 zoom 计数验证"固定视角仅有限缩放"；结束自动 resetDemo 恢复演示数据。
+//       每个手势用例内部重新探测命中点——相机 orbit/zoom 会使早前探测的屏幕坐标失效，
+//       跨手势复用会拖错家具（2026-11-24 实测踩坑）；相机变化不算家具数据变更（V1.4 §3.2）；
+//       结束自动 resetDemo 恢复演示数据。
+// 2026-11-24：由"固定等距视角（设计基准 V1.0）"口径同步为 V1.4 直接拖拽口径——
+//       V2 改为"拖空白应转视角且不标 dirty"；V4/V5/X1 改为手势内重探测；
+//       V5 由已删除的 rotateFurniture 旧方法改为 enterRotate + rotateStep 微调路径。
 const automator = require('../node_modules/miniprogram-automator');
 const wait = ms => new Promise(r => setTimeout(r, ms));
 let pass = 0, fail = 0;
@@ -25,12 +30,12 @@ const E = (mp, fn, arg) => mp.evaluate(fn, arg);
                singleView:p.data.mode===undefined, hint:p.data.hint }; });
     ok('初始化正常', init.view==='3d' && !init.glError && init.ready, JSON.stringify(init));
     ok('单一主视图（无三模式字段）', init.singleView, 'mode=' + init.singleView);
-    ok('提示不宣称自由旋转视角', !/旋转视角|平移视角/.test(init.hint), init.hint);
+    ok('提示含 V1.4 主路径（拖动转视角/双指缩放）', /转视角/.test(init.hint) && /双指缩放/.test(init.hint), init.hint);
 
     // 动态找家具命中点与空白点
     const pts = await E(mp, () => { const p = getCurrentPages().slice(-1)[0];
       let hit=null, blank=null;
-      for (let x=40;x<340;x+=20) for (let y=30;y<210;y+=20) {
+      for (let x=40;x<340;x+=10) for (let y=30;y<210;y+=10) {
         const idx=p._safeGL('pick',[x,y]);
         if (idx!==null && idx>=0 && !hit) hit={x,y,idx};
         if (idx===null && !blank) blank={x,y};
@@ -54,25 +59,25 @@ const E = (mp, fn, arg) => mp.evaluate(fn, arg);
     ok('V1 短按家具选中且不跳页', !!v1.sel && v1.nav==='', JSON.stringify(v1));
     ok('V1 选中卡展示已绑定物品数量', typeof v1.count==='number' && v1.bindings, 'count=' + v1.count);
 
-    // V2 拖空白：固定视角，不 orbit / 不 pan / 不移动家具
+    // V2 拖空白：旋转相机视角（V1.4 §3.1），不平移、不移动家具、不标 dirty
     const v2 = await E(mp, arg => { const p=getCurrentPages().slice(-1)[0]; const gl=p._glRenderer;
       let no=0, np=0; const oo=gl.orbit, op=gl.pan;
       gl.orbit=function(){no++;return oo.apply(this,arguments)}; gl.pan=function(){np++;return op.apply(this,arguments)};
       const a={x:arg.ax,y:arg.ay,clientX:arg.ax+arg.left,clientY:arg.ay+arg.top},
             b={x:arg.ax+40,y:arg.ay+30,clientX:arg.ax+40+arg.left,clientY:arg.ay+30+arg.top};
       const before=p.data.furniture.map(f=>f.px+'/'+f.pz).join(',');
+      const dirty0=p.data.isDirty;
       try { p.onTouchStart({touches:[a],changedTouches:[a]}); p.onTouchMove({touches:[b],changedTouches:[b]}); p.onTouchEnd({touches:[],changedTouches:[b]}); }
       finally { gl.orbit=oo; gl.pan=op; }
       p.loadData();
-      return {no,np,changed:before!==p.data.furniture.map(f=>f.px+'/'+f.pz).join(',')};
-    }, {ax:pts.blank.x,ay:pts.blank.y,bx:pts.blank.x+40,by:pts.blank.y+30,...off});
-    ok('V2 拖空白不旋转/平移视角', v2.no===0 && v2.np===0, JSON.stringify(v2));
+      return {no,np,dirty0,dirty1:p.data.isDirty,changed:before!==p.data.furniture.map(f=>f.px+'/'+f.pz).join(',')};
+    }, {ax:pts.blank.x,ay:pts.blank.y,...off});
+    ok('V2 拖空白转视角（orbit 生效）', v2.no>0, JSON.stringify(v2));
+    ok('V2 拖空白不平移（pan 不参与）', v2.np===0, 'pan=' + v2.np);
     ok('V2 拖空白不移动家具', !v2.changed);
+    ok('V2 相机变化不标 dirty（V1.4 §3.2）', v2.dirty0===v2.dirty1, 'isDirty ' + v2.dirty0 + ' -> ' + v2.dirty1);
 
     // V3 双指缩放视图（打桩 zoom），家具尺寸不变
-    const v3hit = await E(mp, () => { const p=getCurrentPages().slice(-1)[0];
-      for (let x=40;x<340;x+=10) for (let y=30;y<210;y+=10) { const idx=p._safeGL('pick',[x,y]); if (idx!==null&&idx>=0) return {x,y,idx}; }
-      return null; });
     const v3 = await E(mp, arg => { const p=getCurrentPages().slice(-1)[0]; const gl=p._glRenderer;
       let n=0; const oz=gl.zoom; gl.zoom=function(){n++;return oz.apply(this,arguments)};
       const sz0=p.data.selected && p.data.selected.sz;
@@ -84,29 +89,59 @@ const E = (mp, fn, arg) => mp.evaluate(fn, arg);
     ok('V3 双指缩放视图', v3.n>0, 'zoom=' + v3.n);
     ok('V3 双指不改家具尺寸', v3.sz0===v3.sz1, v3.sz0+' -> '+v3.sz1);
 
-    // V4 拖家具移动 + 预览落盘分离（重新探测命中点）
+    // V4 单指拖家具：预览跟手 → 抬手一次性落盘 + 5cm 吸附（V1.4 §5.1）。
+    // 命中点在本用例内重新探测：V3 的 zoom 已使此前探测的屏幕坐标失效。
     const v4 = await E(mp, arg => { const p=getCurrentPages().slice(-1)[0];
-      const hit=arg.hit, idx=hit.idx;
+      const findHit=()=>{ for (let x=40;x<340;x+=10) for (let y=30;y<210;y+=10) { const idx=p._safeGL('pick',[x,y]); if (idx!==null&&idx>=0) return {x,y,idx}; } return null; };
+      const hit=findHit();
+      if (!hit) return {noHit:true};
+      const idx=hit.idx;
       const raw0=JSON.parse(JSON.stringify(p._furniture[idx]._raw.position));
-      const a={x:hit.x,y:hit.y,clientX:hit.x+arg.left,clientY:hit.y+arg.top},
-            b={x:hit.x+80,y:hit.y+50,clientX:hit.x+80+arg.left,clientY:hit.y+50+arg.top};
-      p.onTouchStart({touches:[a],changedTouches:[a]}); p.onTouchMove({touches:[b],changedTouches:[b]});
+      const bind0=p.data.bindings?Object.keys(p.data.bindings).length:null;
+      const pt=(x,y)=>({x,y,clientX:x+arg.left,clientY:y+arg.top});
+      p.onTouchStart({touches:[pt(hit.x,hit.y)],changedTouches:[pt(hit.x,hit.y)]});
+      p.onTouchMove({touches:[pt(hit.x+80,hit.y+50)],changedTouches:[pt(hit.x+80,hit.y+50)]});
       const midCard=p.data.selected.px+'/'+p.data.selected.pz;
       const midRaw=p._furniture[idx]._raw.position.x+'/'+p._furniture[idx]._raw.position.z;
-      p.onTouchEnd({touches:[],changedTouches:[b]}); p.loadData();
-      return {raw0:raw0.x+'/'+raw0.z, midCard, midRaw, after:p.data.furniture[idx].px+'/'+p.data.furniture[idx].pz};
-    }, {hit:v3hit, ...off});
-    ok('V4 单指拖家具落盘', Math.abs(Number(v4.after.split('/')[0])-Number(v4.raw0.split('/')[0]))>0.01, v4.raw0+' -> '+v4.after);
+      p.onTouchEnd({touches:[],changedTouches:[pt(hit.x+80,hit.y+50)]}); p.loadData();
+      const rawAfter=p._furniture[idx]._raw.position;
+      const snapOk=Math.abs(rawAfter.x*20-Math.round(rawAfter.x*20))<1e-6 && Math.abs(rawAfter.z*20-Math.round(rawAfter.z*20))<1e-6;
+      const bind1=p.data.bindings?Object.keys(p.data.bindings).length:null;
+      return {raw0:raw0.x+'/'+raw0.z, midCard, midRaw, rawAfter:rawAfter.x+'/'+rawAfter.z, snapOk, bind0, bind1,
+              movedRaw:rawAfter.x!==raw0.x||rawAfter.z!==raw0.z};
+    }, off);
+    ok('V4 单指拖家具抬手落盘', v4.movedRaw, v4.raw0+' -> '+v4.rawAfter);
+    ok('V4 落盘坐标按 5cm 网格吸附', v4.snapOk, v4.rawAfter);
     ok('V4 预览期卡片变化但库未变', v4.midCard!==v4.midRaw, 'card='+v4.midCard+' raw='+v4.midRaw);
+    ok('V4 拖动不破坏物品绑定（BR-009）', v4.bind0===v4.bind1, 'bindings ' + v4.bind0 + ' -> ' + v4.bind1);
 
-    // V5 按钮旋转 ±90°、可逆
-    const v5 = await E(mp, () => { const p=getCurrentPages().slice(-1)[0];
-      const before=p.data.selected.rot; p.rotateFurniture({currentTarget:{dataset:{dir:1}}});
-      const after1=p.data.selected.rot; p.rotateFurniture({currentTarget:{dataset:{dir:-1}}});
-      return {before,after1,after2:p.data.selected.rot}; });
-    const step = ((v5.after1 - v5.before) + 360) % 360;
-    ok('V5 按钮旋转 90° 且可逆', step===90 && v5.after2===v5.before,
-      v5.before+'° -> '+v5.after1+'° -> '+v5.after2+'°');
+    // V5 角度按钮精确微调（V1.4 §5.2 辅助路径）：选中 → enterRotate → ±90°，即时落盘、可逆
+    const v5hit = await E(mp, () => { const p=getCurrentPages().slice(-1)[0];
+      for (let x=40;x<340;x+=10) for (let y=30;y<210;y+=10) { const idx=p._safeGL('pick',[x,y]);
+        if (idx!==null&&idx>=0 && typeof (p.data.furniture[idx]&&p.data.furniture[idx].rot)==='number') return {x,y,idx}; }
+      return null; });
+    const v5 = await E(mp, arg => { const p=getCurrentPages().slice(-1)[0];
+      if (!arg.hit) return {noHit:true};
+      const pt={x:arg.hit.x,y:arg.hit.y,clientX:arg.hit.x+arg.left,clientY:arg.hit.y+arg.top};
+      p.onTouchStart({touches:[pt],changedTouches:[pt]}); p.onTouchEnd({touches:[],changedTouches:[pt]});
+      const r={selected:!!p.data.selected};
+      if (!r.selected) return r;
+      p.enterRotate(); r.mode=p.data.sceneMode;
+      const rot0=p.data.selected.rot;
+      p.rotateStep({currentTarget:{dataset:{dir:1,quick:1}}});
+      const rot1=p.data.selected.rot;
+      p.rotateStep({currentTarget:{dataset:{dir:-1,quick:1}}});
+      const rot2=p.data.selected.rot;
+      p.finishEdit(); r.modeAfter=p.data.sceneMode;
+      r.rot0=rot0; r.rot1=rot1; r.rot2=rot2;
+      return r;
+    }, {hit:v5hit, ...off});
+    const stepF=((v5.rot1-v5.rot0)+360)%360;
+    const stepB=((v5.rot2-v5.rot1)+360)%360;
+    ok('V5 进入旋转微调模式', v5.selected && v5.mode==='rotate', 'mode=' + v5.mode);
+    ok('V5 角度按钮 +90° 即时落盘', stepF===90, v5.rot0+'° -> '+v5.rot1+'°');
+    ok('V5 角度按钮 -90° 可逆还原', stepB===270 && v5.rot2===v5.rot0, v5.rot1+'° -> '+v5.rot2+'°');
+    ok('V5 完成后退出微调模式', v5.modeAfter==='selected', 'mode=' + v5.modeAfter);
 
     // V6 添加物品两路径（打桩 navigateTo / showActionSheet）
     const v6 = await E(mp, () => { const p=getCurrentPages().slice(-1)[0];
@@ -128,26 +163,54 @@ const E = (mp, fn, arg) => mp.evaluate(fn, arg);
       p.toggleLib(); return {before,after,end:p.data.showLib}; });
     ok('V7 家具库按需展开', v7.before===false && v7.after===true && v7.end===false, JSON.stringify(v7));
 
-    // X1 越界钳制
+    // X1 越界钳制（先 resetView 恢复基准视角再探测，避免前序手势转动相机后扫不到家具）
+    await E(mp, () => { getCurrentPages().slice(-1)[0].resetView(); });
+    await wait(400);
     const x1 = await E(mp, arg => { const p=getCurrentPages().slice(-1)[0];
-      const a={x:arg.cx,y:arg.cy,clientX:arg.cx+arg.left,clientY:arg.cy+arg.top}, b={x:arg.cx+2000,y:arg.cy+2000,clientX:arg.cx+2000+arg.left,clientY:arg.cy+2000+arg.top};
-      p.onTouchStart({touches:[a],changedTouches:[a]}); p.onTouchMove({touches:[b],changedTouches:[b]}); p.onTouchEnd({touches:[],changedTouches:[b]});
-      p.loadData();
-      const f=p.data.furniture[arg.idx], rm=p._room;
-      return {px:Number(f.px),pz:Number(f.pz),w:rm.width,d:rm.depth};
-    }, {cx:pts.hit.x, cy:pts.hit.y, idx:pts.hit.idx, ...off});
-    ok('X1 越界位置被钳制在房间内', Math.abs(x1.px)<=x1.w/2+0.01 && Math.abs(x1.pz)<=x1.d/2+0.01,
-      `pos(${x1.px},${x1.pz}) 房间 ${x1.w}×${x1.d}`);
+      try {
+        let hit=null;
+        for (let x=40;x<340;x+=10) for (let y=30;y<210;y+=10) { const idx=p._safeGL('pick',[x,y]); if (idx!==null&&idx>=0) { hit={x,y,idx}; break; } }
+        if (!hit) return {noHit:true};
+        const a={x:hit.x,y:hit.y,clientX:hit.x+arg.left,clientY:hit.y+arg.top}, b={x:hit.x+2000,y:hit.y+2000,clientX:hit.x+2000+arg.left,clientY:hit.y+2000+arg.top};
+        p.onTouchStart({touches:[a],changedTouches:[a]}); p.onTouchMove({touches:[b],changedTouches:[b]}); p.onTouchEnd({touches:[],changedTouches:[b]});
+        p.loadData();
+        const f=p.data.furniture[hit.idx], rm=p._room || p.data.room;
+        if (!f || !rm) return {noData:true, hasF:!!f, hasRoom:!!rm};
+        return {px:Number(f.px),pz:Number(f.pz),w:rm.width,d:rm.depth};
+      } catch (e) { return {err:e.message}; }
+    }, off);
+    ok('X1 越界位置被钳制在房间内', x1 && typeof x1.px==='number' && Math.abs(x1.px)<=x1.w/2+0.01 && Math.abs(x1.pz)<=x1.d/2+0.01,
+      JSON.stringify(x1) + ` pos(${x1.px},${x1.pz}) 房间 ${x1.w}×${x1.d}`);
 
-    // X2 删除保护：关联家具删除被阻断，物品记录不丢
-    const x2 = await E(mp, () => { const p=getCurrentPages().slice(-1)[0];
-      const bed=p._furniture.find(f=>/床/.test(f.name));
-      let titles=[]; const orig=wx.showModal; wx.showModal=function(o){titles.push(o.title)};
-      try { p._doRemoveFurniture(bed.id); } finally { wx.showModal=orig; }
-      p.loadData();
-      return {titles, stillThere:p.data.furniture.some(f=>f.id===bed.id)};
-    });
-    ok('X2 有关联家具删除被阻断', x2.stillThere && x2.titles.indexOf('无法删除')>=0, JSON.stringify(x2));
+    // X2 删除保护（规范 §4.5 现行口径）：确认弹窗声明物品去向，确认后删除、物品记录不丢
+    // （item-list 为 tabBar 页不能 navigateTo，改用页内 openBindPicker 数全量物品）
+    const bedId = await E(mp, () => { const p=getCurrentPages().slice(-1)[0];
+      const bed=p._furniture.find(f=>/床/.test(f.name)); return bed ? bed.id : null; });
+    const x2 = await E(mp, id => { const p=getCurrentPages().slice(-1)[0];
+      try {
+        // 删除前：借 openBindPicker 数全量物品
+        const pickOther = () => p._furniture.find(f => f.id !== id && p._targetNodeId(f.id));
+        const other1 = pickOther();
+        if (!other1) return {err:'无可替代数数家具'};
+        p.setData({ selected: { id: other1.id, name: other1.name } });
+        p.openBindPicker(); const before = p.data.bindableItems.length; p.closeBindPicker();
+        // 确认删除（打桩 showModal 自动确认）
+        const calls=[]; const orig=wx.showModal;
+        wx.showModal=function(o){calls.push({title:o.title,content:(o.content||'').slice(0,80)}); if(o.success)o.success({confirm:true});};
+        try { p.confirmRemove(id); } finally { wx.showModal=orig; }
+        // 删除后：再数全量物品
+        const other2 = pickOther();
+        if (!other2) return {err:'删除后无可数家具', calls};
+        p.setData({ selected: { id: other2.id, name: other2.name } });
+        p.openBindPicker(); const after = p.data.bindableItems.length; p.closeBindPicker();
+        return {calls, bedGone:!p.data.furniture.some(f=>f.id===id), before, after};
+      } catch (e) { return {err:e.message, route:p.route}; }
+    }, bedId);
+    ok('X2 删除前有确认弹窗且声明物品去向', x2.calls && x2.calls.length===1 && x2.calls[0].title==='删除家具' && /未放置/.test(x2.calls[0].content),
+      JSON.stringify(x2.calls && x2.calls[0] || x2));
+    ok('X2 确认后家具被删除', x2.bedGone, `bed=${bedId}`);
+    ok('X2 物品记录不丢（删除前后总数一致）', typeof x2.before==='number' && x2.before===x2.after,
+      `before=${x2.before} after=${x2.after}`);
 
     // X3 降级：切列表再切回三维重建
     const x3a = await E(mp, () => { const p=getCurrentPages().slice(-1)[0];

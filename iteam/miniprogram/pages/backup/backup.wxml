@@ -1,8 +1,8 @@
 <view class="page">
   <view class="card">
-    <view class="card-t">数据备份</view>
-    <view class="small muted" style="line-height:1.7;margin-bottom:16rpx">备份保存当前云端全部空间、房间、家具、物品、库存与历史数据。恢复前系统会自动创建一份当前快照，可回滚。</view>
-    <button class="btn primary" bindtap="createBackup">创建备份</button>
+    <view class="card-t">本地备份</view>
+    <view class="small muted" style="line-height:1.7;margin-bottom:16rpx">备份保存当前本机全部空间、房间、家具、物品、库存与历史数据到本地文件。恢复会覆盖当前数据，请谨慎操作。</view>
+    <button class="btn primary" bindtap="createBackup">创建本地备份</button>
   </view>
 
   <view class="card">
@@ -13,7 +13,7 @@
     <view class="bk-item" wx:for="{{list}}" wx:key="id">
       <view class="row between">
         <view class="grow">
-          <view class="strong">{{item.note || (item.type==='auto'?'自动备份':'手动备份')}}</view>
+          <view class="strong">{{item.note}}</view>
           <view class="muted small">{{item.time}} · {{item.recordCount}} 条记录</view>
         </view>
         <button class="btn sm" data-id="{{item.id}}" bindtap="restore">恢复</button>
@@ -23,5 +23,5 @@
     <view class="empty-line" wx:if="{{loading}}">加载中…</view>
   </view>
 
-  <view class="foot-note">备份数据仅存于本人私有云空间 · 恢复操作会记录审计日志</view>
+  <view class="foot-note">备份数据仅存于本机用户目录，不上传云端。清除小程序缓存会同时删除备份文件。</view>
 </view>

@@ -61,13 +61,14 @@ function record(id, name, ok, detail) {
     });
     record('AC-13b', '列表降级视图可切换', listView === 'list', `view=${listView}`);
 
-    // --- AC-02/03：单一主视图与选中卡变换入口（规范 V1.0） ---
+    // --- AC-02/03：单一主视图与选中卡变换入口（基准：交互规范 V1.4） ---
     const single = await mp.evaluate(() => {
       const p = getCurrentPages().slice(-1)[0];
       return { noMode: p.data.mode === undefined, hint: p.data.hint || '' };
     });
     record('AC-02', '单一主视图（无三模式）', single.noMode, `mode字段=${single.noMode}`);
-    record('AC-02b', '固定视角提示口径', !/旋转视角|平移视角/.test(single.hint), `hint=${single.hint}`);
+    record('AC-02b', '提示为 V1.4 直接拖拽口径',
+      /拖动|拖拽/.test(single.hint) && !/禁|不能拖/.test(single.hint), `hint=${single.hint}`);
 
     // 注入一件临时家具（仅页面 data，不落库），验证选中卡与旋转按钮入口
     const rot = await mp.evaluate(() => {
@@ -78,10 +79,11 @@ function record(id, name, ok, detail) {
       }, bindings: { nodeCount: 0, items: [] } });
       return { rot: (p.data.selected && p.data.selected.rot), hasBind: !!p.data.bindings,
                hasCount: typeof (p.data.selected && p.data.selected.bindCount) === 'number',
-               rotateFn: typeof p.rotateFurniture === 'function' };
+               enterRotateFn: typeof p.enterRotate === 'function',
+               rotateStepFn: typeof p.rotateStep === 'function' };
     });
-    record('AC-03', '选中卡绑定数量与旋转入口完整', rot.hasBind && rot.hasCount && rot.rotateFn,
-      `selected.rot=${rot.rot}, count=${rot.hasCount}, rotate=${rot.rotateFn}`);
+    record('AC-03', '选中卡绑定数量与旋转入口完整', rot.hasBind && rot.hasCount && rot.enterRotateFn && rot.rotateStepFn,
+      `selected.rot=${rot.rot}, count=${rot.hasCount}, enterRotate=${rot.enterRotateFn}, rotateStep=${rot.rotateStepFn}`);
 
     // --- AC-04/05：绑定卡渲染（来源：F-03 T10） ---
     const bind = await mp.evaluate(() => {
