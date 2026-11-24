@@ -182,8 +182,8 @@ ok('撤销回到拖动前位置', Math.abs(posUndo.x - posPre.x) < 0.001 && Math
 const jsSrc = fs.readFileSync(path.join(MP, 'pages/room3d/room3d.js'), 'utf8');
 const wxml = fs.readFileSync(path.join(MP, 'pages/room3d/room3d.wxml'), 'utf8');
 const rend = fs.readFileSync(path.join(MP, 'package3d/renderer.js'), 'utf8');
-ok('页面调用 dragDelta/previewMove 实现直接拖拽', /'dragDelta'/.test(jsSrc) && /'previewMove'/.test(jsSrc));
-ok('页面调用 previewRotate 实现双指旋转', /'previewRotate'/.test(jsSrc));
+ok('页面调用 dragDelta/previewMove 实现直接拖拽（阶段2a 显式引用）', /gl\.dragDelta\(/.test(jsSrc) && /gl\.previewMove\(/.test(jsSrc));
+ok('页面调用 previewRotate 实现双指旋转（阶段2a 显式引用）', /gl\.previewRotate\(/.test(jsSrc));
 ok('页面含网格吸附 GRID_M', /GRID_M/.test(jsSrc));
 ok('渲染器提供 projectAll 投影接口', /projectAll: function/.test(rend));
 ok('WXML 含三维数量角标层', /furn-badge/.test(wxml) && /furnitureBadges/.test(wxml));

@@ -204,7 +204,7 @@ const wxml = fs.readFileSync(path.join(MP, 'pages/room3d/room3d.wxml'), 'utf8');
 const jsSrc = fs.readFileSync(path.join(MP, 'pages/room3d/room3d.js'), 'utf8');
 ok('canvas 使用 catchtouchstart/move/end', /catchtouchstart="onTouchStart"/.test(wxml) && /catchtouchmove="onTouchMove"/.test(wxml) && /catchtouchend="onTouchEnd"/.test(wxml));
 ok('V1.3 提示声明空白转视角', /空白处拖动转视角/.test(jsSrc));
-ok('V1.3 页面调用 orbit 转视角、不调用 pan', /safeGL\('orbit'/.test(jsSrc) && !/safeGL\('pan'/.test(jsSrc));
+ok('V1.3 页面调用 orbit 转视角、不调用 pan', /gl\.orbit\(/.test(jsSrc) && !/gl\.pan\(/.test(jsSrc));
 ok('WXML 含查看物品与添加物品入口', /bindtap="goNodes"/.test(wxml) && /bindtap="chooseAddItem"/.test(wxml));
 
 console.log('\n' + pass + '/' + (pass + fail) + ' passed');
