@@ -1,19 +1,27 @@
-// utils/store.js —— 本地存储数据层（MVP 个人单用户）
+// utils/store.js —— 本地存储数据层（MVP 个人单用户·纯本地）
 // 业务规则来源：业务规则说明书 V1.1（BR-001~015）与 TBD-001~008
 // 设计原则：事实与预测分离、失败可降级、三维对象与逻辑位置解耦、用户确认优先、数据可追溯
 // 所有写操作在内存中完成变更后一次性落盘，保证"位置更新与历史写入同一事务"（10.3）
+//
+// ============ 数据层分域契约（模块化阶段1，依据《重构影响评估与模块化开发路线 V1.0》）============
+// 1) 统一对外入口：全部页面/app.js 只允许 require('utils/store.js') 这一个门面，
+//    不得 require 本文件内部函数、不得绕过本文件直接 wx.getStorageSync/setStorageSync 读写
+//    home3d_store_v1 / home3d_tombstones_v1 两个存储键。
+// 2) 物理不拆：本阶段单文件内按业务域分节（§0 内核 → §1 空间 → §2 房间 → §3 家具 → §4 节点
+//    → §5 物品 → §6 库存 → §7 提醒 → §8 统计 → §9 演示与快照 → §10 barrel 导出），
+//    未来拆文件时按 § 边界切割，内核层（§0/§9）单点保留。
+// 3) 内核单点：_cache 唯一实例、load/save/commit/tombstone/uid/clone/findById 全库各只有一份
+//    定义；任何域不得自建缓存副本（D-01：拆双份缓存 = 双份数据、写覆盖）。
+// 4) 跨领域写函数（D-02，共 8 个）：endManagement、addItem、deleteRoom、removeFurniture、
+//    moveItem、refreshAlertsForItem、clearAll、applySnapshot —— 逻辑上属内核层，不强行下沉到
+//    某个域；每个函数上方有「⚠ D-02」标记，未来拆文件时随内核走。
 
 var C = require('./constants.js');
-var Sync = null;
-try { Sync = require('./cloud-sync.js'); } catch (e) { Sync = null; }
 
 var KEY = 'home3d_store_v1';
-var TOMB_KEY = 'home3d_tombstones_v1'; // 删除墓碑：记录已删除记录，供云同步表达删除
+var TOMB_KEY = 'home3d_tombstones_v1'; // 删除墓碑：记录已删除记录（本地回滚/恢复用）
 
-// 云同步标记：commit 时调用，不阻塞本地写操作
-function markSyncDirty() { if (Sync && Sync.markDirty) { try { Sync.markDirty(); } catch (e) {} } }
-
-// ---------- 底层读写 ----------
+// ========== §0 内核层：缓存与持久化（单点，全库唯一） ==========
 function blank() {
   return {
     version: 1,
@@ -44,6 +52,16 @@ function load() {
     }
   });
   _cache = b;
+  // 基线 §2 归属模型迁移：为历史物品补 anchorType（无则按 currentNodeId/homeNodeId 推导）
+  var migrated = false;
+  if (Array.isArray(_cache.items)) {
+    _cache.items.forEach(function (it) {
+      if (it.anchorType) return;
+      it.anchorType = (it.currentNodeId || it.homeNodeId) ? 'furniture' : 'space_direct';
+      migrated = true;
+    });
+    if (migrated) { try { wx.setStorageSync(KEY, _cache); } catch (e) {} }
+  }
   return _cache;
 }
 
@@ -58,21 +76,19 @@ function save() {
 }
 
 function commit() {
-  var r = save();
-  if (r.ok) markSyncDirty();
-  return r;
+  return save();
 }
 
-// 记录删除墓碑（逻辑删除由字段表达，物理删除需记录供云端同步）
+// 记录删除墓碑（本地回滚/恢复用）
 function tombstone(collection, id) {
   var list = [];
   try { list = wx.getStorageSync(TOMB_KEY) || []; } catch (e) {}
   list.push({ collection: collection, id: id, at: now() });
   if (list.length > 500) list = list.slice(-500);
   try { wx.setStorageSync(TOMB_KEY, list); } catch (e) {}
-  markSyncDirty();
 }
 
+// ---- 内核层·公共工具（uid/clone/findById 等全库唯一定义，各域禁止重复实现） ----
 function uid(prefix) {
   return (prefix || 'id') + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
 }
@@ -124,7 +140,7 @@ function fmtTime(ts) {
   return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
 }
 
-// ---------- 空间（PRD-002 / 业务规则第3章） ----------
+// ========== §1 空间域（PRD-002 / 业务规则第3章） ==========
 function listSpaces() {
   var d = load();
   return d.spaces.filter(function (s) { return !s.archived; }).slice().sort(function (a, b) { return a.createdAt - b.createdAt; });
@@ -172,7 +188,7 @@ function archiveSpace(id) {
   var r = commit(); return r.ok ? { ok: true } : r;
 }
 
-// ---------- 房间（PRD-003 / 业务规则第3章；CR-001 F-01 手动编辑画布） ----------
+// ========== §2 房间域（PRD-003 / 业务规则第3章；CR-001 F-01 手动编辑画布；含楼层布局/照片/任务） ==========
 // 空白房间布局：地面 + 四面墙 + 默认视角。尺寸单位米，Y-up；默认值保证无尺寸输入也可打开。
 function makeLayout(dims) {
   dims = dims || {};
@@ -347,6 +363,7 @@ function archiveRoom(id) {
 // 房间删除/归档前的关联检查（业务规则第11章）：统计家具/节点/物品，阻断位置关系断裂
 // 房间物理删除：移除房间及其家具/节点记录并写墓碑供云同步；
 // 关联物品不物理删除，解除位置引用置为"位置未知"并写历史，避免悬空引用（业务规则第11章）
+// ⚠ D-02 跨领域写函数（内核层）：rooms+nodes+items+楼层槽位+墓碑
 function deleteRoom(id) {
   var d = load(), rm = findById(d.rooms, id);
   if (!rm) return { ok: false, error: 'NOT_FOUND' };
@@ -395,7 +412,7 @@ function roomAssociations(roomId) {
     total: furniture.length + nodes.length + items.length };
 }
 
-// ---------- 照片与建模任务（PRD-005/006/007） ----------
+// ---- §2 子节：照片与建模任务（PRD-005/006/007） ----
 function addPhotos(roomId, paths) {
   var d = load(), rm = findById(d.rooms, roomId);
   if (!rm) return { ok: false, error: 'NOT_FOUND' };
@@ -430,7 +447,7 @@ function finishTask(roomId, success, errMsg) {
   var r = commit(); return r.ok ? { ok: true, data: clone(rm.task) } : r;
 }
 
-// ---------- 家具（PRD-009~013 / BR-009 模型与逻辑解耦） ----------
+// ========== §3 家具域（PRD-009~013 / BR-009 模型与逻辑解耦；含房间家具模板与变换） ==========
 function listFurniture(roomId) {
   var d = load();
   return d.furniture.filter(function (f) { return f.roomId === roomId; })
@@ -581,23 +598,30 @@ function transformFurniture(id, op) {
 function round2(v) { return Math.round(v * 100) / 100; }
 function round4(v) { return Math.round(v * 10000) / 10000; }
 
+// ⚠ D-02 跨领域写函数（内核层）：furniture+nodes+items（删除迁移 unplaced，§4.5）
 function removeFurniture(id) {
   var d = load(), f = findById(d.furniture, id);
   if (!f) return { ok: false, error: 'NOT_FOUND' };
-  // 关联保护（BR-008）：家具下有子节点或物品时拒绝删除
-  var childNodes = d.nodes.filter(function (n) { return n.furnitureId === id && n.type !== '家具'; });
+  // 基线 §2.3：删除家具不阻断；其下节点随家具移除，物品转入 unplaced 兜底（保留 spaceId 与历史）
   var nodeIds = d.nodes.filter(function (n) { return n.furnitureId === id; }).map(function (n) { return n.id; });
-  var items = d.items.filter(function (it) { return nodeIds.indexOf(it.currentNodeId) >= 0; });
-  if (childNodes.length || items.length) {
-    return { ok: false, error: 'HAS_LINKS', childNodes: childNodes.length, items: items.length };
-  }
+  var migratedCount = 0;
+  d.items.forEach(function (it) {
+    if (nodeIds.indexOf(it.currentNodeId) >= 0 || (it.homeNodeId && nodeIds.indexOf(it.homeNodeId) >= 0)) {
+      it.currentNodeId = '';
+      it.homeNodeId = '';
+      it.anchorType = 'unplaced';
+      // 保留 spaceId，不清除
+      migratedCount++;
+    }
+  });
   d.furniture = d.furniture.filter(function (x) { return x.id !== id; });
   d.nodes = d.nodes.filter(function (n) { return n.furnitureId !== id; });
   tombstone('furniture', id);
-  return commit();
+  var r = commit();
+  return r.ok ? { ok: true, migratedItems: migratedCount } : r;
 }
 
-// ---------- 收纳节点（PRD-014~017 / BR-007 多级树） ----------
+// ========== §4 节点域（PRD-014~017 / BR-007 多级树；itemsInNode 等为跨域只读查询） ==========
 function listNodes(roomId) { return load().nodes.filter(function (n) { return n.roomId === roomId; }); }
 function getNode(id) { return findById(load().nodes, id); }
 function nodePath(nodeId) {
@@ -709,7 +733,7 @@ function bindingsOfFurniture(furnitureId) {
   return { furnitureId: furnitureId, nodeCount: nodes.length, items: itemsOfFurniture(furnitureId) };
 }
 
-// ---------- 物品档案（PRD-018~024 / BR-001~006） ----------
+// ========== §5 物品域（PRD-018~024 / BR-001~006；含移动留痕与结束管理） ==========
 function listItems(filters) {
   var d = load();
   filters = filters || {};
@@ -746,6 +770,7 @@ function listItems(filters) {
   return list.sort(function (a, b) { return b.updatedAt - a.updatedAt; });
 }
 function getItem(id) { return findById(load().items, id); }
+// ⚠ D-02 跨领域写函数（内核层）：items+inventory+alerts
 function addItem(opts) {
   var d = load();
   opts = opts || {};
@@ -758,15 +783,21 @@ function addItem(opts) {
   var track = C.TRACK_MODES.some(function (m) { return m.key === opts.trackingMode; }) ? opts.trackingMode : 'location';
   var hasInitialPos = !!nodeId;
   var st = opts.locationStatus || (hasInitialPos ? 'at_home' : 'unknown');
+  // 基线 §2 归属模型：anchorType 三态互斥
+  //   furniture  — 挂家具（有 currentNodeId）
+  //   space_direct — 空间直挂（用户主动不挂家具）
+  //   unplaced   — 未放置兜底（家具被删除后转入）
+  var anchorType = hasInitialPos ? 'furniture' : 'space_direct';
   var it = {
     id: uid('it'), spaceId: spaceId, name: name,
     category: opts.category || '', tags: normalizeTags(opts.tags), note: opts.note || '', photoPath: opts.photoPath || '',
     trackingMode: track, currentNodeId: hasInitialPos ? nodeId : '',
+    anchorType: anchorType,
     // P1-4 常驻位置：物品"家"里的固定节点。外出/借出只清空 currentNodeId，
     // 不丢这个锚点；归还未指定新节点时据此自动回填。
     homeNodeId: hasInitialPos ? nodeId : '',
     locationStatus: st, managementStatus: 'active',
-    // 收藏星标（交互说明书 V1.2 §5）：物品自身属性，随主数据持久化与云同步
+    // 收藏星标（交互说明书 V1.2 §5）：物品自身属性，随主数据持久化
     favorite: false,
     completed: 0, createdAt: now(), updatedAt: now()
   };
@@ -833,6 +864,7 @@ function setItemTrackingMode(id, mode) {
 }
 
 // 位置移动（BR-005 事务一致：当前位置与历史同一函数写入）
+// ⚠ D-02 跨领域写函数（内核层）：items+movements+processedRequests+spaceId
 function moveItem(id, opts) {
   var d = load(), it = findById(d.items, id);
   if (!it) return { ok: false, error: 'NOT_FOUND' };
@@ -876,6 +908,10 @@ function moveItem(id, opts) {
   }
   it.currentNodeId = newPos || '';
   it.locationStatus = newStatus;
+  // 基线 §2 归属模型：挂节点即 furniture；外出时 homeNodeId 仍指向家具，保持 furniture
+  if (newPos) it.anchorType = 'furniture';
+  else if (it.homeNodeId && findById(d.nodes, it.homeNodeId)) it.anchorType = 'furniture';
+  else if (it.anchorType !== 'unplaced') it.anchorType = 'space_direct';
   // P1-6 跨空间移动时同步档案归属；外出/借出无具体节点则保留原归属不误改
   var movedSpaceId = spaceIdOfNode(newPos);
   if (movedSpaceId) it.spaceId = movedSpaceId;
@@ -903,6 +939,7 @@ function listMovements(itemId) {
   return d.movements.filter(function (m) { return !itemId || m.itemId === itemId; })
     .sort(function (a, b) { return b.createdAt - a.createdAt; });
 }
+// ⚠ D-02 跨领域写函数（内核层）：items+inventory+movements+alerts
 function endManagement(id, disposal) {
   var d = load(), it = findById(d.items, id);
   if (!it) return { ok: false, error: 'NOT_FOUND' };
@@ -952,7 +989,7 @@ function restoreItem(id, opts) {
   var r = commit(); return r.ok ? { ok: true, data: clone(it) } : r;
 }
 
-// ---------- 库存（PRD-025~029 / BR-010~012 / TBD-005/007） ----------
+// ========== §6 库存域（PRD-025~029 / BR-010~012 / TBD-005/007） ==========
 function findInventoryByItem(itemId) {
   var list = load().inventory;
   for (var i = 0; i < list.length; i++) if (list[i].itemId === itemId) return list[i];
@@ -1027,7 +1064,8 @@ function listTransactions(itemId) {
     .sort(function (a, b) { return b.createdAt - a.createdAt; });
 }
 
-// ---------- 提醒（BR-012 / TBD-005 提醒生命周期） ----------
+// ========== §7 提醒域（BR-012 / TBD-005 提醒生命周期） ==========
+// ⚠ D-02 跨领域写函数（内核层）：alerts+items+inventory+transactions
 function refreshAlertsForItem(itemId) {
   var d = load(), iv = findInventoryByItem(itemId);
   if (!iv || iv.threshold <= 0) return;
@@ -1074,7 +1112,7 @@ function ignoreAlert(id) {
   return commit();
 }
 
-// ---------- 统计与演示数据 ----------
+// ========== §8 统计域（跨集合只读聚合） ==========
 function getStats() {
   var activeSpace = getActiveSpace();
   var sid = activeSpace ? activeSpace.id : '';
@@ -1092,6 +1130,7 @@ function getStats() {
   };
 }
 
+// ========== §9 演示数据与快照（内核级：种子数据/清空/导出导入，随内核走，不随域拆分） ==========
 // 演示数据：首次启动填充，便于直接看到完整功能；用户可清空
 function seedDemo() {
   var d = load();
@@ -1188,6 +1227,7 @@ function seedDemo() {
   d.inventory.forEach(function (iv) { refreshAlertsForItem(iv.itemId); });
   return r.ok ? { ok: true, seeded: true } : r;
 }
+// ⚠ D-02 跨领域写函数（内核层）：全集合+墓碑+_cache 重置
 function clearAll() {
   var d = load();
   // 清空前为所有业务记录写删除墓碑（BR：清空/重建必须与云端一致）
@@ -1201,6 +1241,8 @@ function clearAll() {
   return r;
 }
 
+// ========== §10 统一对外入口（barrel）：页面只允许从这里取数据接口 ==========
+// 导出接口与正文 § 分节一一对应；跨领域写函数已在 §0/§9 与正文各自上方标注。
 module.exports = {
   // 空间
   listSpaces: listSpaces, listAllSpaces: listAllSpaces, getActiveSpace: getActiveSpace,
@@ -1237,8 +1279,8 @@ module.exports = {
   // 工具
   fmtTime: fmtTime, uid: uid,
 
-  // ---- 云同步适配接口（供 cloud-sync.js 使用；页面层无需调用） ----
-  // 导出当前全量快照，按云集合名分组；每条保留业务 id 字段
+  // ---- §9 内核级·本地备份/恢复接口（供 backup 页面使用；页面层无需直接调用） ----
+  // 导出当前全量快照；每条保留业务 id 字段
   exportSnapshot: function () {
     var d = load();
     return {
@@ -1253,6 +1295,7 @@ module.exports = {
   },
   // 墓碑清空（同步成功后调用）
   clearTombstones: function () { try { wx.setStorageSync(TOMB_KEY, []); } catch (e) {} },
+  // ⚠ D-02 跨领域写函数（内核层）：全集合覆盖+_cache 重置
   // 用云端快照覆盖本地：按业务 id 去重（兼容历史重复数据），再写入主存储并清缓存
   applySnapshot: function (snap) {
     if (!snap || typeof snap !== 'object') return { ok: false, error: 'INVALID_SNAPSHOT' };
