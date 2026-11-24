@@ -28,7 +28,16 @@ function ok(cond, name, detail) {
   if (cond) { pass++; console.log('PASS  ' + name); }
   else { fail++; console.log('FAIL  ' + name + (detail !== undefined ? '  → ' + detail : '')); }
 }
-const read = rel => fs.readFileSync(path.join(MP, rel), 'utf-8');
+// 阶段2c 起 room3d 页代码按块拆到同目录模块（mixin 合并进 Page）：
+// 读 room3d 下任一 .js 时聚合该目录全部 .js，拆分不漏检。
+const read = rel => {
+  if (/^pages\/room3d\/[^/]+\.js$/.test(rel)) {
+    const dir = path.join(MP, 'pages', 'room3d');
+    return fs.readdirSync(dir).filter(f => f.endsWith('.js')).sort()
+      .map(f => fs.readFileSync(path.join(dir, f), 'utf-8')).join('\n');
+  }
+  return fs.readFileSync(path.join(MP, rel), 'utf-8');
+};
 
 // ========== A1. 页面入口接线 ==========
 const js = read('pages/room3d/room3d.js');

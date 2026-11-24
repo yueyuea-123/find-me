@@ -10,6 +10,7 @@ var C = require('../../utils/constants.js');
 var glLifecycle = require('./gl-lifecycle.js');
 var badgesSync = require('./badges-sync.js');
 var sheetController = require('./sheet-controller.js');
+var selectionController = require('./selection-controller.js');
 var rendererFactory = null;
 function clampNum(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 // 尺寸展示：保留两位小数并去掉无意义的尾随 0，避免缩放后出现长串小数
@@ -223,14 +224,7 @@ Page(Object.assign({
     this._safeRender();
   },
 
-  _syncSelectionToGL: function () {
-    var sel = this.data.selected;
-    // 编辑子模式下仅保留该家具选中；VIEW 模式不主动高亮（进入 selected 才显示）
-    if (!sel || !this._glRenderer || this.data.sceneMode === 'view' || this.data.sceneMode === 'loading') return;
-    for (var i = 0; i < this._furniture.length; i++) {
-      if (this._furniture[i].id === sel.id) { this._withGL(function (gl) { return gl.setSelected(i); }); return; }
-    }
-  },
+  // _syncSelectionToGL 已迁移至 ./selection-controller.js（阶段2c SelectionController 块第三迁）
 
   // 显式引用调用渲染器（阶段2a，评估 3D-02）：方法名写死在调用点，改名可被
   // qa/renderer-signature-contract-test.js 静态发现；catch 兜底真实 WebGL 异常并整体降级列表。
@@ -405,10 +399,7 @@ Page(Object.assign({
     }
   },
   _clearLongPress: function () { if (this._lpTimer) { clearTimeout(this._lpTimer); this._lpTimer = null; } },
-  _findIndexById: function (id) {
-    for (var i = 0; i < this._furniture.length; i++) if (this._furniture[i].id === id) return i;
-    return -1;
-  },
+  // _findIndexById 已迁移至 ./selection-controller.js（阶段2c SelectionController 块第三迁）
 
   onTouchMove: function (e) {
     if (!this._glRenderer || this.data.view !== '3d' || this.data.glError || this._editing()) return;
@@ -814,52 +805,8 @@ Page(Object.assign({
     return Math.atan2(b.y - a.y, b.x - a.x);
   },
 
-  selectIndex: function (idx) {
-    var f = this._furniture[idx];
-    if (!f) return;
-    this._withGL(function (gl) { return gl.setSelected(idx); });
-    this.setData({
-      selected: this._selectedCard(f),
-      bindings: this._decorateBindings(f.id),
-      sceneMode: (this.data.sceneMode === 'loading' || this.data.sceneMode === 'view') ? 'selected' : this.data.sceneMode
-    });
-    this._refreshSheet(f.id);
-  },
-  selectFromList: function (e) {
-    var id = e.currentTarget.dataset.id;
-    if (!id) return;
-    wx.navigateTo({ url: '/pages/furniture-detail/furniture-detail?id=' + id });
-  },
-  // 更换外观模型（UF-002 / BR-009）：从该家具类别的模型变体中选一个，
-  // 只改 furniture.model，不动逻辑节点与物品关联；渲染器 signature 含 model，会自动重建外观。
-  changeModel: function () {
-    var sel = this.data.selected;
-    if (!sel || !sel.id) { wx.showToast({ title: '请先选择一件家具', icon: 'none' }); return; }
-    var f = store.getFurniture(sel.id);
-    if (!f) { wx.showToast({ title: '家具不存在', icon: 'none' }); return; }
-    var vars = (C.FURNITURE_LIB[f.category] || {}).vars || [];
-    if (!vars.length) { wx.showToast({ title: '该家具暂无可选外观', icon: 'none' }); return; }
-    var self = this;
-    wx.showActionSheet({
-      itemList: vars.slice(0, 6),
-      success: function (res) {
-        var model = vars[res.tapIndex];
-        if (!model || model === f.model) return;
-        var r = store.updateFurniture(f.id, { model: model });
-        if (!r.ok) { wx.showToast({ title: '更换失败', icon: 'none' }); return; }
-        self.loadData();               // 刷新 _furniture 与 selected（_raw.model 更新）
-        self._withGL(function (gl) { return gl.setSelected(self._findIndexById(f.id)); });
-        self._safeRender();            // signature 变化 → 重建模型，外观可见
-        wx.showToast({ title: '已换为「' + model + '」，关联不变', icon: 'none' });
-      }
-    });
-  },
-  clearSel: function () {
-    if (this.data.sceneMode !== 'selected' && this.data.sceneMode !== 'view') return;
-    this._withGL(function (gl) { return gl.setSelected(-1); });
-    this.setData({ selected: null, bindings: null, sheetOpen: false, sheetCollapsed: false, sceneMode: 'view' });
-    this._safeRender();
-  },
+  // selectIndex/selectFromList/changeModel/clearSel 已迁移至 ./selection-controller.js
+  // （阶段2c SelectionController 块第三迁，mixin 合并进 Page）
 
   setView: function (e) {
     var v = e.currentTarget.dataset.v;
@@ -872,10 +819,7 @@ Page(Object.assign({
     }
   },
 
-  editFurniture: function () {
-    if (!this.data.selected) return;
-    wx.navigateTo({ url: '/pages/furniture-edit/furniture-edit?id=' + this.data.selected.id });
-  },
+  // editFurniture 已迁移至 ./selection-controller.js（阶段2c SelectionController 块第三迁）
   confirmCandidate: function () {
     var self = this;
     wx.showModal({
@@ -947,4 +891,4 @@ Page(Object.assign({
       }
     });
   }
-}, badgesSync, sheetController));
+}, badgesSync, sheetController, selectionController));
