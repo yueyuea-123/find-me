@@ -16,13 +16,20 @@ const fs = require('fs');
 
 const MP = path.join(__dirname, '..', 'miniprogram');
 const rendererSrc = fs.readFileSync(path.join(MP, 'package3d', 'renderer.js'), 'utf8');
-const room3dSrc = fs.readFileSync(path.join(MP, 'pages', 'room3d', 'room3d.js'), 'utf8');
+// 阶段2c 起页面代码按块迁移到 pages/room3d/ 下的模块文件（mixin 合并进 Page），
+// 页面源码 = room3d.js + 同目录全部模块文件聚合，保证跨文件拆分不漏检。
+const ROOM3D_DIR = path.join(MP, 'pages', 'room3d');
+const room3dFiles = fs.readdirSync(ROOM3D_DIR).filter(f => f.endsWith('.js')).sort();
+const room3dSrc = room3dFiles.map(f =>
+  '/* ==== ' + f + ' ==== */\n' + fs.readFileSync(path.join(ROOM3D_DIR, f), 'utf8')
+).join('\n');
 
 let pass = 0, fail = 0;
 function ok(cond, name, detail) {
   if (cond) { pass++; console.log('PASS  ' + name); }
   else { fail++; console.log('FAIL  ' + name + (detail !== undefined ? '  → ' + detail : '')); }
 }
+ok(room3dFiles.length > 1, '页面源码聚合了 ' + room3dFiles.length + ' 个模块文件（' + room3dFiles.join(', ') + '）');
 
 // ---------- 1. 提取 createRoomRenderer 返回对象的方法签名 ----------
 const retStart = rendererSrc.indexOf('  return {');
@@ -135,9 +142,12 @@ ok(reflectCalls === 0,
 // ---------- 6.5 渲染锁只经 GLLifecycle 管理（阶段2d，评估 3D-03） ----------
 const glLifecycleSrc = fs.readFileSync(path.join(MP, 'pages', 'room3d', 'gl-lifecycle.js'), 'utf8');
 ok(/reset: function|unlockInit: function/.test(glLifecycleSrc), 'gl-lifecycle.js 管理器存在（reset/unlockInit/beginInit/setCanvas/attachRenderer）');
-const directLock = (room3dSrc.match(/[.\w]\s*_gl(?:Renderer|Canvas|InitStarted)\s*=\s*[^=]/g) || []).length;
+// 锁禁令只约束页面代码（room3d.js + 拆出的模块），管理器 gl-lifecycle.js 自身的赋值合法
+const pageCodeSrc = room3dFiles.filter(f => f !== 'gl-lifecycle.js').map(f =>
+  fs.readFileSync(path.join(ROOM3D_DIR, f), 'utf8')).join('\n');
+const directLock = (pageCodeSrc.match(/[.\w]\s*_gl(?:Renderer|Canvas|InitStarted)\s*=\s*[^=]/g) || []).length;
 ok(directLock === 0,
-  'room3d 页无渲染锁直接赋值（三把锁全部经 glLifecycle）',
+  'room3d 页面代码无渲染锁直接赋值（三把锁全部经 glLifecycle，管理器内部除外）',
   '残留 ' + directLock + ' 处直接赋值：应改走 glLifecycle.reset/unlockInit/beginInit/setCanvas/attachRenderer');
 ok(/glLifecycle\.require|require\('\.\/gl-lifecycle\.js'\)/.test(room3dSrc), 'room3d 引入 gl-lifecycle 模块');
 

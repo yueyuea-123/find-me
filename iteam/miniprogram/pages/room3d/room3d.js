@@ -1,10 +1,14 @@
 // pages/room3d/room3d.js —— 三维房间页 UI-006（内嵌三维视图窗口 + 列表降级）
-// 交互基准：《客厅三维空间交互与开发设计规范 V1.3》A 方案（简化操作）+《A 方案交互状态图》：
-//   默认不直接拖动家具；点选家具后通过明确按钮小步调整；编辑先进本地待保存状态，保存后提交。
+// 交互基准：《客厅三维空间交互与开发设计规范 V1.4》（现行唯一基准）：直接拖拽、抬手落盘
+//   （5cm 网格吸附）、双指旋转缩放、按钮微调为辅；短按弹底部抽屉。
 // 三维渲染来自 package3d 分包（Three.js r108 + GLB 资产），按需引入；业务写仍落 store。
+// 阶段2b 七块划分（模块化路线 V1.0）：GLLLifecycle（./gl-lifecycle.js）、BadgeSync（./badges-sync.js）
+//   已拆出，其余块待逐块迁移；页面主体保留 SceneCanvas/SelectionController/TransformController/
+//   SceneStateStore/SheetController 职责，拆分边界见档案八·补9。
 var store = require('../../utils/store.js');
 var C = require('../../utils/constants.js');
 var glLifecycle = require('./gl-lifecycle.js');
+var badgesSync = require('./badges-sync.js');
 var rendererFactory = null;
 function clampNum(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 // 尺寸展示：保留两位小数并去掉无意义的尾随 0，避免缩放后出现长串小数
@@ -51,7 +55,7 @@ function itemThumb(it) {
   return '/images/default-goods-image.png';
 }
 
-Page({
+Page(Object.assign({
   data: {
     roomId: '', roomName: '', dimText: '', view: '3d',
     furniture: [], selected: null, glError: '',
@@ -307,20 +311,7 @@ Page({
   },
   // 数量角标：把每件家具的有效物品数投到其模型顶部的屏幕位置。
   // 只提示数量，不把物品画成三维模型；坐标随拖动/转视角/缩放实时更新。
-  _syncBadges: function () {
-    if (!this._glRenderer || typeof this._glRenderer.projectAll !== 'function') return;
-    var pts = this._withGL(function (gl) { return gl.projectAll(); }) || [];
-    var self = this;
-    var badges = [];
-    pts.forEach(function (p) {
-      var row = self._furniture && self._furniture[p.index];
-      if (!row || !p.visible) return;
-      // 只显示有物品的家具；数量为 0 不显示，避免画面杂乱
-      if (!(row.bindCount > 0)) return;
-      badges.push({ id: row.id, x: p.x, y: p.y, n: row.bindCount });
-    });
-    this.setData({ furnitureBadges: badges });
-  },
+  // _syncBadges 已迁移至 ./badges-sync.js（阶段2c BadgeSync 块首迁，mixin 合并进 Page）
 
   // 缓存 canvas 在视口中的位置：内嵌窗口不再从屏幕左上角开始，pick 需减去此偏移
   _syncCanvasRect: function () {
@@ -1112,4 +1103,4 @@ Page({
       }
     });
   }
-});
+}, badgesSync));
