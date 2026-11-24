@@ -44,11 +44,15 @@ Page({
   openCreate: function () {
     this.setData({
       showEditor: true, editing: false, editingId: '', formName: '', formW: '', formD: '', formH: '', formError: '',
-      templates: store.listRoomTemplates(), startTemplate: ''
+      templates: store.listRoomTemplates(), startTemplate: '', startTemplateName: ''
     });
   },
-  // CR-001 F-07：选择新建房间起点（'' 空白 / 模板 key）
-  setStart: function (e) { this.setData({ startTemplate: e.currentTarget.dataset.key || '' }); },
+  // CR-001 F-07：选择新建房间起点（'' 空白 / 模板 key）；同步中文名供按钮显示
+  setStart: function (e) {
+    var key = e.currentTarget.dataset.key || '';
+    var t = (this.data.templates || []).filter(function (x) { return x.key === key; })[0];
+    this.setData({ startTemplate: key, startTemplateName: t ? t.name : '' });
+  },
   rename: function (e) {
     var d = e.currentTarget.dataset;
     var r = store.getRoom(d.id);

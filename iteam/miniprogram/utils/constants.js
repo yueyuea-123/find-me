@@ -38,8 +38,11 @@ function withCurrent(list, current) {
 // 家具模型库（与三维场景程序化模型对应，模型与逻辑位置解耦 BR-009）
 // size: [宽, 高, 深]，单位米；vars 为可选外观档位
 // 模型库界面选项：演示口径 11 类；字典保留少量历史类别仅供旧数据取尺寸/渲染
+// 家具类别清单：与 FURNITURE_LIB 的 15 个键保持一致（早期漏列软包椅/躺椅/餐桌/椅子，
+// 导致模型库只显示 11 种；补齐后模型库与家具编辑下拉均覆盖全部已建模资产）。
 var FURNITURE_CATEGORIES = [
-  '床', '床头柜', '台灯', '窗帘', '沙发', '茶几', '电视柜', '衣柜', '书架', '收纳盒', '抽屉'
+  '床', '床头柜', '台灯', '窗帘', '软包椅', '躺椅', '沙发', '茶几', '电视柜',
+  '衣柜', '餐桌', '椅子', '书架', '收纳盒', '抽屉'
 ];
 var FURNITURE_LIB = {
   '床':     { size: [1.7, 0.6, 2.0], vars: ['米色床品', '灰色床品'], icon: '🛏️' },
@@ -84,6 +87,52 @@ var ROOM_TEMPLATES = {
     furniture: [
       { category: '收纳盒', name: '浴室收纳盒', x: -0.8, z: -0.8, rot: 0 },
       { category: '抽屉', name: '镜柜抽屉', x: 0.8, z: -1, rot: 0 }
+    ]
+  },
+  study: {
+    key: 'study', name: '书房',
+    furniture: [
+      { category: '书架', name: '书架', x: -1.3, z: -1.2, rot: 0 },
+      { category: '餐桌', name: '书桌', x: 0.2, z: 0.3, rot: 0 },
+      { category: '软包椅', name: '书桌椅', x: 0.2, z: 1.3, rot: 180 },
+      { category: '台灯', name: '台灯', x: -0.2, z: 0.1, rot: 0 },
+      { category: '收纳盒', name: '文件收纳盒', x: 1.3, z: -1.3, rot: 0 }
+    ]
+  },
+  kitchen: {
+    key: 'kitchen', name: '厨房',
+    furniture: [
+      { category: '抽屉', name: '橱柜', x: 0, z: -1.5, rot: 0 },
+      { category: '收纳盒', name: '调料收纳盒', x: -1.2, z: -1.3, rot: 0 },
+      { category: '餐桌', name: '操作台', x: 0, z: 0.2, rot: 0 },
+      { category: '收纳盒', name: '杂物收纳盒', x: 1.2, z: -1.3, rot: 0 }
+    ]
+  },
+  dining: {
+    key: 'dining', name: '餐厅',
+    furniture: [
+      { category: '餐桌', name: '餐桌', x: 0, z: 0, rot: 0 },
+      { category: '椅子', name: '餐椅一', x: -1, z: 0, rot: 90 },
+      { category: '椅子', name: '餐椅二', x: 1, z: 0, rot: 270 },
+      { category: '椅子', name: '餐椅三', x: 0, z: 1, rot: 180 },
+      { category: '收纳盒', name: '餐具收纳盒', x: -1.3, z: -1.3, rot: 0 }
+    ]
+  },
+  balcony: {
+    key: 'balcony', name: '阳台',
+    furniture: [
+      { category: '躺椅', name: '休闲躺椅', x: -0.9, z: 0.4, rot: 0 },
+      { category: '收纳盒', name: '阳台收纳盒', x: 1.1, z: -0.9, rot: 0 },
+      { category: '台灯', name: '氛围灯', x: 0.9, z: 1.0, rot: 0 }
+    ]
+  },
+  kids: {
+    key: 'kids', name: '儿童房',
+    furniture: [
+      { category: '床', name: '儿童床', x: -1.2, z: 0.5, rot: 0 },
+      { category: '床头柜', name: '床头柜', x: -2, z: -0.3, rot: 0 },
+      { category: '书架', name: '绘本架', x: 1.2, z: -1.2, rot: 0 },
+      { category: '收纳盒', name: '玩具收纳盒', x: 1.3, z: 1.0, rot: 0 }
     ]
   }
 };

@@ -54,8 +54,21 @@
       <button class="btn ghost" bindtap="closeEditor">取消</button>
       <button class="btn primary" wx:if="{{editing}}" bindtap="save">保存</button>
       <block wx:else>
+        <!-- 户型由房间拼凑：可选更多房间类型模板，选中后用「用此模板创建」；卧室也在此列 -->
+        <view class="tpl-picker" wx:if="{{templates.length}}">
+          <view class="tpl-hint">选择初始布置模板（可多选房间拼成户型；不选则空白）</view>
+          <view class="tpl-grid">
+            <view class="tpl-item {{startTemplate===item.key?'sel':''}}"
+                  wx:for="{{templates}}" wx:key="key"
+                  data-template="{{item.key}}" bindtap="setStart">
+              <text class="tpl-name">{{item.name}}</text>
+              <text class="tpl-count">{{item.count}} 件</text>
+            </view>
+          </view>
+        </view>
         <button class="btn primary" data-template="" bindtap="createRoom">创建空白房间</button>
         <button class="btn" data-template="bedroom" bindtap="createRoom">用卧室模板</button>
+        <button class="btn" wx:if="{{startTemplate}}" data-template="{{startTemplate}}" bindtap="createRoom">用「{{startTemplateName}}」模板创建</button>
       </block>
     </view>
   </view>

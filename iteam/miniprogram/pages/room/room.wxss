@@ -31,3 +31,17 @@
   border: 1rpx solid #ECE9E3; background: #fff;
 }
 .room-cta .btn.primary { background: #6F8966; color: #fff; border-color: #6F8966; }
+
+/* 户型拼凑：房间类型模板选择器（阶段四） */
+.tpl-picker { margin: 4rpx 0 20rpx; }
+.tpl-hint { font-size: 24rpx; color: #8B8E87; margin-bottom: 14rpx; }
+.tpl-grid { display: flex; flex-wrap: wrap; gap: 14rpx; }
+.tpl-item {
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+  min-width: 150rpx; padding: 14rpx 20rpx;
+  background: #fff; border: 1rpx solid #ECE9E3; border-radius: 18rpx;
+}
+.tpl-item.sel { border-color: #6F8966; background: #E8EEE3; }
+.tpl-name { font-size: 28rpx; color: #252824; line-height: 1.4; }
+.tpl-item.sel .tpl-name { color: #58734F; font-weight: 600; }
+.tpl-count { font-size: 22rpx; color: #8B8E87; }
