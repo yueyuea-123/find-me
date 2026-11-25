@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "skills": {
+    "code-review": {
+      "source": "../../../.workbuddy/cache/skill-sources/mattpocock-skills",
+      "sourceType": "local",
+      "computedHash": "ce86b40a3d1648a0018b712f0c70704e6c2316b2a9b9e915ab116916a31273dc"
+    },
+    "codebase-design": {
+      "source": "../../../.workbuddy/cache/skill-sources/mattpocock-skills",
+      "sourceType": "local",
+      "computedHash": "d40f025dc1b0f2020663260f38f2bcb8d6ed3523afb11e5fda624b01238677e8"
+    },
+    "improve-codebase-architecture": {
+      "source": "../../../.workbuddy/cache/skill-sources/mattpocock-skills",
+      "sourceType": "local",
+      "computedHash": "f0820b18426a7d9a6c823a890988ba0ac70bf0fd596d30d7ef07c88558728c23"
+    },
+    "setup-matt-pocock-skills": {
+      "source": "../../../.workbuddy/cache/skill-sources/mattpocock-skills",
+      "sourceType": "local",
+      "computedHash": "9659e7025d4cf1c0a0b40ddff32ed4b8debb87a4b20d7a52ff89c506a638df69"
+    },
+    "tdd": {
+      "source": "../../../.workbuddy/cache/skill-sources/mattpocock-skills",
+      "sourceType": "local",
+      "computedHash": "e3e0f78ff1c2d52ffefa0378baa1e80e129d359288cf9a56f4e59afcd2aac86c"
+    }
+  }
+}
