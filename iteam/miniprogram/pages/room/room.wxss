@@ -7,6 +7,13 @@
 .room-card { padding: 30rpx 32rpx; }
 .room-card:active { opacity: 0.82; }
 
+/* 卡片右侧「⋯」：列表内管理入口；catchtap 阻止冒泡，避免误进三维 */
+.room-more {
+  padding: 10rpx 16rpx; margin-right: 4rpx;
+  font-size: 34rpx; line-height: 1; color: #8B8E87;
+}
+.room-more:active { color: #6F8966; }
+
 /* 房间卡片左侧图标块：对齐 demo 的 accent-soft 方块 + grid 图标 */
 .room-icon {
   width: 80rpx; height: 80rpx; border-radius: 24rpx;

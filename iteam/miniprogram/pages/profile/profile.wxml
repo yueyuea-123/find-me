@@ -10,25 +10,13 @@
     </view>
     <view class="chips4" style="margin-top:20rpx">
       <text class="tag green">● 本地可用</text>
-      <text class="tag">待同步标记由真实后端处理</text>
+      <text class="tag">数据仅存本机，不上传云端</text>
     </view>
-  </view>
-
-  <view class="card">
-    <view class="card-t">账户与同步</view>
-    <view class="kv"><text class="muted">登录状态</text><text class="strong">{{loggedIn?'已登录':'本地模式'}}</text></view>
-    <view class="kv" wx:if="{{openidMask}}"><text class="muted">账户标识</text><text>{{openidMask}}</text></view>
-    <view class="kv"><text class="muted">同步状态</text><text class="strong {{dirty?'warn':''}}">{{syncText}}</text></view>
-    <view class="row wrap" style="margin-top:16rpx">
-      <button class="btn sm primary" bindtap="syncNow">立即同步</button>
-    </view>
-    <view class="small muted" style="margin-top:12rpx">云端不可用时数据仍保存在本机，恢复后可继续同步。</view>
   </view>
 
   <view class="card">
     <view class="card-t">数据管理</view>
-    <view class="menu" bindtap="goBackup"><text>备份与恢复</text><text class="muted">{{backupCount}} 份 ▸</text></view>
-    <view class="menu" wx:if="{{isAdmin}}" bindtap="goAdmin"><text>管理后台</text><text class="muted">▸</text></view>
+    <view class="menu" bindtap="goBackup"><text>本地备份与恢复</text><text class="muted">{{backupCount}} 份 ▸</text></view>
     <view class="menu" bindtap="resetDemo"><text>重置演示数据</text><text class="muted">▸</text></view>
     <view class="menu" bindtap="clearData"><text>清空本机数据</text><text class="muted">▸</text></view>
   </view>
@@ -44,6 +32,6 @@
 
   <view class="card">
     <view class="card-t">关于</view>
-    <view class="small muted">本页数据全部为模拟数据；真实版本的数据隔离、照片私有存储与备份恢复由后端实现，本演示不涉及。</view>
+    <view class="small muted">本应用为纯本地存储版本，所有数据仅保存在本机 `wx.Storage`，不上传任何服务器。清除小程序缓存会丢失数据，请定期使用「本地备份与恢复」导出备份。</view>
   </view>
 </view>

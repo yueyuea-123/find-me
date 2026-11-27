@@ -79,24 +79,23 @@ Page({
       }
     });
   },
-  // demo 对齐：删除家具，仍走 BR-008 关联保护
+  // 基线 §2.3：删除家具，其下物品转入该空间「未放置」兜底，不阻断、不丢失
   delFurniture: function () {
     var f = this.data.furniture;
     if (!f) return;
     var self = this;
     wx.showModal({
       title: '删除家具',
-      content: '删除后不可恢复；若家具下仍有节点或物品关联会被阻断，请先迁移或归档。确认删除？',
+      content: '删除后不可恢复；其下物品不会丢失，将自动转入该空间「未放置」区，需你重新指定家具或改为空间直挂。确认删除？',
       success: function (res) {
         if (!res.confirm) return;
         var r = store.removeFurniture(f.id);
         if (!r.ok) {
-          if (r.error === 'HAS_LINKS') {
-            wx.showModal({ title: '无法删除', content: '已被关联：' + r.items + ' 件物品 / ' + r.childNodes + ' 个节点，须先迁移或归档。', showCancel: false });
-          } else wx.showToast({ title: '删除失败', icon: 'none' });
+          wx.showToast({ title: '删除失败：' + (r.error || '未知'), icon: 'none' });
           return;
         }
-        wx.showToast({ title: '家具已删除', icon: 'success' });
+        var tip = r.migratedItems > 0 ? ('已删除，' + r.migratedItems + ' 件物品转入未放置') : '家具已删除';
+        wx.showToast({ title: tip, icon: 'success' });
         wx.navigateBack();
       }
     });

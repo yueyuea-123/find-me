@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="docx-page-size" content="A4">
+<title>需求重新梳理与现有方案符合性确认</title>
+<style>
+:root {
+  --typography-fontFamily-body: "宋体", "SimSun", serif;
+  --typography-fontFamily-heading: "黑体", "SimHei", sans-serif;
+  --typography-fontSize-h1: 16pt;
+  --typography-fontSize-h2: 14pt;
+  --typography-fontSize-h3: 13pt;
+  --typography-fontSize-body: 12pt;
+  --typography-fontSize-small: 10.5pt;
+  --typography-fontSize-cover-title: 26pt;
+  --typography-fontSize-cover-subtitle: 14pt;
+  --typography-lineHeight-body: 1.7;
+  --typography-lineHeight-heading: 1.4;
+  --typography-fontWeight-bold: 700;
+  --typography-fontWeight-normal: 400;
+  --fs-body: var(--typography-fontSize-body);
+  --ff-body: var(--typography-fontFamily-body);
+  --color-primary: #58734F;
+  --color-text: #252824;
+  --color-muted: #6B7068;
+  --color-border: #DADFD8;
+  --color-bg: #F7F5F1;
+  --color-callout-bg: #EEF3E9;
+  --color-white: #FFFFFF;
+  --spacing-paragraph: 0.8em;
+  --spacing-section: 1.8em;
+  --spacing-block: 1em;
+  --spacing-cell: 0.45em;
+  --spacing-list: 0.4em;
+  --layout-contentWidth: 15.6cm;
+  --margin-page: 2.5cm;
+  --page-content-width: var(--layout-contentWidth);
+  --border-thin: 0.5pt;
+  --width-full: 100%;
+  --cover-space-top: 5cm;
+  --cover-space-large: 2.5cm;
+  --cover-space-medium: 1.2cm;
+  --indent-body: 2em;
+  --align-center: center;
+  --align-left: left;
+  --align-justify: justify;
+  --vertical-top: top;
+  --collapse: collapse;
+}
+@page { margin: var(--margin-page); @bottom-center { content: counter(page); } }
+@page cover { @bottom-center { content: none; } }
+section[role="cover"] { page: cover; }
+body {
+  max-width: var(--page-content-width);
+  margin-left: auto;
+  margin-right: auto;
+  font-family: var(--typography-fontFamily-body);
+  font-size: var(--typography-fontSize-body);
+  line-height: var(--typography-lineHeight-body);
+  color: var(--color-text);
+}
+h1, h2, h3 {
+  font-family: var(--typography-fontFamily-heading);
+  color: var(--color-primary);
+  font-weight: var(--typography-fontWeight-bold);
+  line-height: var(--typography-lineHeight-heading);
+  text-align: var(--align-left);
+  text-indent: 0;
+}
+h1 { font-size: var(--typography-fontSize-h1); margin-top: var(--spacing-section); margin-bottom: var(--spacing-block); }
+h2 { font-size: var(--typography-fontSize-h2); margin-top: var(--spacing-block); margin-bottom: var(--spacing-paragraph); }
+h3 { font-size: var(--typography-fontSize-h3); margin-top: var(--spacing-block); margin-bottom: var(--spacing-paragraph); }
+p {
+  font-family: var(--typography-fontFamily-body);
+  font-size: var(--typography-fontSize-body);
+  line-height: var(--typography-lineHeight-body);
+  text-indent: var(--indent-body);
+  text-align: var(--align-justify);
+  margin-top: 0;
+  margin-bottom: var(--spacing-paragraph);
+  color: var(--color-text);
+}
+table { width: var(--width-full); border-collapse: var(--collapse); margin-top: var(--spacing-paragraph); margin-bottom: var(--spacing-block); }
+caption { font-family: var(--typography-fontFamily-heading); font-size: var(--typography-fontSize-small); color: var(--color-muted); text-align: var(--align-left); text-indent: 0; }
+th, td {
+  border: var(--border-thin) solid var(--color-border);
+  padding: var(--spacing-cell);
+  font-family: var(--typography-fontFamily-body);
+  font-size: var(--typography-fontSize-small);
+  line-height: var(--typography-lineHeight-body);
+  text-align: var(--align-left);
+  vertical-align: var(--vertical-top);
+  text-indent: 0;
+  color: var(--color-text);
+}
+th { background-color: var(--color-bg); font-weight: var(--typography-fontWeight-bold); }
+li { font-family: var(--typography-fontFamily-body); font-size: var(--typography-fontSize-body); line-height: var(--typography-lineHeight-body); margin-bottom: var(--spacing-list); }
+.toc-title { font-family: var(--typography-fontFamily-heading); font-size: var(--typography-fontSize-h1); font-weight: var(--typography-fontWeight-bold); text-align: var(--align-center); text-indent: 0; color: var(--color-primary); margin-bottom: var(--spacing-block); }
+.toc-list, .toc-list ol, .toc-list ul { list-style: none; }
+.toc-list li { font-size: var(--typography-fontSize-body); }
+.cover-title { font-family: var(--typography-fontFamily-heading); font-size: var(--typography-fontSize-cover-title); font-weight: var(--typography-fontWeight-bold); text-align: var(--align-center); text-indent: 0; color: var(--color-primary); margin-top: var(--cover-space-top); margin-bottom: var(--cover-space-large); }
+.cover-subtitle { font-family: var(--typography-fontFamily-body); font-size: var(--typography-fontSize-cover-subtitle); text-align: var(--align-center); text-indent: 0; color: var(--color-muted); margin-bottom: var(--cover-space-large); }
+.cover-meta { font-family: var(--typography-fontFamily-body); font-size: var(--typography-fontSize-body); text-align: var(--align-center); text-indent: 0; color: var(--color-muted); margin-bottom: var(--cover-space-medium); }
+.note { background-color: var(--color-callout-bg); border-left: var(--border-thin) solid var(--color-primary); padding: var(--spacing-cell); font-size: var(--typography-fontSize-body); }
+</style>
+</head>
+<body>
+<section role="cover">
+  <p class="cover-title">需求重新梳理与现有方案符合性确认</p>
+  <p class="cover-subtitle">三维室内空间与家庭物品管理小程序</p>
+  <p class="cover-meta">V1.0　2026年11月24日</p>
+  <p class="cover-meta">依据当前工作目录资料及本轮需求问答编制</p>
+</section>
+<section role="cover">
+  <nav class="doc-toc" aria-label="文档目录">
+    <p class="toc-title">目录</p>
+    <ol class="toc-list">
+      <li><a href="#section-1">一、编制说明</a></li>
+      <li><a href="#section-2">二、项目相关材料清单</a></li>
+      <li><a href="#section-3">三、重新梳理后的需求基线</a></li>
+      <li><a href="#section-4">四、现有文档与实现方式符合性核对</a></li>
+      <li><a href="#section-5">五、主要差距与改造内容</a>
+        <ol>
+          <li><a href="#section-5-1">（一）三维模块是最大差距，需优先处理</a></li>
+          <li><a href="#section-5-2">（二）数据从纯本地变为"本地＋手动迁移"</a></li>
+          <li><a href="#section-5-3">（三）功能范围要做减法</a></li>
+          <li><a href="#section-5-4">（四）上架合规须在编码前查清</a></li>
+          <li><a href="#section-5-5">（五）文档口径按你的最终选择处理</a></li>
+        </ol>
+      </li>
+      <li><a href="#section-6">六、待确认事项</a></li>
+      <li><a href="#section-7">七、结论与下一步</a></li>
+    </ol>
+  </nav>
+</section>
+<section role="body" data-page-restart="1">
+  <h1 id="section-1">一、编制说明</h1>
+  <p>本文件回应"重新梳理需求"这一诉求。梳理范围为当前工作目录内与本项目相关的全部内容，包含产品与规则文档、设计与交互文档、可运行的小程序代码及验证材料、三维房间改造待评审稿，以及本轮问答中你逐项确认的决定。目录中的 blender_mcp 为第三方工具源码，与产品需求无关，未纳入梳理。</p>
+  <p>结论先行：现有项目的核心方向——微信小程序、个人使用、以"知道物品在哪里"为目标、三维作为可视化入口——与你的期望一致；但三维呈现与交互、数据存放方式、功能范围、上架合规四个方面存在实质差距，其中三维一项与你上一轮提出的不满意直接对应。现有代码可在其基础上改造，不需要推倒重来。</p>
+  <p>下文所有"现有口径"均可在文档或代码中追溯；所有"你的期望"均来自本轮问答，未作推测性补充。</p>
+
+  <h1 id="section-2">二、项目相关材料清单</h1>
+  <table>
+    <thead><tr><th>类别</th><th>主要文件</th><th>作用</th></tr></thead>
+    <tbody>
+      <tr><td>产品与规则</td><td>产品总纲 V1.0、PRD V1.1、MVP 范围冻结清单 V1.1、业务规则说明书 V1.1、需求确认单</td><td>定义做什么、不做什么及业务规则</td></tr>
+      <tr><td>设计与交互</td><td>小程序界面设计文档 V1.0、开发交付稿（8 张高保真与 design-tokens）、三维交互规范 V1.0/V1.3、三维家具风格规范 V1.0</td><td>定义页面、视觉与操作方式</td></tr>
+      <tr><td>实现与验证</td><td>iteam/miniprogram 共 21 页、package3d 三维分包与 8 件白膜 GLB、qa 测试门禁、preview 验证页</td><td>已写出的小程序与验证记录</td></tr>
+      <tr><td>状态记录</td><td>小程序项目档案.md、文档-实现对账清单 V1.0、小程序交付质量验收报告 V1.0</td><td>记录已完成项、冲突项与待办</td></tr>
+      <tr><td>待评审方案</td><td>output/room3d-rebuild-20261123/stage3/三维房间改造方案_V1.0.docx</td><td>针对三维不满意给出的改造路线，尚未实施</td></tr>
+    </tbody>
+  </table>
+
+  <h1 id="section-3">三、重新梳理后的需求基线</h1>
+  <p>以下十二项为本轮逐问逐答确认的结果，作为后续改造的唯一口径。</p>
+  <table>
+    <thead><tr><th>编号</th><th>需求项</th><th>确认内容</th></tr></thead>
+    <tbody>
+      <tr><td>R-01</td><td>平台</td><td>微信小程序，正式发布上架</td></tr>
+      <tr><td>R-02</td><td>功能范围</td><td>物品建档与搜索、三维房间、位置历史与状态、易耗品库存与补货提醒；照片建模、云端后台等不做</td></tr>
+      <tr><td>R-03</td><td>三维定位</td><td>示意即可，不追求真实尺寸与测量精度</td></tr>
+      <tr><td>R-04</td><td>三维视觉</td><td>彩色、家具造型可辨识；不是灰白素模</td></tr>
+      <tr><td>R-05</td><td>三维交互</td><td>直接拖动摆放家具，不用方向盘步进作为主路径</td></tr>
+      <tr><td>R-06</td><td>户型</td><td>预置一室/两室/三室模板；可改房间名与大小、增删房间、拖动墙面改形状（常见不规则形状即可）</td></tr>
+      <tr><td>R-07</td><td>家具品类</td><td>收纳家具＋日常桌椅：柜、架、床、沙发、桌、椅、常见家电；绿植、地毯、灯具、摆件不做</td></tr>
+      <tr><td>R-08</td><td>物品呈现</td><td>维持现状：物品在列表中查看，不显示在三维场景中</td></tr>
+      <tr><td>R-09</td><td>位置颗粒度</td><td>房间＋家具＋抽屉，保留现有五层归属结构</td></tr>
+      <tr><td>R-10</td><td>数据与换机</td><td>先做本地打包导出/导入，数据结构预留以后接云同步；不做账号与云端</td></tr>
+      <tr><td>R-11</td><td>风格规范</td><td>维持"收纳优先、剔除绿植地毯灯具"定位，不正式推翻</td></tr>
+      <tr><td>R-12</td><td>改造方式</td><td>在现有代码上改，保留物品/位置/库存数据层与多数页面</td></tr>
+    </tbody>
+  </table>
+
+  <h1 id="section-4">四、现有文档与实现方式符合性核对</h1>
+  <table>
+    <thead><tr><th>维度</th><th>现有口径（文档或代码）</th><th>你的期望</th><th>判定</th><th>处理方式</th></tr></thead>
+    <tbody>
+      <tr><td>产品定位</td><td>个人单用户、找物与位置管理为核心、三维为可视化入口</td><td>一致</td><td>符合</td><td>保留</td></tr>
+      <tr><td>平台</td><td>微信小程序</td><td>一致，且要正式发布</td><td>部分符合</td><td>保留开发路线，补上架合规准备</td></tr>
+      <tr><td>功能范围</td><td>21 页，含照片上传、建模任务、备份、后台页面</td><td>只做核心＋历史＋库存</td><td>不符合</td><td>裁剪照片、任务、后台等页面及入口</td></tr>
+      <tr><td>数据形态</td><td>纯本地 wx.Storage，无导出导入能力</td><td>本地存储＋手动导出导入</td><td>部分符合</td><td>新增打包导出/导入，预留云同步扩展位</td></tr>
+      <tr><td>三维尺寸</td><td>手动填房间宽深高，按真实尺寸布局</td><td>示意即可，不量尺寸</td><td>不符合</td><td>改为模板起步，尺寸作为可选显示而非必填</td></tr>
+      <tr><td>三维视觉</td><td>灰白素模、8 类复用、零贴图</td><td>彩色、造型可辨识</td><td>不符合</td><td>重做美术资产，按确认品类扩充</td></tr>
+      <tr><td>三维交互</td><td>V1.3 A 方案：选中后方向盘 5cm 步进、±15°/90°、保存/撤销</td><td>直接拖拽</td><td>不符合</td><td>恢复渲染器已有拖拽接口，精简状态机</td></tr>
+      <tr><td>户型编辑</td><td>房间以基础信息与三维场景存在，未支持模板与墙面编辑</td><td>模板＋改名改大小＋增删房间＋拖墙改形状</td><td>不符合</td><td>新增模板与户型编辑能力</td></tr>
+      <tr><td>家具品类</td><td>8 类可建模、15 类目录项；规范剔除装饰品</td><td>收纳家具＋日常桌椅；装饰品仍不做</td><td>部分符合</td><td>在既有定位内补充桌椅与常见家电模型</td></tr>
+      <tr><td>物品呈现</td><td>物品只在列表，三维不显示</td><td>一致</td><td>符合</td><td>保留，仅优化列表与场景的对应提示</td></tr>
+      <tr><td>位置模型</td><td>空间→房间→家具→收纳节点→物品；物品锚定节点，不存坐标</td><td>房间＋家具＋抽屉</td><td>符合</td><td>保留，作为改造的不可破坏底线</td></tr>
+      <tr><td>移动与历史</td><td>首次确认、外出/借出、结束管理、移动历史已实现</td><td>保留</td><td>符合</td><td>保留</td></tr>
+      <tr><td>库存与提醒</td><td>入库/消耗/调整、余额与交易、低库存周期提醒已实现</td><td>保留</td><td>符合</td><td>保留</td></tr>
+      <tr><td>上架合规</td><td>档案记录隐私指引、类目资质、基础库下限、管理员 openid 待处理</td><td>要正式发布</td><td>待确认</td><td>账号主体与认证状态确认后列具体清单</td></tr>
+      <tr><td>改造路径</td><td>改造方案建议重做美术、恢复拖拽、优化性能</td><td>在现有代码上改</td><td>符合</td><td>按该方案分阶段推进，先确认口径</td></tr>
+    </tbody>
+  </table>
+
+  <h1 id="section-5">五、主要差距与改造内容</h1>
+  <h2 id="section-5-1">（一）三维模块是最大差距，需优先处理</h2>
+  <p>现有三维页面同时存在四个问题：灰白素模零贴图、A 方案方向盘操作繁琐、每一步微调触发全量重建导致卡顿、家具品类与丰富度不足。上一轮改造方案已给出可复用的判断：带色版备份仍在包内，渲染器已写好拖拽预览接口，卡顿主因是重建粒度而非模型面数。因此本轮不推倒重来，而是按"恢复拖拽 → 重做美术 → 增量重建 → 扩充品类"的顺序改造，并在每一步回归"换模型、拖位置、加品类不破坏收纳节点与物品关联"这条底线。</p>
+  <p>需要注意一处口径变化：上一轮改造方案把"物品是否三维呈现"列为待确认，你现在已明确选择维持列表方式，因此该项从改造范围中移除；但搜索到物品后如何让场景与列表对应，仍需保留优化空间。</p>
+  <h2 id="section-5-2">（二）数据从纯本地变为"本地＋手动迁移"</h2>
+  <p>现有实现以 wx.Storage 为唯一数据源，清除缓存即丢数据。按你的决定，改造为本地打包导出/导入：换机时导出一份数据文件，在另一台手机导入。数据结构需预留以后接云同步的扩展位，但本期不做账号、不做云端。你已明确接受"手动操作一次"和"未导出就清缓存会丢"这两个代价，这一点应写入用户说明。</p>
+  <h2 id="section-5-3">（三）功能范围要做减法</h2>
+  <p>现有 21 页中的照片上传、建模任务、云端备份降级页、后台页等，按你选的"核心＋历史＋库存"应裁剪或隐藏入口。裁剪时须保证数据层不受影响：历史与库存相关页面、五层归属结构、业务规则 BR-001～015 与 TBD-001～008 继续保留。</p>
+  <h2 id="section-5-4">（四）上架合规须在编码前查清</h2>
+  <p>你已注册小程序，但主体类型（个人/企业）与认证状态尚未确认。这两项直接决定能否提审、可用能力范围以及隐私指引与类目资质的配置要求。在确认之前，本文件不假设任何账号条件，也不把"可上架"写成已完成事项。</p>
+  <h2 id="section-5-5">（五）文档口径按你的最终选择处理</h2>
+  <p>现行《三维家具风格规范 V1.0》§1.1 与 §4.4 的"收纳优先、剔除装饰品"定位维持不变；家具品类扩充到"收纳家具＋日常桌椅"属于在该定位内的补充，不是推翻规范。与此相对，V1.3 交互规范中的 A 方案按钮步进口径与你确认的"直接拖拽"不一致，需在改造时同步修订，避免规范与实现两套口径。</p>
+
+  <h1 id="section-6">六、待确认事项</h1>
+  <table>
+    <thead><tr><th>事项</th><th>当前状态</th><th>需要你提供的信息</th><th>影响</th></tr></thead>
+    <tbody>
+      <tr><td>小程序主体与认证</td><td>未确认</td><td>微信公众平台 → 设置 → 账号信息中的主体类型与认证状态；AppID</td><td>决定能否提审、隐私指引与类目配置</td></tr>
+      <tr><td>导出文件格式</td><td>未确认</td><td>是否接受一个包含全部数据的文件，换机时通过微信文件传输</td><td>影响迁移交互设计</td></tr>
+      <tr><td>性能验收目标机型</td><td>未确认</td><td>你常用的手机档次，或希望覆盖的低端机型</td><td>用于建立真机基线，不承诺未经实测的帧率数字</td></tr>
+      <tr><td>旧版页面裁剪顺序</td><td>未确认</td><td>是否先隐藏入口、保留代码，还是直接删除页面</td><td>影响回退难度与包体</td></tr>
+    </tbody>
+  </table>
+
+  <h1 id="section-7">七、结论与下一步</h1>
+  <p>现有文档的需求、功能与实现方式，在找物核心、五层位置模型、移动历史、库存提醒四项上符合你的预期；在三维的尺寸口径、视觉、交互、户型编辑，以及数据迁移、功能裁剪、上架准备上不符合，需要改造。改造可在现有代码上进行，无需重新开发一套。</p>
+  <p>建议下一步按三件事推进：第一，确认上表中的账号主体与认证状态，把上架条件从"待确认"变为可执行清单；第二，以本文件第三章的十二条需求基线为准，冻结范围并同步修订 V1.3 交互规范；第三，按上一轮改造方案的阶段划分启动三维改造，先从恢复拖拽和样板家具开始，每阶段可独立验证与回退。</p>
+</section>
+</body>
+</html>

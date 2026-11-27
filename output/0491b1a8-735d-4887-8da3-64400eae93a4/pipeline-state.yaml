@@ -1,0 +1,8 @@
+request_id: 0491b1a8-735d-4887-8da3-64400eae93a4
+genre: general
+entry_type: full_pipeline
+user_query: 依据 V1.1 需求基线与三维房间改造方案，输出从现状到上架的开发计划与任务清单
+output_docx_path: /Users/Admin1/Documents/kywork/3d/document/开发计划与任务清单_V1.0.docx
+stage_1: { status: pending, executor: doc-writer }
+stage_2: { status: pending, executor: doc-formatter }
+  stage_3: { status: completed, executor: doc-converter, output: /Users/Admin1/Documents/kywork/3d/document/开发计划与任务清单_V1.0.docx }

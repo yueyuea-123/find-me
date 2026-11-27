@@ -140,12 +140,9 @@ check('全局异常钩子执行不抛出', () => {
 
 const store = require(path.join(MP, 'utils', 'store.js'));
 const C = require(path.join(MP, 'utils', 'constants.js'));
-const Sync = require(path.join(MP, 'utils', 'cloud-sync.js'));
 
-// ---- 云同步适配层断言（离线优先架构的关键不变量） ----
-check('云同步层导出必要接口', () =>
-  ['init','pull','markDirty','flush','backup','adminQuery','setDataProvider','getState'].every(k => typeof Sync[k] === 'function'));
-check('store 导出全量快照按云集合分组', () => {
+// ---- 本地快照/恢复层断言（纯本地备份的关键不变量；云端已移出范围·基线 V1.1） ----
+check('store 导出全量快照按实体分组', () => {
   const snap = store.exportSnapshot();
   const need = ['spaces','rooms','furniture','nodes','items','movements','inventory','transactions','alerts'];
   return need.every(k => Array.isArray(snap[k])) && snap.spaces.length >= 1 && snap.items.length >= 1;
@@ -160,13 +157,13 @@ check('store 导出/清空删除墓碑', () => {
   store.removeNode(node0.id);
   return before === 0 && store.getTombstones().length === 1;
 });
-check('云端快照覆盖本地后空间名与设置正确', () => {
-  const fake = { spaces: [{ id: 'sp_cloud', name: '云端空间', archived: false, createdAt: 1, updatedAt: 1 }],
+check('本地快照覆盖本地后空间名与设置正确', () => {
+  const fake = { spaces: [{ id: 'sp_local', name: '本地空间', archived: false, createdAt: 1, updatedAt: 1 }],
     rooms: [], furniture: [], nodes: [], items: [], movements: [], inventory: [], transactions: [], alerts: [] };
   const r = store.applySnapshot(fake);
-  return r.ok && store.listSpaces().length === 1 && store.listSpaces()[0].name === '云端空间';
+  return r.ok && store.listSpaces().length === 1 && store.listSpaces()[0].name === '本地空间';
 });
-check('云端重复快照覆盖本地时按 id 去重', () => {
+check('本地重复快照恢复时按 id 去重', () => {
   const dup = { spaces: [{ id: 'sp_dup', name: '空间', createdAt: 1, updatedAt: 2 }],
     rooms: [
       { id: 'rm_dup', spaceId: 'sp_dup', name: '旧副本', createdAt: 1, updatedAt: 1 },
@@ -178,11 +175,7 @@ check('云端重复快照覆盖本地时按 id 去重', () => {
   const rooms = store.listRooms('sp_dup');
   return r.ok && rooms.length === 2 && rooms.some(x => x.name === '新副本') && !rooms.some(x => x.name === '旧副本');
 });
-check('云同步状态默认未登录且不影响本地可用', () => {
-  const s = Sync.getState();
-  return typeof s.loggedIn === 'boolean' && typeof s.enabled === 'boolean';
-});
-check('清空数据为全部业务记录写墓碑，避免重新载入后云端数据叠加（多主卧回归）', () => {
+check('清空数据为全部业务记录写墓碑，避免恢复后数据叠加（多主卧回归）', () => {
   store.clearTombstones();
   const before = store.exportSnapshot();
   const expected = ['spaces','rooms','furniture','nodes','items','movements','inventory','transactions','alerts']
@@ -242,7 +235,23 @@ check('界面口径：已结束物品不占用节点，节点可删除', () => {
   return !!(n.ok && r.ok);
 });
 
-expectFail('BR-008 有关联物品的家具禁止删除', () => store.removeFurniture(bed.id), 'HAS_LINKS');
+check('基线§2.3 删除家具有关联物品时物品转入未放置且不丢失', () => {
+  const tr = store.addRoom(room.spaceId, '冒烟临时房间', { width: 3, depth: 3, height: 2.6 });
+  if (!tr.ok) return false;
+  const rid = tr.data.id;
+  const tf = store.addFurniture(rid, { category: '柜子', name: '冒烟临时家具' });
+  if (!tf.ok) return false;
+  const fid = tf.data.id;
+  const tn = store.addNode(rid, tf.node.id, '冒烟临时抽屉', '抽屉');
+  if (!tn.ok) return false;
+  const ti = store.addItem({ name: '冒烟临时物品', currentNodeId: tn.data.id });
+  if (!ti.ok) return false;
+  const iid = ti.data.id;
+  const r = store.removeFurniture(fid);
+  const after = store.getItem(iid);
+  store.deleteRoom(rid); // 清理临时房间（其下家具/节点一并移除，物品保留为未放置兜底）
+  return r.ok && !!after && after.anchorType === 'unplaced' && after.currentNodeId === '' && after.spaceId === room.spaceId;
+});
 check('BR-009 换家具模型不影响收纳节点与物品关联', () => {
   const before = store.listNodes(room.id).length;
   const wool0 = store.listItems().find(i => i.name === '羊毛毯');
@@ -387,7 +396,7 @@ check('模板重复应用幂等：同一房间不重复追加家具（防10/345�
   const first = store.listFurniture(r.data.id).length;
   const again = store.applyRoomTemplate(r.data.id, 'bedroom');
   const after = store.listFurniture(r.data.id).length;
-  return !!(first === 3 && after === first && again.ok && again.data.applied === false);
+  return !!(first === 4 && after === first && again.ok && again.data.applied === false);
 });
 
 // ---------------------------------------------------------------- B3. 已确认规则增补断言（TBD-002/003/005/007/008）

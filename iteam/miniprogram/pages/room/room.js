@@ -1,5 +1,6 @@
 // pages/room/room.js —— 房间列表 UI-003
 var store = require('../../utils/store.js');
+var C = require('../../utils/constants.js');
 
 Page({
   data: {
@@ -42,16 +43,42 @@ Page({
   goSpaces: function () { wx.navigateTo({ url: '/pages/space/space' }); },
 
   openCreate: function () {
+    this._autoName = '';
     this.setData({
       showEditor: true, editing: false, editingId: '', formName: '', formW: '', formD: '', formH: '', formError: '',
       templates: store.listRoomTemplates(), startTemplate: '', startTemplateName: ''
     });
+  },
+  // 默认房名：文档要求的类型默认名；空白房间用「我的空间」
+  _defaultName: function (key) {
+    if (!key) return C.BLANK_ROOM_NAME || '我的空间';
+    var t = (this.data.templates || []).filter(function (x) { return x.key === key; })[0];
+    return t ? (t.defaultName || t.name) : (C.BLANK_ROOM_NAME || '我的空间');
+  },
+  // 同名时自动后缀 2/3…，保证同类型可多间（主卧/次卧/客卧）且不触发重名校验
+  _uniqueName: function (base) {
+    var sp = store.getActiveSpace();
+    var names = sp ? store.listRooms(sp.id).map(function (r) { return r.name; }) : [];
+    if (names.indexOf(base) < 0) return base;
+    for (var i = 2; i < 100; i++) {
+      if (names.indexOf(base + i) < 0) return base + i;
+    }
+    return base + Date.now();
+  },
+  _applyDefaultName: function (key) {
+    // 只在名称为空或仍是上一次自动名时覆盖，避免改掉用户手输的名称
+    if (!this.data.formName || this.data.formName === this._autoName) {
+      var n = this._uniqueName(this._defaultName(key));
+      this._autoName = n;
+      this.setData({ formName: n });
+    }
   },
   // CR-001 F-07：选择新建房间起点（'' 空白 / 模板 key）；同步中文名供按钮显示
   setStart: function (e) {
     var key = e.currentTarget.dataset.key || '';
     var t = (this.data.templates || []).filter(function (x) { return x.key === key; })[0];
     this.setData({ startTemplate: key, startTemplateName: t ? t.name : '' });
+    this._applyDefaultName(key);
   },
   rename: function (e) {
     var d = e.currentTarget.dataset;
@@ -62,7 +89,7 @@ Page({
     });
   },
   closeEditor: function () { this.setData({ showEditor: false }); },
-  onName: function (e) { this.setData({ formName: e.detail.value }); },
+  onName: function (e) { this._autoName = ''; this.setData({ formName: e.detail.value }); },
   onW: function (e) { this.setData({ formW: e.detail.value }); },
   onD: function (e) { this.setData({ formD: e.detail.value }); },
   onH: function (e) { this.setData({ formH: e.detail.value }); },
@@ -101,6 +128,10 @@ Page({
     this.setData({ showEditor: false });
     wx.showToast({ title: msg, icon: 'success' });
     this.load();
+    // 文档口径：房间创建成功后直接进入该房间三维空间（编辑保存仍留在列表）
+    if (!f.editing && r.data && r.data.id) {
+      wx.navigateTo({ url: '/pages/room3d/room3d?id=' + r.data.id });
+    }
   },
 
   // 演示口径：新建房间的两个明确起点（空白 / 卧室模板）
@@ -108,15 +139,55 @@ Page({
     var key = (e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.template) || '';
     var patch = { startTemplate: key };
     if (!key) patch.formW = patch.formD = patch.formH = '';
+    if (!this.data.formName || this.data.formName === this._autoName) {
+      patch.formName = this._uniqueName(this._defaultName(key));
+      this._autoName = patch.formName;
+    }
     var self = this;
     this.setData(patch, function () { self.save(); });
   },
 
+  // 房间卡「⋯」：列表内直接管理，不必先进三维页（文档 §七）
+  roomActions: function (e) {
+    var d = e.currentTarget.dataset || {};
+    var self = this;
+    wx.showActionSheet({
+      itemList: ['重命名房间', '房间照片', '归档房间', '删除房间'],
+      success: function (res) {
+        if (res.tapIndex === 0) self.renameRoom(d.id, d.name);
+        else if (res.tapIndex === 1) wx.navigateTo({ url: '/pages/photos/photos?id=' + d.id });
+        else if (res.tapIndex === 2) self._archiveRoom(d.id, d.name);
+        else if (res.tapIndex === 3) self._destroyRoom(d.id, d.name);
+      }
+    });
+  },
+
+  renameRoom: function (id, name) {
+    var self = this;
+    wx.showModal({
+      title: '重命名房间', editable: true, placeholderText: '请输入房间名称', content: name,
+      success: function (res) {
+        if (!res.confirm || !(res.content || '').trim()) return;
+        var r = store.updateRoom(id, { name: res.content.trim() });
+        if (!r.ok) {
+          wx.showToast({
+            title: r.error === 'ROOM_NAME_DUPLICATE' ? '已有同名房间' : '保存失败：' + r.error,
+            icon: 'none'
+          });
+          return;
+        }
+        wx.showToast({ title: '已重命名', icon: 'success' });
+        self.load();
+      }
+    });
+  },
+
   // 物理删除房间（用户确认口径）：不可恢复，须强提示；关联物品解绑置为位置未知
-  destroy: function (e) {
-    var d = e.currentTarget.dataset, self = this;
-    var a = store.roomAssociations(d.id);
-    var detail = '这将永久删除「' + d.name + '」及其全部家具、节点，操作不可恢复。';
+  destroy: function (e) { var d = e.currentTarget.dataset; this._destroyRoom(d.id, d.name); },
+  _destroyRoom: function (id, name) {
+    var self = this;
+    var a = store.roomAssociations(id);
+    var detail = '这将永久删除「' + name + '」及其全部家具、节点，操作不可恢复。';
     if (a.items > 0) detail += '\n其中 ' + a.items + ' 件物品不会被删除，但会变为「位置未知」。';
     wx.showModal({
       title: '永久删除房间',
@@ -125,7 +196,7 @@ Page({
       confirmColor: '#BE5F44',
       success: function (res) {
         if (!res.confirm) return;
-        var r = store.deleteRoom(d.id);
+        var r = store.deleteRoom(id);
         if (!r.ok) { wx.showToast({ title: '删除失败：' + r.error, icon: 'none' }); return; }
         wx.showToast({ title: '已永久删除', icon: 'success' });
         self.load();
@@ -133,13 +204,14 @@ Page({
     });
   },
 
-  archive: function (e) {
-    var d = e.currentTarget.dataset, self = this;
+  archive: function (e) { var d = e.currentTarget.dataset; this._archiveRoom(d.id, d.name); },
+  _archiveRoom: function (id, name) {
+    var self = this;
     // 业务规则第11章：删除/归档前检查家具、节点、物品关联，避免位置关系断裂
-    var a = store.roomAssociations(d.id);
-    var content = '归档「' + d.name + '」？数据保留但退出日常列表，历史可追溯。';
+    var a = store.roomAssociations(id);
+    var content = '归档「' + name + '」？数据保留但退出日常列表，历史可追溯。';
     if (a.total > 0) {
-      content = '「' + d.name + '」下仍有 ' + a.furniture + ' 件家具、' + a.nodes + ' 个收纳节点、'
+      content = '「' + name + '」下仍有 ' + a.furniture + ' 件家具、' + a.nodes + ' 个收纳节点、'
         + a.items + ' 件物品。归档后该房间不再作为新物品与家具的可选位置，历史记录仍可追溯。是否继续？';
     }
     wx.showModal({
@@ -148,7 +220,7 @@ Page({
       confirmText: a.total > 0 ? '仍要删除' : '删除',
       confirmColor: '#BE5F44',
       success: function (res) {
-        if (res.confirm && store.archiveRoom(d.id).ok) {
+        if (res.confirm && store.archiveRoom(id).ok) {
           wx.showToast({ title: '已归档', icon: 'success' }); self.load();
         }
       }

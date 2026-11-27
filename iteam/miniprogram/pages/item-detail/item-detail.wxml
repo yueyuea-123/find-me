@@ -38,6 +38,7 @@
     </view>
     <view class="kv"><text class="muted">位置状态</text><text class="tag {{item.locClass}}">{{item.locText}}</text></view>
     <view class="kv"><text class="muted">存放位置</text><text>{{item.locPath}}</text></view>
+    <view class="kv"><text class="muted">归属方式</text><text>{{item.anchorText}}</text></view>
     <view class="kv" wx:if="{{item.homePath && item.homePath!==item.locPath}}"><text class="muted">常驻位置</text><text>{{item.homePath}}</text></view>
     <view class="kv" wx:if="{{item.borrowTo}}"><text class="muted">借出对象</text><text>{{item.borrowTo}}</text></view>
     <view class="kv" wx:if="{{item.dueDate}}"><text class="muted">预计归还</text><text>{{item.dueDate}}</text></view>

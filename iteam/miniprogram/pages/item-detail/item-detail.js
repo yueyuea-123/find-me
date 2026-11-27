@@ -42,6 +42,8 @@ Page({
         locPath: it.currentNodeId ? store.nodePath(it.currentNodeId).join(' / ') : (stMap[it.locationStatus] || '未设置'),
         // P1-4 常驻位置：外出/借出时 currentNodeId 为空，但仍在家里有固定位置
         homePath: it.homeNodeId ? store.nodePath(it.homeNodeId).join(' / ') : '',
+        // 基线 §2 归属锚点三态标签
+        anchorText: it.anchorType === 'furniture' ? '挂家具' : (it.anchorType === 'unplaced' ? '未放置（原家具已删除）' : '空间直挂'),
         note: it.note, photo: it.photoPath,
         trackingMode: it.trackingMode,
         mgmt: it.managementStatus,

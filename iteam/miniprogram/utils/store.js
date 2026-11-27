@@ -511,8 +511,14 @@ function addFurniture(roomId, opts) {
 // CR-001 F-07 典型场景模板：列出可选模板（仅元信息，不含坐标）
 function listRoomTemplates() {
   var t = C.ROOM_TEMPLATES || {};
-  return Object.keys(t).map(function (k) {
-    return { key: k, name: t[k].name, count: (t[k].furniture || []).length };
+  // 只暴露新建可选类型（6 类 + 空白由页面单独提供）；dining/kids 等 legacy 模板仅兼容旧数据
+  var keys = C.CREATABLE_ROOM_TEMPLATES || Object.keys(t);
+  return keys.filter(function (k) { return !!t[k]; }).map(function (k) {
+    return {
+      key: k, name: t[k].name,
+      defaultName: t[k].defaultName || t[k].name,
+      count: (t[k].furniture || []).length
+    };
   });
 }
 // 应用模板：按房间实际尺寸钳制预置家具坐标，逐件写为普通可编辑家具；模板缺失/加载失败返回错误供降级空白房间
@@ -531,14 +537,17 @@ function applyRoomTemplate(roomId, templateKey) {
   var created = [];
   tpl.furniture.forEach(function (item) {
     var lib = C.FURNITURE_LIB[item.category] || { size: [0.5, 0.5, 0.5], vars: ['默认'] };
-    var size = { w: lib.size[0], h: lib.size[1], d: lib.size[2] };
+    // 模板可覆盖尺寸/外观（用于「文档要求但暂无独立模型」的家具，如冰箱/洗衣机）；
+    // 后续补真实模型时只改模板配置，已建房间数据不受影响。
+    var rawSize = item.size || lib.size;
+    var size = { w: rawSize[0], h: rawSize[1], d: rawSize[2] };
     // 按房间尺寸钳制，超大家具居中（复用 T8 的 clampCenter）
     var px = round2(clampCenter(item.x || 0, -halfW + size.w / 2, halfW - size.w / 2));
     var pz = round2(clampCenter(item.z || 0, -halfD + size.d / 2, halfD - size.d / 2));
     var f = {
       id: uid('fu'), roomId: roomId, category: item.category,
       name: item.name || item.category,
-      model: lib.vars[0],
+      model: item.model || lib.vars[0],
       position: { x: px, y: 0, z: pz },
       rotation: item.rot || 0,
       size: size,

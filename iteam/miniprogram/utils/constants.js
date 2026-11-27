@@ -65,51 +65,80 @@ var FURNITURE_LIB = {
 // 典型场景模板（CR-001 F-07）：创建房间时的静态初始布置，用户主动选择，非 AI 生成/推荐。
 // 坐标为中心原点、Y-up、单位米，按默认 4×4 房间布局；落库时按房间实际宽/深/高钳制。
 // 每件为普通家具初值（category 必须在 FURNITURE_LIB 中存在）；落库后即普通 furniture 对象，可自由编辑。
+//
+// 2026-11-24 空间模块收敛（02空间功能设计）：
+//   - 新建房间只开放 CREATABLE_ROOM_TEMPLATES 中的 6 类 + 空白（=文档第 7 类「其他」）。
+//   - 文档要求的冰箱/洗衣机/马桶/洗手台/梳妆台/文件柜/边柜/置物架暂无独立 GLB，
+//     统一走「模型替代」：name 保留用户可见名称，category 复用现有模型，size/model 可覆盖。
+//     后续补真实模型时，只改这里的 category/size/model（或替换映射），不动模板结构与已建房间。
+//   - dining/kids 保留定义仅为旧房间/旧调用兼容，不再出现在新建选项（legacy: true）。
 var ROOM_TEMPLATES = {
-  bedroom: {
-    key: 'bedroom', name: '卧室',
-    furniture: [
-      { category: '床', name: '双人床', x: -1.2, z: 0.4, rot: 0 },
-      { category: '床头柜', name: '床头柜', x: -2, z: -0.4, rot: 0 },
-      { category: '窗帘', name: '落地窗', x: 0.4, z: -2, rot: 0 }
-    ]
-  },
   living: {
-    key: 'living', name: '客厅',
+    key: 'living', name: '客厅', defaultName: '客厅',
     furniture: [
       { category: '沙发', name: '三人沙发', x: 0, z: 1.2, rot: 0 },
+      { category: '电视柜', name: '电视柜', x: 0, z: -1.7, rot: 0 },
       { category: '茶几', name: '茶几', x: 0, z: 0, rot: 0 },
-      { category: '电视柜', name: '电视柜', x: 0, z: -1.4, rot: 0 }
+      // 文档要求「边柜」：暂用抽屉模型，尺寸按边柜覆盖
+      { category: '抽屉', name: '边柜', x: -1.7, z: -1.2, rot: 0, size: [0.8, 0.8, 0.4], model: '木色' }
     ]
   },
-  bath: {
-    key: 'bath', name: '卫生间',
+  bedroom: {
+    key: 'bedroom', name: '卧室', defaultName: '主卧',
     furniture: [
-      { category: '收纳盒', name: '浴室收纳盒', x: -0.8, z: -0.8, rot: 0 },
-      { category: '抽屉', name: '镜柜抽屉', x: 0.8, z: -1, rot: 0 }
-    ]
-  },
-  study: {
-    key: 'study', name: '书房',
-    furniture: [
-      { category: '书架', name: '书架', x: -1.3, z: -1.2, rot: 0 },
-      { category: '餐桌', name: '书桌', x: 0.2, z: 0.3, rot: 0 },
-      { category: '软包椅', name: '书桌椅', x: 0.2, z: 1.3, rot: 180 },
-      { category: '台灯', name: '台灯', x: -0.2, z: 0.1, rot: 0 },
-      { category: '收纳盒', name: '文件收纳盒', x: 1.3, z: -1.3, rot: 0 }
+      { category: '床', name: '双人床', x: -0.8, z: 0.6, rot: 0 },
+      { category: '床头柜', name: '床头柜', x: -1.9, z: -0.6, rot: 0 },
+      { category: '衣柜', name: '衣柜', x: 1.4, z: 0, rot: 0 },
+      // 文档要求「梳妆台」：暂用餐桌模型，尺寸按梳妆台覆盖
+      { category: '餐桌', name: '梳妆台', x: 1.3, z: -1.4, rot: 0, size: [1.0, 0.75, 0.45], model: '木色原木' }
     ]
   },
   kitchen: {
-    key: 'kitchen', name: '厨房',
+    key: 'kitchen', name: '厨房', defaultName: '厨房',
     furniture: [
-      { category: '抽屉', name: '橱柜', x: 0, z: -1.5, rot: 0 },
-      { category: '收纳盒', name: '调料收纳盒', x: -1.2, z: -1.3, rot: 0 },
-      { category: '餐桌', name: '操作台', x: 0, z: 0.2, rot: 0 },
-      { category: '收纳盒', name: '杂物收纳盒', x: 1.2, z: -1.3, rot: 0 }
+      // 文档要求「橱柜」：抽屉模型 + 橱柜尺寸
+      { category: '抽屉', name: '橱柜', x: 0, z: -1.7, rot: 0, size: [1.2, 0.85, 0.6], model: '白色' },
+      // 文档要求「冰箱」：衣柜模型 + 冰箱尺寸
+      { category: '衣柜', name: '冰箱', x: 1.5, z: -1.3, rot: 0, size: [0.7, 1.8, 0.7], model: '白色简约' },
+      { category: '餐桌', name: '餐桌', x: 0, z: 0.3, rot: 0 },
+      // 文档要求「置物架」：书架模型
+      { category: '书架', name: '置物架', x: -1.5, z: -1.0, rot: 0, size: [0.9, 1.8, 0.35], model: '木色原木' }
     ]
   },
+  bath: {
+    key: 'bath', name: '卫生间', defaultName: '卫生间',
+    furniture: [
+      // 文档要求「洗手台」：电视柜模型 + 台面尺寸
+      { category: '电视柜', name: '洗手台', x: -1.2, z: -1.6, rot: 0, size: [0.8, 0.85, 0.5], model: '白色简约' },
+      // 文档要求「马桶」：收纳盒模型 + 马桶尺寸
+      { category: '收纳盒', name: '马桶', x: 1.2, z: -1.6, rot: 0, size: [0.4, 0.7, 0.6], model: '白色' },
+      { category: '抽屉', name: '浴室柜', x: 0, z: -1.7, rot: 0, size: [0.8, 0.85, 0.45], model: '白色' },
+      { category: '书架', name: '置物架', x: 1.5, z: 0.6, rot: 0, size: [0.9, 1.8, 0.35], model: '白色简约' }
+    ]
+  },
+  study: {
+    key: 'study', name: '书房', defaultName: '书房',
+    furniture: [
+      { category: '餐桌', name: '书桌', x: 0, z: 0.6, rot: 0, size: [1.2, 0.75, 0.6], model: '木色原木' },
+      { category: '软包椅', name: '办公椅', x: 0, z: 1.4, rot: 180 },
+      { category: '书架', name: '书柜', x: -1.5, z: -1.4, rot: 0, size: [0.9, 1.8, 0.35], model: '木色原木' },
+      // 文档要求「文件柜」：衣柜模型 + 文件柜尺寸
+      { category: '衣柜', name: '文件柜', x: 1.5, z: -1.4, rot: 0, size: [0.9, 1.8, 0.45], model: '白色简约' }
+    ]
+  },
+  balcony: {
+    key: 'balcony', name: '阳台', defaultName: '阳台',
+    furniture: [
+      // 文档要求「洗衣机」：抽屉模型 + 洗衣机尺寸
+      { category: '抽屉', name: '洗衣机', x: -1.2, z: -1.5, rot: 0, size: [0.6, 0.85, 0.6], model: '白色' },
+      // 文档要求「收纳柜」：衣柜模型 + 收纳柜尺寸
+      { category: '衣柜', name: '收纳柜', x: 1.2, z: -1.5, rot: 0, size: [0.9, 1.8, 0.45], model: '木色原木' },
+      { category: '书架', name: '置物架', x: 0, z: 1.5, rot: 180, size: [0.9, 1.8, 0.35], model: '木色原木' }
+    ]
+  },
+  // 以下两类不再作为新建选项，仅为旧数据/旧调用兼容保留
   dining: {
-    key: 'dining', name: '餐厅',
+    key: 'dining', name: '餐厅', legacy: true,
     furniture: [
       { category: '餐桌', name: '餐桌', x: 0, z: 0, rot: 0 },
       { category: '椅子', name: '餐椅一', x: -1, z: 0, rot: 90 },
@@ -118,16 +147,8 @@ var ROOM_TEMPLATES = {
       { category: '收纳盒', name: '餐具收纳盒', x: -1.3, z: -1.3, rot: 0 }
     ]
   },
-  balcony: {
-    key: 'balcony', name: '阳台',
-    furniture: [
-      { category: '躺椅', name: '休闲躺椅', x: -0.9, z: 0.4, rot: 0 },
-      { category: '收纳盒', name: '阳台收纳盒', x: 1.1, z: -0.9, rot: 0 },
-      { category: '台灯', name: '氛围灯', x: 0.9, z: 1.0, rot: 0 }
-    ]
-  },
   kids: {
-    key: 'kids', name: '儿童房',
+    key: 'kids', name: '儿童房', legacy: true,
     furniture: [
       { category: '床', name: '儿童床', x: -1.2, z: 0.5, rot: 0 },
       { category: '床头柜', name: '床头柜', x: -2, z: -0.3, rot: 0 },
@@ -136,6 +157,9 @@ var ROOM_TEMPLATES = {
     ]
   }
 };
+// 新建房间可选类型（文档 7 类中除「其他=空白」外的 6 类，按文档顺序）
+var CREATABLE_ROOM_TEMPLATES = ['living', 'bedroom', 'kitchen', 'bath', 'study', 'balcony'];
+var BLANK_ROOM_NAME = '我的空间';
 
 // 收纳节点类型（PRD 5.2 位置层级）
 var NODE_TYPES = ['房间', '家具', '抽屉/隔层', '收纳盒', '表面', '其他'];
@@ -177,6 +201,8 @@ module.exports = {
   FURNITURE_CATEGORIES: FURNITURE_CATEGORIES,
   FURNITURE_LIB: FURNITURE_LIB,
   ROOM_TEMPLATES: ROOM_TEMPLATES,
+  CREATABLE_ROOM_TEMPLATES: CREATABLE_ROOM_TEMPLATES,
+  BLANK_ROOM_NAME: BLANK_ROOM_NAME,
   NODE_TYPES: NODE_TYPES,
   INVENTORY_TX_TYPES: INVENTORY_TX_TYPES,
   DISPOSAL_TYPES: DISPOSAL_TYPES,

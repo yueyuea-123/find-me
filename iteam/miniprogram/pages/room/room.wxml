@@ -8,12 +8,13 @@
       <view class="room-icon">⌗</view>
       <view class="grow" style="margin-left:24rpx">
         <view class="card-t">{{item.name}}</view>
-        <view class="card-s">{{item.dimText}} · {{item.furnitureCount}} 件家具</view>
+        <view class="card-s">{{item.dimText}} · {{item.furnitureCount}} 件家具 · {{item.itemCount}} 件物品</view>
         <view class="row wrap" style="margin-top:14rpx">
           <text class="tag gray">{{item.templateText}}</text>
           <text class="tag green">● 用户确认事实</text>
         </view>
       </view>
+      <text class="room-more" catchtap="roomActions" data-id="{{item.id}}" data-name="{{item.name}}">⋯</text>
       <text class="muted">▸</text>
     </view>
   </view>

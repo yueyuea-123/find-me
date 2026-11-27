@@ -1,43 +1,67 @@
-// pages/backup/backup.js —— 备份与恢复 PRD-032
-var Sync = require('../../utils/cloud-sync.js');
+// pages/backup/backup.js —— 本地备份与恢复（纯本地存储，无云端）
+var store = require('../../utils/store.js');
+
+var BACKUPS_KEY = 'home3d_local_backups';
+
+function getBackups() {
+  try { return wx.getStorageSync(BACKUPS_KEY) || []; } catch (e) { return []; }
+}
+function saveBackups(list) {
+  try { wx.setStorageSync(BACKUPS_KEY, list); } catch (e) {}
+}
+function formatTime(ts) {
+  try { return new Date(ts).toLocaleString(); } catch (e) { return ''; }
+}
 
 Page({
-  data: { list: [], loading: false, page: 1 },
+  data: { list: [], loading: false },
 
   onShow: function () { this.load(); },
 
   load: function () {
-    var self = this;
-    this.setData({ loading: true });
-    Sync.backup('list', { page: 1, size: 20 }).then(function (r) {
-      self.setData({ loading: false });
-      if (r && r.ok) {
-        var list = (r.data.list || []).map(function (b) {
-          return {
-            id: b._id, type: b.type, note: b.note, recordCount: b.recordCount,
-            time: b.createdAt ? new Date(b.createdAt.$date || b.createdAt).toLocaleString() : ''
-          };
-        });
-        self.setData({ list: list });
-      } else {
-        wx.showToast({ title: '加载失败', icon: 'none' });
-      }
+    var list = getBackups().map(function (b) {
+      return {
+        id: b.id, note: b.note, recordCount: b.recordCount || 0,
+        time: formatTime(b.createdAt), filePath: b.filePath
+      };
     });
+    this.setData({ list: list });
   },
 
   createBackup: function () {
     var self = this;
     wx.showModal({
-      title: '创建备份',
-      content: '将当前云端全部数据保存为一个快照，可随时恢复。继续？',
+      title: '创建本地备份',
+      content: '将当前本机全部数据保存为备份文件，可随时恢复。继续？',
       success: function (res) {
         if (!res.confirm) return;
         wx.showLoading({ title: '备份中' });
-        Sync.backup('create', { type: 'manual', note: '手动备份' }).then(function (r) {
+        try {
+          var snapshot = store.exportSnapshot();
+          var json = JSON.stringify({ version: 1, createdAt: Date.now(), data: snapshot });
+          var fs = wx.getFileSystemManager();
+          var filePath = `${wx.env.USER_DATA_PATH}/backup_${Date.now()}.json`;
+          fs.writeFileSync(filePath, json, 'utf8');
+          var count = 0;
+          Object.keys(snapshot).forEach(function (k) { if (Array.isArray(snapshot[k])) count += snapshot[k].length; });
+          var backups = getBackups();
+          backups.unshift({
+            id: 'bk_' + Date.now(),
+            note: '手动备份',
+            recordCount: count,
+            createdAt: Date.now(),
+            filePath: filePath
+          });
+          // 最多保留 10 份本地备份
+          if (backups.length > 10) backups = backups.slice(0, 10);
+          saveBackups(backups);
           wx.hideLoading();
-          if (r && r.ok) { wx.showToast({ title: '备份完成', icon: 'success' }); self.load(); }
-          else wx.showToast({ title: '备份失败', icon: 'none' });
-        });
+          wx.showToast({ title: '备份完成', icon: 'success' });
+          self.load();
+        } catch (e) {
+          wx.hideLoading();
+          wx.showToast({ title: '备份失败：' + (e.message || '未知'), icon: 'none' });
+        }
       }
     });
   },
@@ -45,23 +69,46 @@ Page({
   restore: function (e) {
     var id = e.currentTarget.dataset.id;
     var self = this;
+    var backups = getBackups();
+    var target = backups.find(function (b) { return b.id === id; });
+    if (!target) { wx.showToast({ title: '备份不存在', icon: 'none' }); return; }
     wx.showModal({
       title: '恢复备份',
-      content: '将用该备份覆盖当前云端数据。恢复前系统会自动备份当前状态，可再次回滚。确定恢复？',
+      content: '将用该备份覆盖当前本机数据，此操作不可撤销。确定恢复？',
       success: function (res) {
         if (!res.confirm) return;
         wx.showLoading({ title: '恢复中' });
-        Sync.backup('restore', { backupId: id }).then(function (r) {
+        try {
+          var fs = wx.getFileSystemManager();
+          var json = fs.readFileSync(target.filePath, 'utf8');
+          var obj = JSON.parse(json);
+          if (!obj || !obj.data) throw new Error('备份文件无效');
+          var applied = store.applySnapshot(obj.data);
           wx.hideLoading();
-          if (r && r.ok) {
+          if (applied && applied.ok) {
             wx.showToast({ title: '恢复完成', icon: 'success' });
-            // 恢复后重新拉取云端快照到本地
-            Sync.pull().then(function (p) {
-              if (p && p.ok && p.snapshot) require('../../utils/store.js').applySnapshot(p.snapshot);
-            });
-            self.load();
-          } else wx.showToast({ title: '恢复失败：' + ((r && r.error) || '未知'), icon: 'none' });
-        });
+          } else {
+            wx.showToast({ title: '恢复失败：' + ((applied && applied.error) || '未知'), icon: 'none' });
+          }
+        } catch (e) {
+          wx.hideLoading();
+          wx.showToast({ title: '恢复失败：' + (e.message || '未知'), icon: 'none' });
+        }
+      }
+    });
+  },
+
+  exportFile: function (e) {
+    // 将备份文件复制到可分享位置（通过 wx.saveFile 或 openDocument 预览）
+    var id = e.currentTarget.dataset.id;
+    var backups = getBackups();
+    var target = backups.find(function (b) { return b.id === id; });
+    if (!target) return;
+    wx.openDocument({
+      filePath: target.filePath,
+      showMenu: true,
+      fail: function () {
+        wx.showToast({ title: '请使用「恢复」功能还原', icon: 'none' });
       }
     });
   }
